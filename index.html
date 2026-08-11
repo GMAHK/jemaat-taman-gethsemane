@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah</title>
+  <meta name="description"
+    content="Aplikasi resmi GMAHK Taman Gethsemane. Informasi Ibadah Sabat, Sejarah Gereja, Renungan, Persembahan & Warta Jemaat.">
+  <meta name="theme-color" content="#6b1d2f">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah">
+  <meta property="og:description"
+    content="Informasi Ibadah Sabat, Sejarah Gereja, Renungan, dan Persembahan GMAHK Taman Gethsemane.">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts: Cinzel & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ==================== APP CONTAINER & SHELL ==================== -->
+  <div class="app-wrapper" id="app-wrapper">
+    <div class="app-shell" id="app-shell">
+
+      <!-- APP HEADER -->
+      <header class="app-header">
+        <div class="header-container">
+          <div class="header-brand">
+            <div class="brand-logo">
+              <i class="fa-solid fa-church"></i>
+            </div>
+            <div class="brand-text">
+              <span class="brand-title">GMAHK Taman Gethsemane</span>
+              <span class="brand-sub">Warta & Susunan Ibadah</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button id="btn-view-toggle" class="header-btn" title="Simulasi Tampilan Mobile Frame">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+            </button>
+            <button id="btn-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang">
+              <i class="fa-solid fa-moon"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT TABS -->
+      <main class="app-body">
+        <div class="body-container">
+
+          <!-- ==================== TAB 1: HOME ==================== -->
+          <section id="tab-home" class="tab-content active">
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+              <div class="hero-overlay"></div>
+              <div class="hero-content">
+                <span class="hero-chip"><i class="fa-solid fa-cross"></i> Ayat Sabat Ini</span>
+                <h2 class="hero-title">"Ingatlah dan kuduskanlah hari Sabat"</h2>
+                <p class="hero-verse">Keluaran 20:8</p>
+                <div class="hero-actions">
+                  <button class="btn-hero" onclick="switchTab('tab-worship')">
+                    <i class="fa-solid fa-book-open"></i> Susunan Ibadah Sabat
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Action Buttons Grid -->
+            <div class="section-container">
+              <h3 class="section-title"><i class="fa-solid fa-bolt text-gold"></i> Akses Cepat</h3>
+              <div class="quick-grid">
+                <button class="quick-card" onclick="openModal('modal-about')">
+                  <div class="quick-icon icon-burgundy">
+                    <i class="fa-solid fa-circle-info"></i>
+                  </div>
+                  <span class="quick-label">Tentang Kami</span>
+                  <span class="quick-sub">Visi & Gembala</span>
+                </button>
+
+                <button class="quick-card" onclick="openModal('modal-schedule')">
+                  <div class="quick-icon icon-gold">
+                    <i class="fa-solid fa-clock"></i>
+                  </div>
+                  <span class="quick-label">Waktu Ibadah</span>
+                  <span class="quick-sub">Sabat & Vesper</span>
+                </button>
+
+                <button class="quick-card" onclick="openModal('modal-donate')">
+                  <div class="quick-icon icon-emerald">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                  </div>
+                  <span class="quick-label">Persembahan</span>
+                  <span class="quick-sub">Transfer & QRIS</span>
+                </button>
+
+                <button class="quick-card" onclick="openModal('modal-prayer')">
+                  <div class="quick-icon icon-blue">
+                    <i class="fa-solid fa-hands-praying"></i>
+                  </div>
+                  <span class="quick-label">Kontak & Doa</span>
+                  <span class="quick-sub">Layanan Jemaat</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Announcement & Sabbath Verse Card -->
+            <div class="section-container">
+              <div class="info-card info-card-gradient">
+                <div class="info-header">
+                  <i class="fa-solid fa-bullhorn text-gold"></i>
+                  <h4>Pengumuman Penting Sabat Ini</h4>
+                </div>
+                <p class="info-body">
+                  Syalom Anggota Jemaat GMAHK Taman Gethsemane, Selamat beribadah di Hari Sabat yang suci. Mari
+                  persiapkan hati dan jiwa untuk menyambut hadirat Tuhan.
+                </p>
+                <div class="info-footer">
+                  <span class="badge-pill"><i class="fa-regular fa-calendar"></i> Sabat, 08:30 WIB</span>
+                  <span class="badge-pill"><i class="fa-solid fa-location-dot"></i> Gedung Gereja Utama</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Google Maps Location Widget -->
+            <div class="section-container">
+              <h3 class="section-title"><i class="fa-solid fa-map-location-dot text-gold"></i> Lokasi Gereja</h3>
+              <div class="map-card">
+                <div class="map-wrapper">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3957.545672159187!2d112.712300!3d-7.348700!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7fb51a5e1823d%3A0x8e820c27a9cf60a7!2sGMAHK!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid"
+                    width="100%" height="260" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade" title="Lokasi GMAHK Taman Gethsemane">
+                  </iframe>
+                </div>
+                <div class="map-details">
+                  <div class="map-address">
+                    <strong>GMAHK Taman Gethsemane</strong>
+                    <p>Jl. Raya Taman Gethsemane No. 12, Jawa Timur, Indonesia</p>
+                  </div>
+                  <div class="map-buttons">
+                    <a href="https://maps.google.com/?q=GMAHK+Taman+Gethsemane" target="_blank" rel="noopener"
+                      class="btn-map btn-map-outline">
+                      <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Google Maps
+                    </a>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=GMAHK+Taman+Gethsemane" target="_blank"
+                      rel="noopener" class="btn-map btn-map-solid">
+                      <i class="fa-solid fa-diamond-turn-right"></i> Petunjuk Arah
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interactive Rating & Review Widget -->
+            <div class="section-container">
+              <h3 class="section-title"><i class="fa-solid fa-star text-gold"></i> Kesan & Penilaian Jemaat</h3>
+              <div class="rating-card">
+                <div class="rating-header">
+                  <p>Bagaimana pengalaman ibadah & warta pelayanan GMAHK Taman Gethsemane minggu ini?</p>
+                </div>
+
+                <div class="star-rating" id="star-rating-container">
+                  <i class="fa-regular fa-star star-btn" data-value="1"></i>
+                  <i class="fa-regular fa-star star-btn" data-value="2"></i>
+                  <i class="fa-regular fa-star star-btn" data-value="3"></i>
+                  <i class="fa-regular fa-star star-btn" data-value="4"></i>
+                  <i class="fa-regular fa-star star-btn" data-value="5"></i>
+                </div>
+                <div id="rating-score-label" class="rating-score-text">Pilih 1 - 5 Bintang</div>
+
+                <form id="rating-form" class="rating-form">
+                  <input type="text" id="rating-name" placeholder="Nama Anda (opsional)" class="form-input">
+                  <textarea id="rating-comment" placeholder="Tuliskan pesan, saran, atau kesan Anda..." rows="3"
+                    class="form-input"></textarea>
+                  <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i> Kirim Penilaian
+                  </button>
+                </form>
+
+                <div id="rating-success-message" class="rating-success hidden">
+                  <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+                  <div class="success-text">
+                    <h5>Terima kasih atas penilaian Anda!</h5>
+                    <p id="saved-rating-details"></p>
+                    <button type="button" id="btn-edit-rating" class="btn-text-small">
+                      <i class="fa-solid fa-pen"></i> Ubah Penilaian Saya
+                    </button>
+                  </div>
+                </div>
+
+                <!-- List of Recent Reviews stored in LocalStorage -->
+                <div class="reviews-preview">
+                  <div class="reviews-title">Ulasan Terbaru Jemaat:</div>
+                  <div id="reviews-list" class="reviews-list">
+                    <!-- Rendered dynamically -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          <!-- ==================== TAB 2: SEJARAH ==================== -->
+          <section id="tab-history" class="tab-content">
+            <div class="section-container">
+              <div class="history-hero">
+                <span class="badge-accent"><i class="fa-solid fa-hourglass-half"></i> Perjalanan Iman</span>
+                <h2 class="section-header-title">Sejarah & Perjalanan GMAHK Taman Gethsemane</h2>
+                <p class="section-header-desc">
+                  Mengenang penyertaan Tuhan dalam membimbing perkembangannya jemaat dari masa ke masa demi kemuliaan
+                  Nama-Nya.
+                </p>
+              </div>
+
+              <!-- Responsive Video Sejarah -->
+              <div class="video-container-card">
+                <div class="video-header">
+                  <i class="fa-solid fa-circle-play text-burgundy"></i>
+                  <span>Dokumenter Sejarah Singkat Gereja</span>
+                </div>
+                <div class="video-wrapper">
+                  <iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?controls=1"
+                    title="Dokumenter Sejarah GMAHK Taman Gethsemane"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                  </iframe>
+                </div>
+                <div class="video-caption">
+                  <i class="fa-solid fa-info-circle"></i> Video kilas balik perintisan Jemaat GMAHK Taman Gethsemane dan
+                  pertambahan jiwa-jiwa.
+                </div>
+              </div>
+
+              <!-- Milestone Timeline -->
+              <h3 class="section-title mt-4"><i class="fa-solid fa-timeline text-gold"></i> Timeline Sejarah</h3>
+              <div class="timeline">
+
+                <div class="timeline-item">
+                  <div class="timeline-dot"><i class="fa-solid fa-seedling"></i></div>
+                  <div class="timeline-content">
+                    <span class="timeline-year">Tahun 1985</span>
+                    <h4 class="timeline-title">Awal Perintisan Pendalaman Alkitab</h4>
+                    <p>Berawal dari persekutuan doa kelompok kecil beranggotakan 7 keluarga yang rindu belajar kebenaran
+                      Firman Tuhan di kawasan Taman Gethsemane.</p>
+                  </div>
+                </div>
+
+                <div class="timeline-item">
+                  <div class="timeline-dot"><i class="fa-solid fa-house-chimney"></i></div>
+                  <div class="timeline-content">
+                    <span class="timeline-year">Tahun 1992</span>
+                    <h4 class="timeline-title">Pembangunan Rumah Ibadah Pertama</h4>
+                    <p>Dengan semangat gotong-royong dan swadaya jemaat, peletakan batu pertama gedung gereja berukuran
+                      8x15 meter resmi dilaksanakan.</p>
+                  </div>
+                </div>
+
+                <div class="timeline-item">
+                  <div class="timeline-dot"><i class="fa-solid fa-award"></i></div>
+                  <div class="timeline-content">
+                    <span class="timeline-year">Tahun 2005</span>
+                    <h4 class="timeline-title">Perubahan Status Menjadi Jemaat Mandiri</h4>
+                    <p>Resmi diorganisasi menjadi Jemaat Mandiri di bawah naungan Konferens dengan jumlah anggota
+                      terdaftar lebih dari 120 jiwa.</p>
+                  </div>
+                </div>
+
+                <div class="timeline-item">
+                  <div class="timeline-dot"><i class="fa-solid fa-building-columns"></i></div>
+                  <div class="timeline-content">
+                    <span class="timeline-year">Masa Kini</span>
+                    <h4 class="timeline-title">Renovasi Modern & Pelayanan Digital</h4>
+                    <p>Pengembangan fasilitas gereja modern, ruang Sekolah Sabat Anak yang representatif, serta
+                      integrasi warta ibadah digital.</p>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Galeri Foto Sejarah Interaktif -->
+              <h3 class="section-title mt-4"><i class="fa-solid fa-images text-gold"></i> Galeri Foto Dokumentasi</h3>
+              <p class="section-subtitle">Klik pada foto untuk memperbesar & membaca keterangan lengkap.</p>
+
+              <div class="gallery-grid">
+
+                <div class="gallery-item" onclick="openLightbox(0)">
+                  <img src="https://images.unsplash.com/photo-1548625361-18569c76251b?auto=format&fit=crop&w=800&q=80"
+                    alt="Gedung Gereja Perdana" loading="lazy">
+                  <div class="gallery-overlay">
+                    <span class="gallery-title">Gedung Perdana (1992)</span>
+                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                  </div>
+                </div>
+
+                <div class="gallery-item" onclick="openLightbox(1)">
+                  <img
+                    src="https://images.unsplash.com/photo-1510563800743-aed236490d08?auto=format&fit=crop&w=800&q=80"
+                    alt="Ibadah Sabat Pertama" loading="lazy">
+                  <div class="gallery-overlay">
+                    <span class="gallery-title">Kebaktian Sabat Pertama</span>
+                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                  </div>
+                </div>
+
+                <div class="gallery-item" onclick="openLightbox(2)">
+                  <img
+                    src="https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80"
+                    alt="Tim Paduan Suara Jemaat" loading="lazy">
+                  <div class="gallery-overlay">
+                    <span class="gallery-title">Paduan Suara (2010)</span>
+                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                  </div>
+                </div>
+
+                <div class="gallery-item" onclick="openLightbox(3)">
+                  <img
+                    src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&w=800&q=80"
+                    alt="Kegiatan Bakti Sosial" loading="lazy">
+                  <div class="gallery-overlay">
+                    <span class="gallery-title">Bakti Sosial Masyarakat</span>
+                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </section>
+
+          <!-- ==================== TAB 3: SUSUNAN IBADAH ==================== -->
+          <section id="tab-worship" class="tab-content">
+            <div class="section-container">
+
+              <!-- Countdown Widget -->
+              <div class="countdown-card">
+                <div class="countdown-header">
+                  <i class="fa-solid fa-hourglass-start icon-pulse text-gold"></i>
+                  <span>Menuju Sabat Berikutnya</span>
+                </div>
+                <div class="countdown-timer" id="sabbath-countdown">
+                  <div class="time-block">
+                    <span id="cd-days" class="time-val">00</span>
+                    <span class="time-label">Hari</span>
+                  </div>
+                  <span class="time-sep">:</span>
+                  <div class="time-block">
+                    <span id="cd-hours" class="time-val">00</span>
+                    <span class="time-label">Jam</span>
+                  </div>
+                  <span class="time-sep">:</span>
+                  <div class="time-block">
+                    <span id="cd-mins" class="time-val">00</span>
+                    <span class="time-label">Menit</span>
+                  </div>
+                  <span class="time-sep">:</span>
+                  <div class="time-block">
+                    <span id="cd-secs" class="time-val">00</span>
+                    <span class="time-label">Detik</span>
+                  </div>
+                </div>
+                <div class="countdown-sub">
+                  <i class="fa-regular fa-calendar-check"></i> Ibadah Sabat: Sabtu Pukul 08:30 WIB
+                </div>
+              </div>
+
+              <!-- Header Action Controls for Printable PDF & Hymnal -->
+              <div class="worship-actions-bar">
+                <button class="btn-action-worship" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
+                </button>
+                <button class="btn-action-worship btn-action-gold" onclick="openModal('modal-hymnal')">
+                  <i class="fa-solid fa-music"></i> Lagu Zion / Hymnal
+                </button>
+              </div>
+
+              <!-- Program Selector Tabs / Accordions -->
+              <div class="program-tab-headers">
+                <button class="program-tab-btn active" data-program="ss">
+                  <i class="fa-solid fa-book-bible"></i> Sekolah Sabat
+                </button>
+                <button class="program-tab-btn" data-program="khotbah">
+                  <i class="fa-solid fa-cross"></i> Khotbah Utama
+                </button>
+                <button class="program-tab-btn" data-program="pa">
+                  <i class="fa-solid fa-people-group"></i> Pemuda Advent
+                </button>
+              </div>
+
+              <!-- PROGRAM 1: SEKOLAH SABAT -->
+              <div id="prog-ss" class="program-content active">
+                <div class="program-card">
+                  <div class="program-card-header">
+                    <h4>Acara Sekolah Sabat</h4>
+                    <span class="time-tag"><i class="fa-regular fa-clock"></i> 08:30 - 10:00 WIB</span>
+                  </div>
+
+                  <div class="liturgy-list">
+                    <div class="liturgy-item">
+                      <span class="lit-time">08:30</span>
+                      <div class="lit-info">
+                        <h5>Lagu-Lagu Pujian / Song Service</h5>
+                        <p>Pemimpin Lagu & Tim Musik</p>
+                      </div>
+                      <span class="lit-song">Lagu Zion No. 12</span>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">08:45</span>
+                      <div class="lit-info">
+                        <h5>Panggilan Beribadah & Doa Buka</h5>
+                        <p>Pemimpin Sekolah Sabat</p>
+                      </div>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">08:50</span>
+                      <div class="lit-info">
+                        <h5>Berita Misi Sedunia</h5>
+                        <p>Petugas Warta Misi</p>
+                      </div>
+                      <span class="lit-badge">Video / Pembacaan</span>
+                    </div>
+
+                    <div class="liturgy-item highlight">
+                      <span class="lit-time">09:05</span>
+                      <div class="lit-info">
+                        <h5>Diskusi Pelajaran Alkitab (Kelas)</h5>
+                        <p>Triwulan: <i>"Kebenaran dalam Kristus"</i></p>
+                      </div>
+                      <span class="lit-badge badge-gold">Diskusi Kelas</span>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">09:50</span>
+                      <div class="lit-info">
+                        <h5>Lagu Penutup Sekolah Sabat & Doa</h5>
+                        <p>Pemimpin Sekolah Sabat</p>
+                      </div>
+                      <span class="lit-song">Lagu Zion No. 145</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PROGRAM 2: IBADAH KHOTBAH -->
+              <div id="prog-khotbah" class="program-content">
+                <div class="program-card">
+                  <div class="program-card-header">
+                    <h4>Ibadah Khotbah / Worship Service</h4>
+                    <span class="time-tag"><i class="fa-regular fa-clock"></i> 10:15 - 12:00 WIB</span>
+                  </div>
+
+                  <div class="liturgy-list">
+                    <div class="liturgy-item">
+                      <span class="lit-time">10:15</span>
+                      <div class="lit-info">
+                        <h5>Prosesional & Panggilan Beribadah</h5>
+                        <p>Majelis Ibadah & Pemimpin</p>
+                      </div>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">10:20</span>
+                      <div class="lit-info">
+                        <h5>Lagu Buka</h5>
+                        <p>Seluruh Jemaat Berdiri</p>
+                      </div>
+                      <span class="lit-song">Lagu Zion No. 3</span>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">10:25</span>
+                      <div class="lit-info">
+                        <h5>Doa Syafaat</h5>
+                        <p>Ketua Jemaat / Majelis</p>
+                      </div>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">10:35</span>
+                      <div class="lit-info">
+                        <h5>Pengumpulan Persembahan & Persepuluhan</h5>
+                        <p>Para Diaken / Diakenes</p>
+                      </div>
+                      <span class="lit-song">Pujian Koor / Musikal</span>
+                    </div>
+
+                    <div class="liturgy-item highlight">
+                      <span class="lit-time">10:50</span>
+                      <div class="lit-info">
+                        <h5>Khotbah Firman Tuhan</h5>
+                        <p>Pembicara: <strong>Pdt. Samuel Hartono, M.Th.</strong></p>
+                        <p class="lit-sub">Judul: <i>"Pengharapan di Tengah Gelombang Zaman"</i></p>
+                      </div>
+                      <span class="lit-badge badge-burgundy">Khotbah Utama</span>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">11:45</span>
+                      <div class="lit-info">
+                        <h5>Lagu Penutup & Berkat</h5>
+                        <p>Seluruh Jemaat Berdiri</p>
+                      </div>
+                      <span class="lit-song">Lagu Zion No. 240</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PROGRAM 3: PEMUDA ADVENT / IBADAH SORE -->
+              <div id="prog-pa" class="program-content">
+                <div class="program-card">
+                  <div class="program-card-header">
+                    <h4>Pemuda Advent & Vesper Sore</h4>
+                    <span class="time-tag"><i class="fa-regular fa-clock"></i> 15:30 - Selesai</span>
+                  </div>
+
+                  <div class="liturgy-list">
+                    <div class="liturgy-item">
+                      <span class="lit-time">15:30</span>
+                      <div class="lit-info">
+                        <h5>Songs of Praise & Games Alkitab</h5>
+                        <p>Pengurus Pemuda Advent (PA)</p>
+                      </div>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">16:15</span>
+                      <div class="lit-info">
+                        <h5>Seminar Pemuda / Talkshow Inspiratif</h5>
+                        <p>Topik: <i>"Karakter Pemuda Advent di Era Digital"</i></p>
+                      </div>
+                    </div>
+
+                    <div class="liturgy-item">
+                      <span class="lit-time">17:30</span>
+                      <div class="lit-info">
+                        <h5>Vesper Tutup Sabat</h5>
+                        <p>Doa & Pujian Bersama Menyambut Pekan Baru</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <!-- BOTTOM NAVIGATION BAR (Fixed at bottom edge) -->
+      <nav class="bottom-nav">
+        <div class="nav-container">
+          <button class="nav-item active" onclick="switchTab('tab-home')" id="nav-tab-home">
+            <div class="nav-icon-box"><i class="fa-solid fa-house"></i></div>
+            <span class="nav-label">Beranda</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-history')" id="nav-tab-history">
+            <div class="nav-icon-box"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <span class="nav-label">Sejarah</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-worship')" id="nav-tab-worship">
+            <div class="nav-icon-box"><i class="fa-solid fa-book-bible"></i></div>
+            <span class="nav-label">Ibadah</span>
+          </button>
+        </div>
+      </nav>
+
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal: Tentang Kami -->
+  <div id="modal-about" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-circle-info text-burgundy"></i> Tentang GMAHK Taman Gethsemane</h4>
+        <button class="modal-close" onclick="closeModal('modal-about')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="about-hero">
+          <i class="fa-solid fa-church about-icon"></i>
+          <h5>Gereja Masehi Advent Hari Ketujuh Jemaat Taman Gethsemane</h5>
+          <p>Anggota dari Organisasi GMAHK Konferens Jawa Timur</p>
+        </div>
+        <div class="about-section">
+          <h6><i class="fa-solid fa-bullseye text-gold"></i> Visi Kami</h6>
+          <p>Menjadi jemaat yang berpusat pada Kristus, memancarkan kasih-Nya, serta memberitakan Injil Kekal kepada
+            seluruh lapisan masyarakat.</p>
+        </div>
+        <div class="about-section">
+          <h6><i class="fa-solid fa-compass text-gold"></i> Misi Kami</h6>
+          <ul>
+            <li>Menguatkan persekutuan jemaat dalam doa dan pendalaman Alkitab.</li>
+            <li>Memperlengkapi setiap anggota jemaat untuk terlibat aktif dalam pelayanan sosial dan kerohanian.</li>
+            <li>Menyiapkan jemaat bagi Kedatangan Yesus Kristus yang kedua kali.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h6><i class="fa-solid fa-user-tie text-gold"></i> Gembala & Pengurus</h6>
+          <p><strong>Gembala Jemaat:</strong> Pdt. Samuel Hartono, M.Th.</p>
+          <p><strong>Ketua Jemaat:</strong> Bpk. Yonas Subagyo</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Waktu Ibadah -->
+  <div id="modal-schedule" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-clock text-gold"></i> Jadwal Ibadah Rutin</h4>
+        <button class="modal-close" onclick="closeModal('modal-schedule')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="schedule-list">
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-sun"></i></div>
+            <div class="sched-info">
+              <h5>Sekolah Sabat</h5>
+              <p>Sabtu Pagi, 08:30 - 10:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-cross"></i></div>
+            <div class="sched-info">
+              <h5>Ibadah Khotbah Utama</h5>
+              <p>Sabtu Pagi, 10:15 - 12:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="sched-info">
+              <h5>Pemuda Advent & Vesper</h5>
+              <p>Sabtu Sore, 15:30 - 18:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-hands-praying"></i></div>
+            <div class="sched-info">
+              <h5>Persekutuan Doa Rabu Malam</h5>
+              <p>Rabu Malam, 19:00 WIB (Online & Hybrid)</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-moon"></i></div>
+            <div class="sched-info">
+              <h5>Vesper Buka Sabat</h5>
+              <p>Jumat Malam, 18:00 WIB</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Donasi & Persembahan -->
+  <div id="modal-donate" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-hand-holding-dollar text-emerald"></i> Persembahan & Donasi</h4>
+        <button class="modal-close" onclick="closeModal('modal-donate')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="donate-desc">
+          "Hendaklah masing-masing memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau karena paksaan,
+          sebab Allah mengasihi orang yang memberi dengan sukacita." — 2 Korintus 9:7
+        </p>
+
+        <div class="bank-card">
+          <div class="bank-header">
+            <span class="bank-name">BANK BCA</span>
+            <span class="bank-chip">Persepuluhan & Persembahan</span>
+          </div>
+          <div class="bank-number">
+            <span id="account-bca">8820-1928-3741</span>
+            <button class="btn-copy" onclick="copyToClipboard('8820-1928-3741', 'No. Rekening BCA')">
+              <i class="fa-solid fa-copy"></i> Salin
+            </button>
+          </div>
+          <p class="bank-holder">a.n. GMAHK Jemaat Taman Gethsemane</p>
+        </div>
+
+        <div class="bank-card">
+          <div class="bank-header">
+            <span class="bank-name">BANK MANDIRI</span>
+            <span class="bank-chip">Pembangunan Gereja</span>
+          </div>
+          <div class="bank-number">
+            <span id="account-mandiri">142-00-9988776-5</span>
+            <button class="btn-copy" onclick="copyToClipboard('142-00-9988776-5', 'No. Rekening Mandiri')">
+              <i class="fa-solid fa-copy"></i> Salin
+            </button>
+          </div>
+          <p class="bank-holder">a.n. Panitia Pembangunan GMAHK Taman Gethsemane</p>
+        </div>
+
+        <!-- QRIS Section -->
+        <div class="qris-box">
+          <h5>Scan QRIS Persembahan Digital</h5>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GMAHK+TAMAN+GETHSEMANE+PERSEMBAHAN"
+            alt="QRIS GMAHK Taman Gethsemane" class="qris-img">
+          <p>Mendukung GoPay, OVO, Dana, ShopeePay, & Semua Mobile Banking</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Kontak & Permohonan Doa -->
+  <div id="modal-prayer" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-hands-praying text-blue"></i> Layanan Kontak & Permohonan Doa</h4>
+        <button class="modal-close" onclick="closeModal('modal-prayer')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Apakah Anda membutuhkan dukungan doa atau konsultasi kerohanian? Tim Majelis GMAHK Taman Gethsemane siap
+          melayani Anda.</p>
+
+        <div class="contact-links">
+          <a href="https://wa.me/6281234567890?text=Syalom,%20saya%20ingin%20mengirimkan%20permohonan%20doa..."
+            target="_blank" rel="noopener" class="btn-contact-channel wa">
+            <i class="fa-brands fa-whatsapp"></i>
+            <div>
+              <strong>WhatsApp Permohonan Doa</strong>
+              <span>+62 812-3456-7890 (Majelis Doa)</span>
+            </div>
+          </a>
+
+          <a href="tel:+6281234567890" class="btn-contact-channel phone">
+            <i class="fa-solid fa-phone"></i>
+            <div>
+              <strong>Telepon Gembala Jemaat</strong>
+              <span>Pdt. Samuel Hartono (+62 812-3456-7890)</span>
+            </div>
+          </a>
+        </div>
+
+        <form id="prayer-form" class="prayer-form mt-3" onsubmit="handlePrayerSubmit(event)">
+          <h6>Kirim Permohonan Doa Langsung:</h6>
+          <input type="text" id="prayer-name" placeholder="Nama Anda" class="form-input" required>
+          <textarea id="prayer-request" placeholder="Tuliskan pokok permohonan doa Anda di sini..." rows="3"
+            class="form-input" required></textarea>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-paper-plane"></i> Kirim Doa
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Lagu Zion / Hymnal Reference -->
+  <div id="modal-hymnal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-music text-gold"></i> Pencarian & Daftar Lagu Zion</h4>
+        <button class="modal-close" onclick="closeModal('modal-hymnal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="hymnal-search">
+          <input type="text" id="hymnal-search-input" placeholder="Cari judul atau nomor lagu (contoh: 12 atau Suci)..."
+            class="form-input" onkeyup="filterHymnal()">
+        </div>
+        <div class="hymnal-list" id="hymnal-list-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal for Photo Gallery -->
+  <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
+    <div class="lightbox-container" onclick="event.stopPropagation()">
+      <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+      <button class="lightbox-prev" onclick="navigateLightbox(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <button class="lightbox-next" onclick="navigateLightbox(1)"><i class="fa-solid fa-chevron-right"></i></button>
+
+      <div class="lightbox-media">
+        <img id="lightbox-img" src="" alt="Sejarah GMAHK Taman Gethsemane">
+      </div>
+      <div class="lightbox-caption">
+        <h4 id="lightbox-title"></h4>
+        <p id="lightbox-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast">
+    <i id="toast-icon" class="fa-solid fa-check-circle"></i>
+    <span id="toast-message">Pesan notifikasi</span>
+  </div>
+
+  <!-- JavaScript File -->
+  <script src="script.js"></script>
+</body>
+
+</html>
