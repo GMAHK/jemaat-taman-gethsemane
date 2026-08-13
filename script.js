@@ -33,7 +33,7 @@ const galleryData = [
 
 // Sample Hymnal / Lagu Zion Collection
 const hymnalSongs = [
-  { num: 1, title: "Hormat Bagi Allah Baba" },
+  { num: 1, title: "Di Hadapan Hadirat-Mu (LSEL 1)" },
   { num: 3, title: "Suci, Suci, Suci! Tuhan Maha Kuasa" },
   { num: 12, title: "Hari Sabat yang Kudus" },
   { num: 24, title: "Pujilah Tuhan, Sang Raja" },
@@ -43,7 +43,11 @@ const hymnalSongs = [
   { num: 145, title: "Di Bawah Kepak Sayap-Nya" },
   { num: 180, title: "Yesus Kawan yang Sejati" },
   { num: 215, title: "Bekerja Selagi Hari Siang" },
-  { num: 240, title: "Tuhan Beserta Engkau Sampai Bertemu Lagi" }
+  { num: 240, title: "Tuhan Beserta Engkau Sampai Bertemu Lagi" },
+  { num: 260, title: "Bawa Persembahanmu (LSEL 260)" },
+  { num: 515, title: "Tuhan Ada Dalam Bait Allah (LSEL 515)" },
+  { num: 520, title: "Kami Datang Dalam Doa (LSEL 520)" },
+  { num: 523, title: "Tuhan Dengar Doa Kami (LSEL 523)" }
 ];
 
 let currentLightboxIndex = 0;
@@ -59,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initProgramTabs();
   initHymnal();
   initGlobalKeyboard();
+  initWorshipSubTabs();
 });
 
 // ==========================================
@@ -77,18 +82,6 @@ function initTheme() {
     });
   }
 
-  const viewBtn = document.getElementById("btn-view-toggle");
-  const appWrapper = document.getElementById("app-wrapper");
-  if (viewBtn && appWrapper) {
-    viewBtn.addEventListener("click", () => {
-      appWrapper.classList.toggle("compact-mobile");
-      const isCompact = appWrapper.classList.contains("compact-mobile");
-      viewBtn.innerHTML = isCompact 
-        ? '<i class="fa-solid fa-expand"></i>' 
-        : '<i class="fa-solid fa-mobile-screen-button"></i>';
-      showToast(isCompact ? "Tampilan Frame Mobile Aktif" : "Tampilan Layar Penuh (Full Screen) Aktif");
-    });
-  }
 }
 
 function setTheme(theme) {
@@ -341,6 +334,7 @@ function initProgramTabs() {
       const activeProg = document.getElementById(`prog-${targetProg}`);
       if (activeProg) {
         activeProg.classList.add("active");
+        renderSubTab(targetProg);
       }
     });
   });
@@ -490,4 +484,344 @@ function showToast(message, iconClass = "fa-solid fa-circle-check") {
   setTimeout(() => {
     toast.classList.remove("show");
   }, 3500);
+}
+
+// ==========================================
+// 12. WORSHIP DATA ENGINE & INLINE EDITOR
+// ==========================================
+const defaultWorshipData = {
+  "sabat-raya": {
+    title: "Ibadah Sabat Raya",
+    subtitle: "Sabtu, 15 Agustus 2026",
+    dateNum: "15",
+    dateMonth: "AGT",
+    generalInfo: [
+      { key: "Pianist", value: "Sdra. Meakhel" },
+      { key: "Operator", value: "Sdra. Fabian" },
+      { key: "Soundman", value: "Sdra. Fahrell" }
+    ],
+    sections: [
+      {
+        title: "II. Ibadah Sekolah Sabat (09:00 – 10:30)",
+        items: [
+          { time: "09:00", name: "MC & Yel Yel Sekolah Sabat", officer: "Sdra. Misaell", type: "text" },
+          { time: "09:10", name: "Lagu Buka Sekolah Sabat", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "09:15", name: "Ayat Inti SS & Doa Buka", officer: "Ibu Dyah", type: "text" },
+          { time: "09:20", name: "Bacaan Berita Mission", officer: "Ibu Ummi", type: "text" },
+          { time: "09:30", name: "Ringkasan Sekolah Sabat Dewasa", officer: "Bpk. Frans", type: "text", highlight: true },
+          { time: "10:00", name: "Promosi Pelayanan Perorangan", officer: "Bpk. Micky K", type: "text" },
+          { time: "10:10", name: "Lagu Tutup Sekolah Sabat", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "10:15", name: "Doa Tutup Sekolah Sabat", officer: "Bpk. Micky K", type: "text" },
+          { time: "10:20", name: "Pengumuman Jemaat", officer: "Tua-Tua / Officers Jemaat", type: "text" },
+          { time: "10:25", name: "Cerita Alkitab Anak-Anak", officer: "-", type: "text" }
+        ]
+      },
+      {
+        title: "III. Ibadah Khotbah (10:30 – 12:00)",
+        items: [
+          { time: "10:30", name: "Diakon & Diakones Bertugas", officer: "Sdra. Ricky & Sdra. Jimmy", type: "text" },
+          { time: "10:35", name: "Pemimpin Lagu", officer: "Ibu Dyah", type: "text" },
+          { time: "10:38", name: "Lagu Pengiring Partisipan Mimbar", officer: "", type: "song", songBook: "LSEL No.", songNo: "515", songTitle: "Tuhan Ada Dalam Bait Allah" },
+          { time: "10:40", name: "Lagu Sambutan", officer: "", type: "song", songBook: "LSEL No.", songNo: "1", songTitle: "Di Hadapan Hadirat-Mu" },
+          { time: "10:43", name: "Doa Buka", officer: "Bpk. Agus", type: "text" },
+          { time: "10:46", name: "Pembacaan Ayat Bersahutan", officer: "Sdra. Rolando", type: "text" },
+          { time: "10:50", name: "Lagu Buka Kebaktian", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "10:55", name: "Lagu Pengantar Doa Syafaat", officer: "", type: "song", songBook: "LSEL No.", songNo: "520", songTitle: "Kami Datang Dalam Doa" },
+          { time: "10:58", name: "Doa Syafaat Bersama", officer: "Sdra. Rolando", type: "text" },
+          { time: "11:05", name: "Bacaan Persembahan & Persepuluhan", officer: "Bpk. Irfan", type: "text" },
+          { time: "11:08", name: "Lagu Persembahan", officer: "", type: "song", songBook: "LSEL No.", songNo: "260", songTitle: "Bawa Persembahanmu" },
+          { time: "11:12", name: "Doa Persembahan", officer: "Bpk. Irfan", type: "text" },
+          { time: "11:15", name: "Pembacaan Ayat Inti", officer: "Bpk. Irfan", type: "text" },
+          { time: "11:18", name: "Lagu Tema", officer: "MISI KITA", type: "text" },
+          { time: "11:20", name: "Khotbah / Renungan Firman Tuhan", officer: "Bpk. Agus", type: "text", highlight: true },
+          { time: "11:50", name: "Lagu Tutup Kebaktian", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "11:55", name: "Doa TUTUP dan Doa BERKAT", officer: "Pdt. Benny Lumbantobing", type: "text" },
+          { time: "11:58", name: "Lagu Sambutan Doa Tutup & Berkat", officer: "", type: "song", songBook: "LSEL No.", songNo: "523", songTitle: "Tuhan Dengar Doa Kami" }
+        ]
+      }
+    ]
+  },
+  "pa": {
+    title: "Pemuda Advent (PA)",
+    subtitle: "Sabtu Sore, 15 Agustus 2026",
+    dateNum: "15",
+    dateMonth: "AGT",
+    generalInfo: [
+      { key: "Pemimpin Acara", value: "Sdra. Hansell" },
+      { key: "Pemusik / Gitaris", value: "Sdra. Fabian" }
+    ],
+    sections: [
+      {
+        title: "Susunan Acara Pemuda Advent",
+        items: [
+          { time: "1", name: "MC & Janji PA", officer: "Sdra Hansell", type: "text" },
+          { time: "2", name: "Lagu Pembuka (AYS)", officer: "", type: "song", songBook: "AYS No.", songNo: "", songTitle: "" },
+          { time: "3", name: "Ayat Inti & Doa Buka PA", officer: "Sdra Fabian", type: "text" },
+          { time: "4", name: "Belajar Alkitab Bersama (BAB)", officer: "AKOM", type: "text" },
+          { time: "5", name: "Funfact / Tips", officer: "Sdra Jimmy", type: "text" },
+          { time: "6", name: "Games", officer: "Bu Pdt Natalia", type: "text" },
+          { time: "7", name: "Acara Inti & Diskusi", officer: "Sdra. Misaell", type: "text", highlight: true },
+          { time: "8", name: "Lagu Penutup (AYS)", officer: "", type: "song", songBook: "AYS No.", songNo: "", songTitle: "" },
+          { time: "9", name: "Doa Tutup", officer: "Sdra. Misaell", type: "text" },
+          { time: "10", name: "Pengumuman", officer: "Pengurus PA", type: "text" },
+          { time: "11", name: "Laporan Bendahara PA", officer: "Bendahara PA", type: "text" }
+        ]
+      }
+    ]
+  },
+  "rabu-malam": {
+    title: "Persekutuan Doa Rabu Malam",
+    subtitle: "Rabu, 19 Agustus 2026",
+    dateNum: "19",
+    dateMonth: "AGT",
+    generalInfo: [
+      { key: "Host / Moderator", value: "Sdra. Ricky" }
+    ],
+    sections: [
+      {
+        title: "Susunan Acara Persekutuan Doa",
+        items: [
+          { time: "1", name: "Host", officer: "-", type: "text" },
+          { time: "2", name: "MC & Doa Buka", officer: "-", type: "text" },
+          { time: "3", name: "Kesaksian", officer: "-", type: "text" },
+          { time: "4", name: "Lagu Pujian", officer: "Host", type: "text" },
+          { time: "5", name: "Doa Syafaat", officer: "-", type: "text" },
+          { time: "6", name: "Firman Tuhan", officer: "-", type: "text", highlight: true },
+          { time: "7", name: "Doa Tutup", officer: "-", type: "text" },
+          { time: "8", name: "Ucapan Terima Kasih & Pengumuman", officer: "Ketua Jemaat", type: "text" }
+        ]
+      }
+    ]
+  }
+};
+
+let worshipData = JSON.parse(localStorage.getItem("gmahk_worship_data") || "null") || JSON.parse(JSON.stringify(defaultWorshipData));
+let subtabEditState = {
+  "sabat-raya": false,
+  "pa": false,
+  "rabu-malam": false
+};
+
+function saveWorshipDataToStorage() {
+  localStorage.setItem("gmahk_worship_data", JSON.stringify(worshipData));
+}
+
+function initWorshipSubTabs() {
+  renderSubTab("sabat-raya");
+  renderSubTab("pa");
+  renderSubTab("rabu-malam");
+}
+
+function renderSubTab(key) {
+  const container = document.getElementById(`subtab-container-${key}`);
+  if (!container) return;
+
+  const data = worshipData[key];
+  if (!data) return;
+
+  const isEditing = subtabEditState[key];
+
+  let html = `
+    <div class="subtab-header-card">
+      <div class="subtab-header-left">
+        <div class="subtab-header-titles">
+          <h3>${data.title}</h3>
+          <div class="subtab-date-pill">
+            <i class="fa-solid fa-calendar-day text-gold"></i>
+            <span>${data.subtitle}</span>
+          </div>
+        </div>
+      </div>
+      <div class="subtab-actions-group">
+        ${isEditing ? `
+          <button class="btn-subtab-pill btn-pill-reset" onclick="resetSubTabData('${key}')">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button class="btn-subtab-pill btn-pill-edit editing" onclick="toggleEditSubTab('${key}')">
+            <i class="fa-solid fa-check"></i> Selesai Edit
+          </button>
+        ` : `
+          <button class="btn-subtab-pill btn-pill-edit" onclick="toggleEditSubTab('${key}')">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Susunan
+          </button>
+        `}
+      </div>
+    </div>
+  `;
+
+  if (data.generalInfo && data.generalInfo.length > 0) {
+    const icons = ["fa-solid fa-music", "fa-solid fa-sliders", "fa-solid fa-volume-high", "fa-solid fa-user-gear"];
+    html += `
+      <div class="program-card mb-4">
+        <div class="program-card-header">
+          <h4><i class="fa-solid fa-sliders text-gold"></i> I. Informasi Umum</h4>
+        </div>
+        <div class="gen-metric-grid">
+          ${data.generalInfo.map((info, idx) => `
+            <div class="gen-metric-card">
+              <div class="gen-metric-icon"><i class="${icons[idx % icons.length]}"></i></div>
+              <div class="gen-metric-details">
+                <span class="gen-metric-title">${info.key}</span>
+                ${isEditing ? `
+                  <input type="text" class="edit-pill-input" value="${escapeHtml(info.value)}" 
+                    oninput="updateGenInfo('${key}', ${idx}, this.value)">
+                ` : `
+                  <span class="gen-metric-value">${escapeHtml(info.value)}</span>
+                `}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  data.sections.forEach((sec, secIdx) => {
+    html += `
+      <div class="program-card ${secIdx > 0 || (data.generalInfo && data.generalInfo.length > 0) ? 'mt-4' : ''}">
+        <div class="program-card-header">
+          <h4>${sec.title}</h4>
+        </div>
+        <div class="liturgy-list">
+          ${sec.items.map((item, itemIdx) => `
+            <div class="liturgy-item ${item.highlight ? 'highlight' : ''}">
+              <span class="lit-time">${item.time}</span>
+              <div class="lit-info">
+                <div class="lit-main">
+                  <h5>${item.name}</h5>
+                </div>
+                <div class="lit-right">
+                  ${isEditing ? (
+                    item.type === 'song' ? `
+                      <div class="edit-song-group">
+                        <span class="song-icon"><i class="fa-solid fa-music text-gold"></i></span>
+                        <input type="text" class="song-no-pill" placeholder="No." value="${escapeHtml(item.songNo || '')}"
+                          oninput="updateSongNo('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                        <input type="text" class="song-title-pill" placeholder="Judul Lagu..." value="${escapeHtml(item.songTitle || '')}"
+                          oninput="updateSongTitle('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                      </div>
+                    ` : `
+                      <input type="text" class="edit-pill-input" value="${escapeHtml(item.officer || '')}"
+                        oninput="updateOfficer('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                    `
+                  ) : (
+                    item.type === 'song' ? `
+                      <span class="lit-officer">${formatSongDisplay(item)}</span>
+                    ` : `
+                      <span class="lit-officer">${escapeHtml(item.officer || '-')}</span>
+                    `
+                  )}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function formatSongDisplay(item) {
+  if (!item.songNo && !item.songTitle) return '-';
+  const book = item.songBook || 'LSEL No.';
+  let res = `${book} ${item.songNo || ''}`;
+  if (item.songTitle) {
+    res += `: - "${item.songTitle}"`;
+  }
+  return res;
+}
+
+function toggleEditSubTab(key) {
+  subtabEditState[key] = !subtabEditState[key];
+  renderSubTab(key);
+  if (subtabEditState[key]) {
+    showToast("Mode Edit Aktif! Ubah nama/lagu langsung di baris susunan.", "fa-solid fa-pen-to-square text-gold");
+  } else {
+    saveWorshipDataToStorage();
+    showToast("Perubahan susunan berhasil disimpan!", "fa-solid fa-circle-check text-gold");
+  }
+}
+
+function resetSubTabData(key) {
+  worshipData[key] = JSON.parse(JSON.stringify(defaultWorshipData[key]));
+  saveWorshipDataToStorage();
+  renderSubTab(key);
+  showToast("Data susunan berhasil di-reset ke semula!", "fa-solid fa-rotate-left text-gold");
+}
+
+function updateGenInfo(key, idx, val) {
+  if (worshipData[key] && worshipData[key].generalInfo[idx]) {
+    worshipData[key].generalInfo[idx].value = val;
+    saveWorshipDataToStorage();
+  }
+}
+
+function updateOfficer(key, secIdx, itemIdx, val) {
+  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
+    worshipData[key].sections[secIdx].items[itemIdx].officer = val;
+    saveWorshipDataToStorage();
+  }
+}
+
+function updateSongNo(key, secIdx, itemIdx, val) {
+  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
+    worshipData[key].sections[secIdx].items[itemIdx].songNo = val;
+    saveWorshipDataToStorage();
+  }
+}
+
+function updateSongTitle(key, secIdx, itemIdx, val) {
+  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
+    worshipData[key].sections[secIdx].items[itemIdx].songTitle = val;
+    saveWorshipDataToStorage();
+  }
+}
+
+
+
+function openEditSubTabModal(programName) {
+  const keyMap = { "Sabat Raya": "sabat-raya", "Pemuda Advent": "pa", "Rabu Malam": "rabu-malam" };
+  const key = keyMap[programName] || "sabat-raya";
+  toggleEditSubTab(key);
+}
+
+function handleAdminLoginSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById("admin-email").value;
+  closeModal("modal-admin-login");
+  showToast(`Selamat datang Admin (${email})! Modul siap dihubungkan ke Supabase.`, "fa-solid fa-user-shield text-gold");
+}
+
+function handleSubTabEditSubmit(e) {
+  e.preventDefault();
+  const progName = document.getElementById("edit-program-name").value;
+  closeModal("modal-edit-subtab");
+  showToast(`Perubahan susunan ${progName} berhasil disimpan! Siap sync ke Supabase.`, "fa-solid fa-floppy-disk text-gold");
+}
+
+function filterDirectory() {
+  const input = document.getElementById("directory-search-input");
+  if (!input) return;
+  const filter = input.value.toLowerCase().trim();
+  const items = document.querySelectorAll("#directory-content .dir-item");
+
+  items.forEach(item => {
+    const nameEl = item.querySelector(".dir-name");
+    const roleEl = item.querySelector(".dir-role");
+    const nameText = nameEl ? nameEl.textContent.toLowerCase() : "";
+    const roleText = roleEl ? roleEl.textContent.toLowerCase() : "";
+
+    if (nameText.includes(filter) || roleText.includes(filter)) {
+      item.style.display = "flex";
+    } else {
+      item.style.display = "none";
+    }
+  });
 }

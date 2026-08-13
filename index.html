@@ -7,7 +7,7 @@
   <title>GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah</title>
   <meta name="description"
     content="Aplikasi resmi GMAHK Taman Gethsemane. Informasi Ibadah Sabat, Sejarah Gereja, Renungan, Persembahan & Warta Jemaat.">
-  <meta name="theme-color" content="#6b1d2f">
+  <meta name="theme-color" content="#0f2b5c">
 
   <!-- Open Graph -->
   <meta property="og:title" content="GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah">
@@ -48,8 +48,8 @@
             </div>
           </div>
           <div class="header-actions">
-            <button id="btn-view-toggle" class="header-btn" title="Simulasi Tampilan Mobile Frame">
-              <i class="fa-solid fa-mobile-screen-button"></i>
+            <button id="btn-admin-login" class="header-btn" title="Login Admin / Pengurus" onclick="openModal('modal-admin-login')">
+              <i class="fa-solid fa-user-gear"></i>
             </button>
             <button id="btn-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang">
               <i class="fa-solid fa-moon"></i>
@@ -83,12 +83,12 @@
             <div class="section-container">
               <h3 class="section-title"><i class="fa-solid fa-bolt text-gold"></i> Akses Cepat</h3>
               <div class="quick-grid">
-                <button class="quick-card" onclick="openModal('modal-about')">
-                  <div class="quick-icon icon-burgundy">
-                    <i class="fa-solid fa-circle-info"></i>
+                <button class="quick-card" onclick="switchTab('tab-directory')">
+                  <div class="quick-icon icon-navy">
+                    <i class="fa-solid fa-address-book"></i>
                   </div>
-                  <span class="quick-label">Tentang Kami</span>
-                  <span class="quick-sub">Visi & Gembala</span>
+                  <span class="quick-label">Direktori Jemaat</span>
+                  <span class="quick-sub">Pengurus & Majelis</span>
                 </button>
 
                 <button class="quick-card" onclick="openModal('modal-schedule')">
@@ -141,75 +141,52 @@
               <div class="map-card">
                 <div class="map-wrapper">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3957.545672159187!2d112.712300!3d-7.348700!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7fb51a5e1823d%3A0x8e820c27a9cf60a7!2sGMAHK!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid"
-                    width="100%" height="260" style="border:0;" allowfullscreen="" loading="lazy"
+                    src="https://maps.google.com/maps?q=Jl.+Brigjend+Katamso+No.257,+Mekar+Raya+Binangun,+Janti,+Kec.+Waru,+Kabupaten+Sidoarjo,+Jawa+Timur+61256&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                    width="100%" height="280" style="border:0;" allowfullscreen="" loading="lazy"
                     referrerpolicy="no-referrer-when-downgrade" title="Lokasi GMAHK Taman Gethsemane">
                   </iframe>
                 </div>
                 <div class="map-details">
                   <div class="map-address">
                     <strong>GMAHK Taman Gethsemane</strong>
-                    <p>Jl. Raya Taman Gethsemane No. 12, Jawa Timur, Indonesia</p>
+                    <p>Jl. Brigjend Katamso No.257, Mekar Raya Binangun, Janti, Kec. Waru, Kabupaten Sidoarjo, Jawa
+                      Timur 61256</p>
                   </div>
                   <div class="map-buttons">
-                    <a href="https://maps.google.com/?q=GMAHK+Taman+Gethsemane" target="_blank" rel="noopener"
-                      class="btn-map btn-map-outline">
-                      <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Google Maps
-                    </a>
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=GMAHK+Taman+Gethsemane" target="_blank"
-                      rel="noopener" class="btn-map btn-map-solid">
-                      <i class="fa-solid fa-diamond-turn-right"></i> Petunjuk Arah
+                    <a href="https://maps.app.goo.gl/aroJndf6yvEmBBW98" target="_blank" rel="noopener"
+                      class="btn-map btn-map-solid">
+                      <i class="fa-solid fa-map-location-dot"></i> Buka Google Maps & Petunjuk Arah
                     </a>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Interactive Rating & Review Widget -->
+            <!-- Google Maps Rating & Review Widget -->
             <div class="section-container">
               <h3 class="section-title"><i class="fa-solid fa-star text-gold"></i> Kesan & Penilaian Jemaat</h3>
-              <div class="rating-card">
-                <div class="rating-header">
-                  <p>Bagaimana pengalaman ibadah & warta pelayanan GMAHK Taman Gethsemane minggu ini?</p>
-                </div>
-
-                <div class="star-rating" id="star-rating-container">
-                  <i class="fa-regular fa-star star-btn" data-value="1"></i>
-                  <i class="fa-regular fa-star star-btn" data-value="2"></i>
-                  <i class="fa-regular fa-star star-btn" data-value="3"></i>
-                  <i class="fa-regular fa-star star-btn" data-value="4"></i>
-                  <i class="fa-regular fa-star star-btn" data-value="5"></i>
-                </div>
-                <div id="rating-score-label" class="rating-score-text">Pilih 1 - 5 Bintang</div>
-
-                <form id="rating-form" class="rating-form">
-                  <input type="text" id="rating-name" placeholder="Nama Anda (opsional)" class="form-input">
-                  <textarea id="rating-comment" placeholder="Tuliskan pesan, saran, atau kesan Anda..." rows="3"
-                    class="form-input"></textarea>
-                  <button type="submit" class="btn-primary">
-                    <i class="fa-solid fa-paper-plane"></i> Kirim Penilaian
-                  </button>
-                </form>
-
-                <div id="rating-success-message" class="rating-success hidden">
-                  <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
-                  <div class="success-text">
-                    <h5>Terima kasih atas penilaian Anda!</h5>
-                    <p id="saved-rating-details"></p>
-                    <button type="button" id="btn-edit-rating" class="btn-text-small">
-                      <i class="fa-solid fa-pen"></i> Ubah Penilaian Saya
-                    </button>
+              <div class="rating-card text-center-card">
+                <div class="rating-icon-header">
+                  <div class="rating-stars-badge">
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
                   </div>
+                  <h4>Beri Ulasan & Rating Gereja</h4>
+                  <p>Bagaimana pengalaman ibadah & pelayanan GMAHK Taman Gethsemane? Bagikan ulasan dan penilaian
+                    bintang 5 Anda langsung di Google Maps untuk membantu perkembangan jemaat kita.</p>
                 </div>
 
-                <!-- List of Recent Reviews stored in LocalStorage -->
-                <div class="reviews-preview">
-                  <div class="reviews-title">Ulasan Terbaru Jemaat:</div>
-                  <div id="reviews-list" class="reviews-list">
-                    <!-- Rendered dynamically -->
-                  </div>
+                <div class="rating-cta-container">
+                  <a href="https://maps.app.goo.gl/aroJndf6yvEmBBW98" target="_blank" rel="noopener"
+                    class="btn-google-rating">
+                    <i class="fa-brands fa-google"></i>
+                    <span>Beri Rating di Google Maps</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  </a>
                 </div>
-
               </div>
             </div>
           </section>
@@ -229,7 +206,7 @@
               <!-- Responsive Video Sejarah -->
               <div class="video-container-card">
                 <div class="video-header">
-                  <i class="fa-solid fa-circle-play text-burgundy"></i>
+                  <i class="fa-solid fa-circle-play text-navy"></i>
                   <span>Dokumenter Sejarah Singkat Gereja</span>
                 </div>
                 <div class="video-wrapper">
@@ -377,188 +354,250 @@
                 </div>
               </div>
 
-              <!-- Header Action Controls for Printable PDF & Hymnal -->
-              <div class="worship-actions-bar">
-                <button class="btn-action-worship" onclick="window.print()">
-                  <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
-                </button>
-                <button class="btn-action-worship btn-action-gold" onclick="openModal('modal-hymnal')">
-                  <i class="fa-solid fa-music"></i> Lagu Zion / Hymnal
-                </button>
-              </div>
 
               <!-- Program Selector Tabs / Accordions -->
               <div class="program-tab-headers">
-                <button class="program-tab-btn active" data-program="ss">
-                  <i class="fa-solid fa-book-bible"></i> Sekolah Sabat
-                </button>
-                <button class="program-tab-btn" data-program="khotbah">
-                  <i class="fa-solid fa-cross"></i> Khotbah Utama
+                <button class="program-tab-btn active" data-program="sabat-raya">
+                  <i class="fa-solid fa-church"></i> Sabat Raya
                 </button>
                 <button class="program-tab-btn" data-program="pa">
-                  <i class="fa-solid fa-people-group"></i> Pemuda Advent
+                  <i class="fa-solid fa-users"></i> Pemuda Advent
+                </button>
+                <button class="program-tab-btn" data-program="rabu-malam">
+                  <i class="fa-solid fa-moon"></i> Rabu Malam
                 </button>
               </div>
 
-              <!-- PROGRAM 1: SEKOLAH SABAT -->
-              <div id="prog-ss" class="program-content active">
-                <div class="program-card">
-                  <div class="program-card-header">
-                    <h4>Acara Sekolah Sabat</h4>
-                    <span class="time-tag"><i class="fa-regular fa-clock"></i> 08:30 - 10:00 WIB</span>
-                  </div>
-
-                  <div class="liturgy-list">
-                    <div class="liturgy-item">
-                      <span class="lit-time">08:30</span>
-                      <div class="lit-info">
-                        <h5>Lagu-Lagu Pujian / Song Service</h5>
-                        <p>Pemimpin Lagu & Tim Musik</p>
-                      </div>
-                      <span class="lit-song">Lagu Zion No. 12</span>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">08:45</span>
-                      <div class="lit-info">
-                        <h5>Panggilan Beribadah & Doa Buka</h5>
-                        <p>Pemimpin Sekolah Sabat</p>
-                      </div>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">08:50</span>
-                      <div class="lit-info">
-                        <h5>Berita Misi Sedunia</h5>
-                        <p>Petugas Warta Misi</p>
-                      </div>
-                      <span class="lit-badge">Video / Pembacaan</span>
-                    </div>
-
-                    <div class="liturgy-item highlight">
-                      <span class="lit-time">09:05</span>
-                      <div class="lit-info">
-                        <h5>Diskusi Pelajaran Alkitab (Kelas)</h5>
-                        <p>Triwulan: <i>"Kebenaran dalam Kristus"</i></p>
-                      </div>
-                      <span class="lit-badge badge-gold">Diskusi Kelas</span>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">09:50</span>
-                      <div class="lit-info">
-                        <h5>Lagu Penutup Sekolah Sabat & Doa</h5>
-                        <p>Pemimpin Sekolah Sabat</p>
-                      </div>
-                      <span class="lit-song">Lagu Zion No. 145</span>
-                    </div>
-                  </div>
-                </div>
+              <!-- PROGRAM 1: SABAT RAYA (Sekolah Sabat & Ibadah Khotbah) -->
+              <div id="prog-sabat-raya" class="program-content active">
+                <div id="subtab-container-sabat-raya"></div>
               </div>
 
-              <!-- PROGRAM 2: IBADAH KHOTBAH -->
-              <div id="prog-khotbah" class="program-content">
-                <div class="program-card">
-                  <div class="program-card-header">
-                    <h4>Ibadah Khotbah / Worship Service</h4>
-                    <span class="time-tag"><i class="fa-regular fa-clock"></i> 10:15 - 12:00 WIB</span>
-                  </div>
-
-                  <div class="liturgy-list">
-                    <div class="liturgy-item">
-                      <span class="lit-time">10:15</span>
-                      <div class="lit-info">
-                        <h5>Prosesional & Panggilan Beribadah</h5>
-                        <p>Majelis Ibadah & Pemimpin</p>
-                      </div>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">10:20</span>
-                      <div class="lit-info">
-                        <h5>Lagu Buka</h5>
-                        <p>Seluruh Jemaat Berdiri</p>
-                      </div>
-                      <span class="lit-song">Lagu Zion No. 3</span>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">10:25</span>
-                      <div class="lit-info">
-                        <h5>Doa Syafaat</h5>
-                        <p>Ketua Jemaat / Majelis</p>
-                      </div>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">10:35</span>
-                      <div class="lit-info">
-                        <h5>Pengumpulan Persembahan & Persepuluhan</h5>
-                        <p>Para Diaken / Diakenes</p>
-                      </div>
-                      <span class="lit-song">Pujian Koor / Musikal</span>
-                    </div>
-
-                    <div class="liturgy-item highlight">
-                      <span class="lit-time">10:50</span>
-                      <div class="lit-info">
-                        <h5>Khotbah Firman Tuhan</h5>
-                        <p>Pembicara: <strong>Pdt. Samuel Hartono, M.Th.</strong></p>
-                        <p class="lit-sub">Judul: <i>"Pengharapan di Tengah Gelombang Zaman"</i></p>
-                      </div>
-                      <span class="lit-badge badge-burgundy">Khotbah Utama</span>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">11:45</span>
-                      <div class="lit-info">
-                        <h5>Lagu Penutup & Berkat</h5>
-                        <p>Seluruh Jemaat Berdiri</p>
-                      </div>
-                      <span class="lit-song">Lagu Zion No. 240</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- PROGRAM 3: PEMUDA ADVENT / IBADAH SORE -->
+              <!-- PROGRAM 2: PEMUDA ADVENT -->
               <div id="prog-pa" class="program-content">
-                <div class="program-card">
-                  <div class="program-card-header">
-                    <h4>Pemuda Advent & Vesper Sore</h4>
-                    <span class="time-tag"><i class="fa-regular fa-clock"></i> 15:30 - Selesai</span>
-                  </div>
+                <div id="subtab-container-pa"></div>
+              </div>
 
-                  <div class="liturgy-list">
-                    <div class="liturgy-item">
-                      <span class="lit-time">15:30</span>
-                      <div class="lit-info">
-                        <h5>Songs of Praise & Games Alkitab</h5>
-                        <p>Pengurus Pemuda Advent (PA)</p>
-                      </div>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">16:15</span>
-                      <div class="lit-info">
-                        <h5>Seminar Pemuda / Talkshow Inspiratif</h5>
-                        <p>Topik: <i>"Karakter Pemuda Advent di Era Digital"</i></p>
-                      </div>
-                    </div>
-
-                    <div class="liturgy-item">
-                      <span class="lit-time">17:30</span>
-                      <div class="lit-info">
-                        <h5>Vesper Tutup Sabat</h5>
-                        <p>Doa & Pujian Bersama Menyambut Pekan Baru</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- PROGRAM 3: RABU MALAM -->
+              <div id="prog-rabu-malam" class="program-content">
+                <div id="subtab-container-rabu-malam"></div>
               </div>
 
             </div>
           </section>
+
+          <!-- ==================== TAB 4: DIREKTORI JEMAAT ==================== -->
+          <div id="tab-directory" class="tab-content">
+            <!-- Header Banner Page -->
+            <div class="section-container">
+              <div class="info-card info-card-gradient">
+                <div class="info-header" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-address-book text-gold" style="font-size: 1.4rem;"></i>
+                    <h4 style="font-size: 1.2rem; font-weight: 800; color: #ffffff; margin: 0;">Direktori Jemaat & Pengurus</h4>
+                  </div>
+                  <button class="btn-subtab-pill btn-pill-reset" style="background: rgba(255,255,255,0.18); color: #ffffff; border: 1px solid rgba(255,255,255,0.35);" onclick="switchTab('tab-home')">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda
+                  </button>
+                </div>
+                <p class="info-body" style="margin-top: 8px;">
+                  Daftar kontak lengkap Gembala Jemaat, Officers, dan Anggota Majelis GMAHK Taman Gethsemane.
+                </p>
+              </div>
+            </div>
+
+            <!-- Search Filter Bar -->
+            <div class="section-container mt-3">
+              <div class="program-card">
+                <div style="padding: 16px 20px;">
+                  <label style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">
+                    <i class="fa-solid fa-magnifying-glass text-gold"></i> Cari Pengurus / Majelis:
+                  </label>
+                  <input type="text" id="directory-search-input" placeholder="Ketik nama atau jabatan pengurus (contoh: Gembala, Sekretaris, Bpk. Agus)..." 
+                    class="form-input" onkeyup="filterDirectory()" style="font-size: 0.92rem; padding: 10px 16px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Directory Categorized Grid -->
+            <div class="section-container mt-3">
+              <div id="directory-content">
+
+                <!-- Section 1: Gembala Jemaat -->
+                <div class="directory-section-title">
+                  <i class="fa-solid fa-crown text-gold"></i> Gembala Jemaat
+                </div>
+                <div class="directory-grid">
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-user-tie"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Pdt. Benny Lumbantobing</h5>
+                        <p class="dir-role">Gembala Jemaat</p>
+                        <span class="directory-phone">+62 812-3456-7890</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567890?text=Syalom%20Pendeta,%20saya%20jemaat%20GMAHK%20Taman%20Gethsemane..." target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Section 2: Officers Jemaat -->
+                <div class="directory-section-title mt-4">
+                  <i class="fa-solid fa-user-gear text-navy"></i> Officers Jemaat
+                </div>
+                <div class="directory-grid">
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-user-shield"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Bpk. Agus</h5>
+                        <p class="dir-role">Ketua Jemaat / Tua-Tua</p>
+                        <span class="directory-phone">+62 812-3456-7891</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567891" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-file-signature"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Ibu Dyah</h5>
+                        <p class="dir-role">Sekretaris Jemaat</p>
+                        <span class="directory-phone">+62 812-3456-7892</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567892" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-vault"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Bpk. Irfan</h5>
+                        <p class="dir-role">Bendahara Jemaat</p>
+                        <span class="directory-phone">+62 812-3456-7893</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567893" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-users"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Sdra. Hansell</h5>
+                        <p class="dir-role">Ketua Pemuda Advent (PA)</p>
+                        <span class="directory-phone">+62 812-3456-7894</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567894" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-hand-holding-heart"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Sdra. Ricky</h5>
+                        <p class="dir-role">Kepala Diakon</p>
+                        <span class="directory-phone">+62 812-3456-7895</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567895" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-heart"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Ibu Ummi</h5>
+                        <p class="dir-role">Kepala Diakones</p>
+                        <span class="directory-phone">+62 812-3456-7896</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567896" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Section 3: Anggota Majelis Jemaat -->
+                <div class="directory-section-title mt-4">
+                  <i class="fa-solid fa-users-line text-gold"></i> Anggota Majelis Jemaat
+                </div>
+                <div class="directory-grid">
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-book-open"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Bpk. Frans</h5>
+                        <p class="dir-role">Majelis / Pemateri SS</p>
+                        <span class="directory-phone">+62 812-3456-7897</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567897" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-bullhorn"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Bpk. Micky K</h5>
+                        <p class="dir-role">Majelis / Pelayanan Perorangan</p>
+                        <span class="directory-phone">+62 812-3456-7898</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567898" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-tower-cell"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Sdra. Misaell</h5>
+                        <p class="dir-role">Majelis / Komunikasi & Media</p>
+                        <span class="directory-phone">+62 812-3456-7899</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567899" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-music"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Sdra. Fabian</h5>
+                        <p class="dir-role">Majelis / Pelayanan Musik</p>
+                        <span class="directory-phone">+62 812-3456-7900</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567900" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
 
         </div>
       </main>
@@ -580,6 +619,11 @@
             <div class="nav-icon-box"><i class="fa-solid fa-book-bible"></i></div>
             <span class="nav-label">Ibadah</span>
           </button>
+
+          <button class="nav-item" onclick="switchTab('tab-directory')" id="nav-tab-directory">
+            <div class="nav-icon-box"><i class="fa-solid fa-address-book"></i></div>
+            <span class="nav-label">Direktori</span>
+          </button>
         </div>
       </nav>
 
@@ -587,41 +631,6 @@
   </div>
 
   <!-- ==================== MODALS ==================== -->
-
-  <!-- Modal: Tentang Kami -->
-  <div id="modal-about" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h4><i class="fa-solid fa-circle-info text-burgundy"></i> Tentang GMAHK Taman Gethsemane</h4>
-        <button class="modal-close" onclick="closeModal('modal-about')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="about-hero">
-          <i class="fa-solid fa-church about-icon"></i>
-          <h5>Gereja Masehi Advent Hari Ketujuh Jemaat Taman Gethsemane</h5>
-          <p>Anggota dari Organisasi GMAHK Konferens Jawa Timur</p>
-        </div>
-        <div class="about-section">
-          <h6><i class="fa-solid fa-bullseye text-gold"></i> Visi Kami</h6>
-          <p>Menjadi jemaat yang berpusat pada Kristus, memancarkan kasih-Nya, serta memberitakan Injil Kekal kepada
-            seluruh lapisan masyarakat.</p>
-        </div>
-        <div class="about-section">
-          <h6><i class="fa-solid fa-compass text-gold"></i> Misi Kami</h6>
-          <ul>
-            <li>Menguatkan persekutuan jemaat dalam doa dan pendalaman Alkitab.</li>
-            <li>Memperlengkapi setiap anggota jemaat untuk terlibat aktif dalam pelayanan sosial dan kerohanian.</li>
-            <li>Menyiapkan jemaat bagi Kedatangan Yesus Kristus yang kedua kali.</li>
-          </ul>
-        </div>
-        <div class="about-section">
-          <h6><i class="fa-solid fa-user-tie text-gold"></i> Gembala & Pengurus</h6>
-          <p><strong>Gembala Jemaat:</strong> Pdt. Samuel Hartono, M.Th.</p>
-          <p><strong>Ketua Jemaat:</strong> Bpk. Yonas Subagyo</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modal: Waktu Ibadah -->
   <div id="modal-schedule" class="modal-overlay">
@@ -789,6 +798,65 @@
         <div class="hymnal-list" id="hymnal-list-container">
           <!-- Rendered dynamically -->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Login Admin -->
+  <div id="modal-admin-login" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-user-gear text-navy"></i> Login Admin / Pengurus</h4>
+        <button class="modal-close" onclick="closeModal('modal-admin-login')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+          Silakan masuk dengan akun Admin untuk mengelola & mengedit susunan acara ibadah jemaat.
+        </p>
+        <form id="admin-login-form" class="rating-form" onsubmit="handleAdminLoginSubmit(event)">
+          <div class="form-group">
+            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Email Admin</label>
+            <input type="email" id="admin-email" placeholder="admin@gmahkgethsemane.org" class="form-input" required>
+          </div>
+          <div class="form-group" style="margin-top: 12px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Password</label>
+            <input type="password" id="admin-password" placeholder="••••••••" class="form-input" required>
+          </div>
+          <button type="submit" class="btn-primary mt-3" style="width: 100%;">
+            <i class="fa-solid fa-right-to-bracket"></i> Masuk Admin (Supabase Ready)
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Sub-Tab Program -->
+  <div id="modal-edit-subtab" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4 id="edit-modal-title"><i class="fa-solid fa-pen-to-square text-gold"></i> Edit Susunan Acara</h4>
+        <button class="modal-close" onclick="closeModal('modal-edit-subtab')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(217, 119, 6, 0.1); border: 1px solid var(--accent-gold); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+          <p style="font-size: 0.85rem; color: var(--text-main); margin: 0;">
+            <i class="fa-solid fa-circle-info text-gold"></i> <strong>Modul Editor Sub-Tab:</strong> Fitur ini siap dihubungkan dengan database Supabase Anda untuk update data secara real-time.
+          </p>
+        </div>
+        <form id="subtab-edit-form" class="rating-form" onsubmit="handleSubTabEditSubmit(event)">
+          <input type="hidden" id="edit-target-tab" value="">
+          <div class="form-group">
+            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Nama Program / Sub-Tab</label>
+            <input type="text" id="edit-program-name" class="form-input" readonly>
+          </div>
+          <div class="form-group" style="margin-top: 12px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Catatan / Warta Tambahan</label>
+            <textarea id="edit-program-notes" placeholder="Tuliskan catatan khusus atau perubahan petugas..." rows="4" class="form-input"></textarea>
+          </div>
+          <button type="submit" class="btn-primary mt-3" style="width: 100%;">
+            <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
+          </button>
+        </form>
       </div>
     </div>
   </div>
