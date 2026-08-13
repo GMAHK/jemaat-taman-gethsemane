@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initHymnal();
   initGlobalKeyboard();
   initWorshipSubTabs();
+  initAdminState();
 });
 
 // ==========================================
@@ -96,9 +97,30 @@ function setTheme(theme) {
 }
 
 // ==========================================
-// 5. TAB NAVIGATION LOGIC (SPA FEEL)
+// 5. TAB NAVIGATION & HASH ROUTER (SPA HISTORY & BACK BUTTON SUPPORT)
 // ==========================================
-function switchTab(tabId) {
+const tabToHashMap = {
+  "tab-home": "beranda",
+  "tab-history": "sejarah",
+  "tab-worship": "ibadah",
+  "tab-directory": "direktori",
+  "tab-donate": "persembahan"
+};
+
+const hashToTabMap = {
+  "beranda": "tab-home",
+  "home": "tab-home",
+  "sejarah": "tab-history",
+  "history": "tab-history",
+  "ibadah": "tab-worship",
+  "worship": "tab-worship",
+  "direktori": "tab-directory",
+  "directory": "tab-directory",
+  "persembahan": "tab-donate",
+  "donate": "tab-donate"
+};
+
+function switchTab(tabId, updateHistory = true) {
   // Hide all tabs
   const tabs = document.querySelectorAll(".tab-content");
   tabs.forEach(tab => tab.classList.remove("active"));
@@ -118,10 +140,55 @@ function switchTab(tabId) {
     targetNavBtn.classList.add("active");
   }
 
+  // Save active tab ID to localStorage
+  localStorage.setItem("gmahk_active_tab", tabId);
+
+  // Update URL Hash and Browser History
+  const hash = tabToHashMap[tabId] || "beranda";
+  if (updateHistory) {
+    if (window.location.hash !== `#${hash}`) {
+      window.history.pushState({ tabId: tabId }, "", `#${hash}`);
+    }
+  }
+
   // Scroll main body to top smoothly
   const appBody = document.querySelector(".app-body");
   if (appBody) {
     appBody.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+function initRouter() {
+  // Listen for browser Back / Forward buttons and mobile back gestures
+  window.addEventListener("popstate", (e) => {
+    if (e.state && e.state.tabId) {
+      switchTab(e.state.tabId, false);
+    } else {
+      const hash = window.location.hash.replace("#", "").toLowerCase();
+      const tabId = hashToTabMap[hash] || "tab-home";
+      switchTab(tabId, false);
+    }
+  });
+
+  window.addEventListener("hashchange", () => {
+    const hash = window.location.hash.replace("#", "").toLowerCase();
+    const tabId = hashToTabMap[hash];
+    if (tabId) {
+      switchTab(tabId, false);
+    }
+  });
+
+  // Restore initial tab on page load or refresh
+  const initialHash = window.location.hash.replace("#", "").toLowerCase();
+  const tabFromHash = hashToTabMap[initialHash];
+  const savedTab = localStorage.getItem("gmahk_active_tab");
+
+  if (tabFromHash) {
+    switchTab(tabFromHash, false);
+  } else if (savedTab && document.getElementById(savedTab)) {
+    switchTab(savedTab, true);
+  } else {
+    switchTab("tab-home", true);
   }
 }
 
@@ -619,7 +686,7 @@ function renderSubTab(key) {
   const data = worshipData[key];
   if (!data) return;
 
-  const isEditing = subtabEditState[key];
+  const isEditing = isAdminLoggedIn && subtabEditState[key];
 
   let html = `
     <div class="subtab-header-card">
@@ -633,18 +700,20 @@ function renderSubTab(key) {
         </div>
       </div>
       <div class="subtab-actions-group">
-        ${isEditing ? `
-          <button class="btn-subtab-pill btn-pill-reset" onclick="resetSubTabData('${key}')">
-            <i class="fa-solid fa-rotate-left"></i> Reset
-          </button>
-          <button class="btn-subtab-pill btn-pill-edit editing" onclick="toggleEditSubTab('${key}')">
-            <i class="fa-solid fa-check"></i> Selesai Edit
-          </button>
-        ` : `
-          <button class="btn-subtab-pill btn-pill-edit" onclick="toggleEditSubTab('${key}')">
-            <i class="fa-solid fa-pen-to-square"></i> Edit Susunan
-          </button>
-        `}
+        ${isAdminLoggedIn ? (
+          isEditing ? `
+            <button class="btn-subtab-pill btn-pill-reset" onclick="resetSubTabData('${key}')">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+            <button class="btn-subtab-pill btn-pill-edit editing" onclick="toggleEditSubTab('${key}')">
+              <i class="fa-solid fa-check"></i> Selesai Edit
+            </button>
+          ` : `
+            <button class="btn-subtab-pill btn-pill-edit" onclick="toggleEditSubTab('${key}')">
+              <i class="fa-solid fa-pen-to-square"></i> Edit Susunan
+            </button>
+          `
+        ) : ''}
       </div>
     </div>
   `;
@@ -792,11 +861,220 @@ function openEditSubTabModal(programName) {
   toggleEditSubTab(key);
 }
 
-function handleAdminLoginSubmit(e) {
+// ==========================================
+// 13. SUPABASE INTEGRATION & ADMIN AUTH ENGINE
+// ==========================================
+const SUPABASE_URL = "https://jgrarsmzaqcviurladpm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Vp2_Hx0mpyreTrfFQW-14g_NTxNBABy";
+let supabaseClient = null;
+
+function initSupabaseClient() {
+  if (window.supabase && SUPABASE_URL) {
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      return supabaseClient;
+    } catch (err) {
+      console.warn("Supabase Client Init Error:", err);
+    }
+  }
+  return null;
+}
+
+// Initial client creation attempt
+initSupabaseClient();
+
+let isAdminLoggedIn = localStorage.getItem("is_admin_logged_in") === "true";
+
+function initAdminState() {
+  updateAdminUIState();
+}
+
+function updateAdminUIState() {
+  const btnAdmin = document.getElementById("btn-admin-login");
+  const btnText = document.getElementById("admin-btn-text");
+  
+  if (!isAdminLoggedIn) {
+    subtabEditState = {
+      "sabat-raya": false,
+      "pa": false,
+      "rabu-malam": false
+    };
+  }
+
+  // Refresh worship subtabs so edit buttons toggle dynamically
+  renderSubTab("sabat-raya");
+  renderSubTab("pa");
+  renderSubTab("rabu-malam");
+
+  if (!btnAdmin) return;
+
+  if (isAdminLoggedIn) {
+    btnAdmin.classList.add("admin-logged-in");
+    if (btnText) {
+      btnText.innerHTML = `<span class="pulse-indicator"></span> Mode Admin <span class="badge-logout"><i class="fa-solid fa-right-from-bracket"></i> Keluar</span>`;
+    }
+    btnAdmin.title = "Mode Admin Aktif (Klik untuk Keluar / Logout)";
+  } else {
+    btnAdmin.classList.remove("admin-logged-in");
+    if (btnText) {
+      btnText.textContent = "Login Admin";
+    }
+    btnAdmin.title = "Login Admin / Pengurus";
+  }
+}
+
+function handleAdminNavClick() {
+  if (isAdminLoggedIn) {
+    openModal("modal-logout-confirm");
+  } else {
+    // Populate Supabase URL input if exists
+    const urlInput = document.getElementById("supabase-url-input");
+    if (urlInput && SUPABASE_URL) {
+      urlInput.value = SUPABASE_URL;
+    }
+    openModal("modal-admin-login");
+  }
+}
+
+function confirmLogoutAdmin() {
+  closeModal("modal-logout-confirm");
+  logoutAdmin();
+}
+
+function logoutAdmin() {
+  isAdminLoggedIn = false;
+  localStorage.removeItem("is_admin_logged_in");
+  
+  // Sign out from Supabase Auth session if active
+  if (supabaseClient && supabaseClient.auth) {
+    supabaseClient.auth.signOut().catch(() => {});
+  }
+
+  updateAdminUIState();
+  showToast("Anda telah keluar dari Mode Admin.", "fa-solid fa-right-from-bracket text-gold");
+}
+
+function togglePasswordVisibility() {
+  const pwdInput = document.getElementById("admin-password");
+  const icon = document.getElementById("password-toggle-icon");
+  if (!pwdInput || !icon) return;
+
+  if (pwdInput.type === "password") {
+    pwdInput.type = "text";
+    icon.classList.remove("fa-eye");
+    icon.classList.add("fa-eye-slash");
+  } else {
+    pwdInput.type = "password";
+    icon.classList.remove("fa-eye-slash");
+    icon.classList.add("fa-eye");
+  }
+}
+
+async function handleAdminLoginSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById("admin-email").value;
-  closeModal("modal-admin-login");
-  showToast(`Selamat datang Admin (${email})! Modul siap dihubungkan ke Supabase.`, "fa-solid fa-user-shield text-gold");
+  const emailInput = document.getElementById("admin-email");
+  const passwordInput = document.getElementById("admin-password");
+  const urlInput = document.getElementById("supabase-url-input");
+  const errorBanner = document.getElementById("admin-login-error");
+  const errorText = document.getElementById("admin-error-text");
+  const successBanner = document.getElementById("admin-login-success");
+  const submitBtn = document.getElementById("btn-submit-admin-login");
+  const modalCard = document.querySelector("#modal-admin-login .modal-card");
+
+  const email = emailInput ? emailInput.value.trim() : "";
+  const password = passwordInput ? passwordInput.value : "";
+  const customUrl = urlInput ? urlInput.value.trim() : "";
+
+  if (customUrl) {
+    saveSupabaseUrl(customUrl);
+  }
+
+  // Reset UI Banners
+  if (errorBanner) errorBanner.style.display = "none";
+  if (successBanner) successBanner.style.display = "none";
+
+  // Show loading spinner
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Menghubungkan Supabase...</span>`;
+  }
+
+  const client = initSupabaseClient();
+
+  if (client) {
+    // Direct Supabase Authentication Call
+    try {
+      const { data, error } = await client.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error) {
+        showLoginFailure(error.message || "Gagal masuk Supabase. Periksa Email & Password.");
+        return;
+      }
+
+      if (data && data.user) {
+        showLoginSuccess(data.user.email);
+        return;
+      }
+    } catch (err) {
+      showLoginFailure("Gagal menghubungi Supabase: " + err.message);
+      return;
+    }
+  }
+
+  // Fallback: Built-in credentials if Supabase URL is not set or client fails to initialize
+  const validAdminAccounts = [
+    { email: "admin@gmahkgethsemane.org", pass: "AdminGethsemane2026!" },
+    { email: "admin@gmail.com", pass: "Admin123!" },
+    { email: "admin@gmahk.org", pass: "Admin123!" }
+  ];
+
+  const matchedAccount = validAdminAccounts.find(
+    acc => acc.email.toLowerCase() === email.toLowerCase() && acc.pass === password
+  );
+
+  if (matchedAccount) {
+    showLoginSuccess(email);
+  } else {
+    showLoginFailure("Email atau password admin tidak ditemukan di Supabase Auth / Kredensial Admin.");
+  }
+
+  function showLoginSuccess(userEmail) {
+    if (successBanner) successBanner.style.display = "flex";
+    isAdminLoggedIn = true;
+    localStorage.setItem("is_admin_logged_in", "true");
+    updateAdminUIState();
+
+    setTimeout(() => {
+      closeModal("modal-admin-login");
+      showToast(`Login Supabase Berhasil! Selamat datang ${userEmail}.`, "fa-solid fa-user-shield text-emerald");
+
+      if (emailInput) emailInput.value = "";
+      if (passwordInput) passwordInput.value = "";
+      if (successBanner) successBanner.style.display = "none";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span>Masuk via Supabase Auth</span>`;
+      }
+    }, 800);
+  }
+
+  function showLoginFailure(msg) {
+    if (modalCard) {
+      modalCard.classList.remove("shake-error");
+      void modalCard.offsetWidth;
+      modalCard.classList.add("shake-error");
+    }
+    if (errorText) errorText.textContent = msg;
+    if (errorBanner) errorBanner.style.display = "flex";
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span>Masuk via Supabase Auth</span>`;
+    }
+  }
 }
 
 function handleSubTabEditSubmit(e) {

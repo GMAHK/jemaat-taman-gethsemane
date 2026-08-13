@@ -9,6 +9,11 @@
     content="Aplikasi resmi GMAHK Taman Gethsemane. Informasi Ibadah Sabat, Sejarah Gereja, Renungan, Persembahan & Warta Jemaat.">
   <meta name="theme-color" content="#0f2b5c">
 
+  <!-- Favicon / Tab Site Icon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+
   <!-- Open Graph -->
   <meta property="og:title" content="GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah">
   <meta property="og:description"
@@ -25,6 +30,9 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -40,7 +48,7 @@
         <div class="header-container">
           <div class="header-brand">
             <div class="brand-logo">
-              <i class="fa-solid fa-church"></i>
+              <img src="favicon.svg" alt="GMAHK Taman Gethsemane Logo" style="width: 26px; height: 26px; border-radius: 6px; display: block;">
             </div>
             <div class="brand-text">
               <span class="brand-title">GMAHK Taman Gethsemane</span>
@@ -48,8 +56,8 @@
             </div>
           </div>
           <div class="header-actions">
-            <button id="btn-admin-login" class="header-btn" title="Login Admin / Pengurus" onclick="openModal('modal-admin-login')">
-              <i class="fa-solid fa-user-gear"></i>
+            <button id="btn-admin-login" class="header-btn btn-admin-nav" title="Login Admin / Pengurus" onclick="handleAdminNavClick()">
+              <i class="fa-solid fa-user-gear"></i> <span id="admin-btn-text" class="admin-btn-label">Login Admin</span>
             </button>
             <button id="btn-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang">
               <i class="fa-solid fa-moon"></i>
@@ -79,6 +87,37 @@
               </div>
             </div>
 
+            <!-- Visi & Misi GMAHK Card -->
+            <div class="section-container">
+              <div class="vm-card">
+                <div class="vm-grid">
+                  <div class="vm-item vm-misi">
+                    <div class="vm-header">
+                      <div class="vm-icon icon-blue">
+                        <i class="fa-solid fa-compass"></i>
+                      </div>
+                      <h4>Misi Kita</h4>
+                    </div>
+                    <p class="vm-text">
+                      Menjadikan murid Yesus Kristus, yang hidup sebagai saksiNya yang penuh kasih dan memberitakan kepada semua orang Injil yang kekal dari Pekabaran Tiga Malaikat sebagai persiapan untuk kedatanganNya yang segera (Matius 28:18–20; Kisah 1:8; Wahyu 14:6–12).
+                    </p>
+                  </div>
+
+                  <div class="vm-item vm-visi">
+                    <div class="vm-header">
+                      <div class="vm-icon icon-gold">
+                        <i class="fa-solid fa-eye"></i>
+                      </div>
+                      <h4>Visi Kita</h4>
+                    </div>
+                    <p class="vm-text">
+                      Selaras dengan wahyu Alkitab, Gereja Masehi Advent Hari Ketujuh melihat sebagai klimaks dari rencana Allah untuk memulihkan segenap ciptaanNya untuk menjadi selaras sepenuhnya dengan kehendak dan kebenaranNya.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Quick Action Buttons Grid -->
             <div class="section-container">
               <h3 class="section-title"><i class="fa-solid fa-bolt text-gold"></i> Akses Cepat</h3>
@@ -99,7 +138,7 @@
                   <span class="quick-sub">Sabat & Vesper</span>
                 </button>
 
-                <button class="quick-card" onclick="openModal('modal-donate')">
+                <button class="quick-card" onclick="switchTab('tab-donate')">
                   <div class="quick-icon icon-emerald">
                     <i class="fa-solid fa-hand-holding-dollar"></i>
                   </div>
@@ -388,33 +427,28 @@
 
           <!-- ==================== TAB 4: DIREKTORI JEMAAT ==================== -->
           <div id="tab-directory" class="tab-content">
-            <!-- Header Banner Page -->
+            <!-- Header Card & Search Bar Unified -->
             <div class="section-container">
-              <div class="info-card info-card-gradient">
-                <div class="info-header" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-address-book text-gold" style="font-size: 1.4rem;"></i>
-                    <h4 style="font-size: 1.2rem; font-weight: 800; color: #ffffff; margin: 0;">Direktori Jemaat & Pengurus</h4>
+              <div class="directory-header-card">
+                <div class="dir-header-main">
+                  <div class="dir-header-info">
+                    <div class="dir-title-row">
+                      <i class="fa-solid fa-address-book text-burgundy"></i>
+                      <h2>Direktori Jemaat & Pengurus</h2>
+                    </div>
+                    <p class="dir-subtitle">Daftar kontak lengkap Gembala Jemaat, Officers, dan Anggota Majelis GMAHK Taman Gethsemane.</p>
                   </div>
-                  <button class="btn-subtab-pill btn-pill-reset" style="background: rgba(255,255,255,0.18); color: #ffffff; border: 1px solid rgba(255,255,255,0.35);" onclick="switchTab('tab-home')">
-                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda
+                  <button class="btn-back-home" onclick="switchTab('tab-home')">
+                    <i class="fa-solid fa-arrow-left"></i> Beranda
                   </button>
                 </div>
-                <p class="info-body" style="margin-top: 8px;">
-                  Daftar kontak lengkap Gembala Jemaat, Officers, dan Anggota Majelis GMAHK Taman Gethsemane.
-                </p>
-              </div>
-            </div>
 
-            <!-- Search Filter Bar -->
-            <div class="section-container mt-3">
-              <div class="program-card">
-                <div style="padding: 16px 20px;">
-                  <label style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">
-                    <i class="fa-solid fa-magnifying-glass text-gold"></i> Cari Pengurus / Majelis:
-                  </label>
-                  <input type="text" id="directory-search-input" placeholder="Ketik nama atau jabatan pengurus (contoh: Gembala, Sekretaris, Bpk. Agus)..." 
-                    class="form-input" onkeyup="filterDirectory()" style="font-size: 0.92rem; padding: 10px 16px;">
+                <div class="dir-search-row">
+                  <div class="dir-search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon text-gold"></i>
+                    <input type="text" id="directory-search-input" placeholder="Cari nama atau jabatan (contoh: Gembala, Ketua, Sekretaris, Bpk. Agus)..." 
+                      class="dir-search-input" onkeyup="filterDirectory()">
+                  </div>
                 </div>
               </div>
             </div>
@@ -443,9 +477,9 @@
                   </div>
                 </div>
 
-                <!-- Section 2: Officers Jemaat -->
+                <!-- Section 2: Officers Jemaat (Hanya 4 Officers) -->
                 <div class="directory-section-title mt-4">
-                  <i class="fa-solid fa-user-gear text-navy"></i> Officers Jemaat
+                  <i class="fa-solid fa-user-gear text-burgundy"></i> Officers Jemaat
                 </div>
                 <div class="directory-grid">
                   <div class="directory-card dir-item">
@@ -453,11 +487,25 @@
                       <div class="directory-avatar"><i class="fa-solid fa-user-shield"></i></div>
                       <div class="directory-details">
                         <h5 class="dir-name">Bpk. Agus</h5>
-                        <p class="dir-role">Ketua Jemaat / Tua-Tua</p>
+                        <p class="dir-role">Ketua Jemaat</p>
                         <span class="directory-phone">+62 812-3456-7891</span>
                       </div>
                     </div>
                     <a href="https://wa.me/6281234567891" target="_blank" rel="noopener" class="btn-wa-contact">
+                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
+                    </a>
+                  </div>
+
+                  <div class="directory-card dir-item">
+                    <div class="directory-info">
+                      <div class="directory-avatar"><i class="fa-solid fa-user-shield"></i></div>
+                      <div class="directory-details">
+                        <h5 class="dir-name">Bpk. Yonas Subagyo</h5>
+                        <p class="dir-role">Ketua Jemaat</p>
+                        <span class="directory-phone">+62 812-3456-7899</span>
+                      </div>
+                    </div>
+                    <a href="https://wa.me/6281234567899" target="_blank" rel="noopener" class="btn-wa-contact">
                       <i class="fa-brands fa-whatsapp"></i> Hubungi WA
                     </a>
                   </div>
@@ -489,7 +537,13 @@
                       <i class="fa-brands fa-whatsapp"></i> Hubungi WA
                     </a>
                   </div>
+                </div>
 
+                <!-- Section 3: Majelis & Pengurus Departemen -->
+                <div class="directory-section-title mt-4">
+                  <i class="fa-solid fa-users-line text-gold"></i> Majelis & Pengurus Departemen
+                </div>
+                <div class="directory-grid">
                   <div class="directory-card dir-item">
                     <div class="directory-info">
                       <div class="directory-avatar"><i class="fa-solid fa-users"></i></div>
@@ -599,6 +653,81 @@
             </div>
           </div>
 
+          <!-- ==================== TAB 5: PERSEMBAHAN & DONASI ==================== -->
+          <div id="tab-donate" class="tab-content">
+            <!-- Header Card for Persembahan Page -->
+            <div class="section-container">
+              <div class="directory-header-card" style="border-left-color: var(--accent-emerald);">
+                <div class="dir-header-main">
+                  <div class="dir-header-info">
+                    <div class="dir-title-row">
+                      <i class="fa-solid fa-hand-holding-dollar text-emerald" style="font-size: 1.5rem;"></i>
+                      <h2>Persembahan & Donasi</h2>
+                    </div>
+                    <p class="dir-subtitle" style="font-style: italic;">
+                      "Hendaklah masing-masing memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau karena paksaan, sebab Allah mengasihi orang yang memberi dengan sukacita." — 2 Korintus 9:7
+                    </p>
+                  </div>
+                  <button class="btn-back-home" onclick="switchTab('tab-home')">
+                    <i class="fa-solid fa-arrow-left"></i> Beranda
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Grid for Bank Cards & QRIS -->
+            <div class="section-container mt-3">
+              <div class="donate-page-grid">
+                <div class="donate-banks-row">
+                  <!-- Bank Card 1: BCA -->
+                  <div class="donate-page-card">
+                    <div class="bank-header">
+                      <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK BCA</span>
+                      <span class="bank-chip">Persepuluhan & Persembahan</span>
+                    </div>
+                    <div class="bank-number-box">
+                      <span class="bank-num-text">8820-1928-3741</span>
+                      <button class="btn-copy" onclick="copyToClipboard('8820-1928-3741', 'No. Rekening BCA')">
+                        <i class="fa-solid fa-copy"></i> Salin Rekening
+                      </button>
+                    </div>
+                    <p class="bank-holder">a.n. GMAHK Jemaat Taman Gethsemane</p>
+                  </div>
+
+                  <!-- Bank Card 2: MANDIRI -->
+                  <div class="donate-page-card">
+                    <div class="bank-header">
+                      <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK MANDIRI</span>
+                      <span class="bank-chip chip-gold">Pembangunan Gereja</span>
+                    </div>
+                    <div class="bank-number-box">
+                      <span class="bank-num-text">142-00-9988776-5</span>
+                      <button class="btn-copy" onclick="copyToClipboard('142-00-9988776-5', 'No. Rekening Mandiri')">
+                        <i class="fa-solid fa-copy"></i> Salin Rekening
+                      </button>
+                    </div>
+                    <p class="bank-holder">a.n. Panitia Pembangunan GMAHK Taman Gethsemane</p>
+                  </div>
+                </div>
+
+                <!-- QRIS Section Card -->
+                <div class="qris-page-card">
+                  <div class="qris-page-header">
+                    <i class="fa-solid fa-qrcode text-emerald"></i>
+                    <h4>Scan QRIS Persembahan Digital</h4>
+                  </div>
+                  <div class="qris-page-img-box">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=GMAHK+TAMAN+GETHSEMANE+PERSEMBAHAN" alt="QRIS GMAHK Taman Gethsemane" class="qris-page-img">
+                  </div>
+                  <p class="qris-page-sub">
+                    <i class="fa-solid fa-circle-check text-emerald"></i> Mendukung GoPay, OVO, Dana, ShopeePay, & Semua Mobile Banking.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
 
@@ -623,6 +752,11 @@
           <button class="nav-item" onclick="switchTab('tab-directory')" id="nav-tab-directory">
             <div class="nav-icon-box"><i class="fa-solid fa-address-book"></i></div>
             <span class="nav-label">Direktori</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-donate')" id="nav-tab-donate">
+            <div class="nav-icon-box"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            <span class="nav-label">Persembahan</span>
           </button>
         </div>
       </nav>
@@ -804,28 +938,101 @@
 
   <!-- Modal: Login Admin -->
   <div id="modal-admin-login" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h4><i class="fa-solid fa-user-gear text-navy"></i> Login Admin / Pengurus</h4>
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Login Admin / Pengurus</h4>
+            <span class="auth-subtitle">GMAHK Taman Gethsemane</span>
+          </div>
+        </div>
         <button class="modal-close" onclick="closeModal('modal-admin-login')">&times;</button>
       </div>
+
       <div class="modal-body">
-        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
-          Silakan masuk dengan akun Admin untuk mengelola & mengedit susunan acara ibadah jemaat.
+        <!-- Error Alert Banner -->
+        <div id="admin-login-error" class="login-error-banner" style="display: none;">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="admin-error-text">Email atau Password salah. Silakan periksa kembali.</span>
+        </div>
+
+        <!-- Success Alert Banner -->
+        <div id="admin-login-success" class="login-success-banner" style="display: none;">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>Login berhasil! Membuka Mode Admin...</span>
+        </div>
+
+        <p class="auth-desc-text">
+          Masuk dengan akun pengurus yang terdaftar pada <strong>Supabase Authentication</strong>.
         </p>
-        <form id="admin-login-form" class="rating-form" onsubmit="handleAdminLoginSubmit(event)">
+
+        <form id="admin-login-form" class="auth-form" onsubmit="handleAdminLoginSubmit(event)">
           <div class="form-group">
-            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Email Admin</label>
-            <input type="email" id="admin-email" placeholder="admin@gmahkgethsemane.org" class="form-input" required>
+            <label class="form-label">Email Admin Supabase</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="admin-email" placeholder="admin@gmahkgethsemane.org" class="form-input-styled" required>
+            </div>
           </div>
-          <div class="form-group" style="margin-top: 12px;">
-            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Password</label>
-            <input type="password" id="admin-password" placeholder="••••••••" class="form-input" required>
+
+          <div class="form-group mt-3">
+            <label class="form-label">Password Supabase</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="admin-password" placeholder="••••••••" class="form-input-styled" required>
+              <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility()" title="Tampilkan/Sembunyikan Password">
+                <i id="password-toggle-icon" class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
-          <button type="submit" class="btn-primary mt-3" style="width: 100%;">
-            <i class="fa-solid fa-right-to-bracket"></i> Masuk Admin (Supabase Ready)
+
+          <button type="submit" id="btn-submit-admin-login" class="btn-primary btn-auth-submit mt-4">
+            <i class="fa-solid fa-right-to-bracket"></i> <span>Masuk via Supabase Auth</span>
           </button>
         </form>
+
+        <div class="supabase-badge-info mt-3">
+          <i class="fa-solid fa-shield-halved text-emerald"></i>
+          <span>Autentikasi Langsung via <strong>Supabase Auth API</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Logout Admin -->
+  <div id="modal-logout-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Keluar</h4>
+            <span class="auth-subtitle" style="color: #ef4444;">Mode Admin Aktif</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-logout-confirm')">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="padding: 24px;">
+        <p style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+          Apakah Anda yakin ingin keluar dari Mode Admin?
+        </p>
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Akses fitur editor susunan acara & warta jemaat akan ditutup sampai Anda login kembali.
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-subtab-pill" style="flex: 1; padding: 11px; font-weight: 700; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main);" onclick="closeModal('modal-logout-confirm')">
+            Batal
+          </button>
+          <button class="btn-primary" style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="confirmLogoutAdmin()">
+            <i class="fa-solid fa-right-from-bracket"></i> Ya, Keluar
+          </button>
+        </div>
       </div>
     </div>
   </div>
