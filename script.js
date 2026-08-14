@@ -58,6 +58,7 @@ let userRatingScore = 0;
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
+  initRouter();
   initCountdown();
   initRatingSystem();
   initProgramTabs();
@@ -65,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initGlobalKeyboard();
   initWorshipSubTabs();
   initAdminState();
+  renderPublicDirectory();
 });
 
 // ==========================================
@@ -77,24 +79,31 @@ function initTheme() {
   const themeBtn = document.getElementById("btn-theme-toggle");
   if (themeBtn) {
     themeBtn.addEventListener("click", () => {
-      const current = document.documentElement.getAttribute("data-theme");
-      const nextTheme = current === "dark" ? "light" : "dark";
-      setTheme(nextTheme);
+      toggleTheme();
     });
   }
+}
 
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme");
+  const nextTheme = current === "dark" ? "light" : "dark";
+  setTheme(nextTheme);
 }
 
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("gmahk_theme", theme);
+  const icon = theme === "dark" 
+    ? '<i class="fa-solid fa-sun text-gold"></i>' 
+    : '<i class="fa-solid fa-moon"></i>';
+    
   const themeBtn = document.getElementById("btn-theme-toggle");
-  if (themeBtn) {
-    themeBtn.innerHTML = theme === "dark" 
-      ? '<i class="fa-solid fa-sun text-gold"></i>' 
-      : '<i class="fa-solid fa-moon"></i>';
-  }
+  if (themeBtn) themeBtn.innerHTML = icon;
+  
+  const adminThemeBtn = document.getElementById("btn-admin-theme-toggle");
+  if (adminThemeBtn) adminThemeBtn.innerHTML = icon;
 }
+
 
 // ==========================================
 // 5. TAB NAVIGATION & HASH ROUTER (SPA HISTORY & BACK BUTTON SUPPORT)
@@ -556,6 +565,8 @@ function showToast(message, iconClass = "fa-solid fa-circle-check") {
 // ==========================================
 // 12. WORSHIP DATA ENGINE & INLINE EDITOR
 // ==========================================
+const WORSHIP_DATA_VERSION = "2.3";
+
 const defaultWorshipData = {
   "sabat-raya": {
     title: "Ibadah Sabat Raya",
@@ -571,11 +582,21 @@ const defaultWorshipData = {
       {
         title: "II. Ibadah Sekolah Sabat (09:00 – 10:30)",
         items: [
-          { time: "09:00", name: "MC & Yel Yel Sekolah Sabat", officer: "Sdra. Misaell", type: "text" },
+          { time: "09:00", name: "Pemimpin Acara", officer: "Sdra. Misaell", type: "text" },
           { time: "09:10", name: "Lagu Buka Sekolah Sabat", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
           { time: "09:15", name: "Ayat Inti SS & Doa Buka", officer: "Ibu Dyah", type: "text" },
           { time: "09:20", name: "Bacaan Berita Mission", officer: "Ibu Ummi", type: "text" },
-          { time: "09:30", name: "Ringkasan Sekolah Sabat Dewasa", officer: "Bpk. Frans", type: "text", highlight: true },
+          { 
+            time: "09:30", 
+            name: "Diskusi Sekolah Sabat", 
+            type: "group", 
+            highlight: true,
+            subItems: [
+              { label: "Orang Muda", officer: "Sdra. Rolando" },
+              { label: "Orang Tua", officer: "Bpk. Frans" }
+            ] 
+          },
+          { time: "09:55", name: "Lagu Pujian", officer: "-", type: "text" },
           { time: "10:00", name: "Promosi Pelayanan Perorangan", officer: "Bpk. Micky K", type: "text" },
           { time: "10:10", name: "Lagu Tutup Sekolah Sabat", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
           { time: "10:15", name: "Doa Tutup Sekolah Sabat", officer: "Bpk. Micky K", type: "text" },
@@ -598,12 +619,12 @@ const defaultWorshipData = {
           { time: "11:05", name: "Bacaan Persembahan & Persepuluhan", officer: "Bpk. Irfan", type: "text" },
           { time: "11:08", name: "Lagu Persembahan", officer: "", type: "song", songBook: "LSEL No.", songNo: "260", songTitle: "Bawa Persembahanmu" },
           { time: "11:12", name: "Doa Persembahan", officer: "Bpk. Irfan", type: "text" },
-          { time: "11:15", name: "Pembacaan Ayat Inti", officer: "Bpk. Irfan", type: "text" },
+          { time: "11:15", name: "Pembacaan Ayat Inti & Visi Misi", officer: "Bpk. Irfan", type: "text" },
           { time: "11:18", name: "Lagu Tema", officer: "MISI KITA", type: "text" },
           { time: "11:20", name: "Khotbah / Renungan Firman Tuhan", officer: "Bpk. Agus", type: "text", highlight: true },
           { time: "11:50", name: "Lagu Tutup Kebaktian", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "11:55", name: "Doa TUTUP dan Doa BERKAT", officer: "Pdt. Benny Lumbantobing", type: "text" },
-          { time: "11:58", name: "Lagu Sambutan Doa Tutup & Berkat", officer: "", type: "song", songBook: "LSEL No.", songNo: "523", songTitle: "Tuhan Dengar Doa Kami" }
+          { time: "11:55", name: "Doa Tutup", officer: "Pdt. Benny Lumbantobing", type: "text" },
+          { time: "11:58", name: "Lagu Sambutan Doa Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "523", songTitle: "Tuhan Dengar Doa Kami" }
         ]
       }
     ]
@@ -662,7 +683,25 @@ const defaultWorshipData = {
   }
 };
 
-let worshipData = JSON.parse(localStorage.getItem("gmahk_worship_data") || "null") || JSON.parse(JSON.stringify(defaultWorshipData));
+function loadWorshipData() {
+  const savedVersion = localStorage.getItem("gmahk_worship_version");
+  if (savedVersion !== WORSHIP_DATA_VERSION) {
+    localStorage.setItem("gmahk_worship_version", WORSHIP_DATA_VERSION);
+    localStorage.setItem("gmahk_worship_data", JSON.stringify(defaultWorshipData));
+    return JSON.parse(JSON.stringify(defaultWorshipData));
+  }
+  const saved = localStorage.getItem("gmahk_worship_data");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Parse worship data error:", e);
+    }
+  }
+  return JSON.parse(JSON.stringify(defaultWorshipData));
+}
+
+let worshipData = loadWorshipData();
 let subtabEditState = {
   "sabat-raya": false,
   "pa": false,
@@ -753,7 +792,7 @@ function renderSubTab(key) {
         </div>
         <div class="liturgy-list">
           ${sec.items.map((item, itemIdx) => `
-            <div class="liturgy-item ${item.highlight ? 'highlight' : ''}">
+            <div class="liturgy-item ${item.highlight ? 'highlight' : ''} ${item.type === 'group' || item.subItems ? 'liturgy-group-item' : ''}">
               <span class="lit-time">${item.time}</span>
               <div class="lit-info">
                 <div class="lit-main">
@@ -769,6 +808,16 @@ function renderSubTab(key) {
                         <input type="text" class="song-title-pill" placeholder="Judul Lagu..." value="${escapeHtml(item.songTitle || '')}"
                           oninput="updateSongTitle('${key}', ${secIdx}, ${itemIdx}, this.value)">
                       </div>
+                    ` : (item.type === 'group' || item.subItems) ? `
+                      <div class="edit-subitems-group">
+                        ${item.subItems.map((sub, subIdx) => `
+                          <div class="edit-subitem-row">
+                            <span class="subitem-edit-label">${escapeHtml(sub.label)}:</span>
+                            <input type="text" class="edit-pill-input edit-subitem-input" value="${escapeHtml(sub.officer || '')}"
+                              oninput="updateSubGroupOfficer('${key}', ${secIdx}, ${itemIdx}, ${subIdx}, this.value)">
+                          </div>
+                        `).join('')}
+                      </div>
                     ` : `
                       <input type="text" class="edit-pill-input" value="${escapeHtml(item.officer || '')}"
                         oninput="updateOfficer('${key}', ${secIdx}, ${itemIdx}, this.value)">
@@ -776,6 +825,15 @@ function renderSubTab(key) {
                   ) : (
                     item.type === 'song' ? `
                       <span class="lit-officer">${formatSongDisplay(item)}</span>
+                    ` : (item.type === 'group' || item.subItems) ? `
+                      <div class="lit-subitems-list-right">
+                        ${item.subItems.map(sub => `
+                          <div class="lit-subitem-row-right">
+                            <span class="subitem-badge-right">${escapeHtml(sub.label)}:</span>
+                            <span class="subitem-val-right">${escapeHtml(sub.officer || '-')}</span>
+                          </div>
+                        `).join('')}
+                      </div>
                     ` : `
                       <span class="lit-officer">${escapeHtml(item.officer || '-')}</span>
                     `
@@ -839,6 +897,19 @@ function updateOfficer(key, secIdx, itemIdx, val) {
   }
 }
 
+function updateSubGroupOfficer(key, secIdx, itemIdx, subIdx, val) {
+  if (
+    worshipData[key] &&
+    worshipData[key].sections[secIdx] &&
+    worshipData[key].sections[secIdx].items[itemIdx] &&
+    worshipData[key].sections[secIdx].items[itemIdx].subItems &&
+    worshipData[key].sections[secIdx].items[itemIdx].subItems[subIdx]
+  ) {
+    worshipData[key].sections[secIdx].items[itemIdx].subItems[subIdx].officer = val;
+    saveWorshipDataToStorage();
+  }
+}
+
 function updateSongNo(key, secIdx, itemIdx, val) {
   if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
     worshipData[key].sections[secIdx].items[itemIdx].songNo = val;
@@ -862,7 +933,7 @@ function openEditSubTabModal(programName) {
 }
 
 // ==========================================
-// 13. SUPABASE INTEGRATION & ADMIN AUTH ENGINE
+// 13. SUPABASE INTEGRATION, ADMIN AUTH & DATABASE VIEW ENGINE
 // ==========================================
 const SUPABASE_URL = "https://jgrarsmzaqcviurladpm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Vp2_Hx0mpyreTrfFQW-14g_NTxNBABy";
@@ -887,11 +958,15 @@ let isAdminLoggedIn = localStorage.getItem("is_admin_logged_in") === "true";
 
 function initAdminState() {
   updateAdminUIState();
+  syncNearestPosToWorship();
+  fetchDirectoryFromSupabase();
+  fetchPosFromSupabase();
 }
 
 function updateAdminUIState() {
   const btnAdmin = document.getElementById("btn-admin-login");
   const btnText = document.getElementById("admin-btn-text");
+  const btnIcon = document.getElementById("admin-btn-icon");
   
   if (!isAdminLoggedIn) {
     subtabEditState = {
@@ -910,12 +985,18 @@ function updateAdminUIState() {
 
   if (isAdminLoggedIn) {
     btnAdmin.classList.add("admin-logged-in");
-    if (btnText) {
-      btnText.innerHTML = `<span class="pulse-indicator"></span> Mode Admin <span class="badge-logout"><i class="fa-solid fa-right-from-bracket"></i> Keluar</span>`;
+    if (btnIcon) {
+      btnIcon.className = "fa-solid fa-table-columns";
     }
-    btnAdmin.title = "Mode Admin Aktif (Klik untuk Keluar / Logout)";
+    if (btnText) {
+      btnText.innerHTML = `<span class="pulse-indicator"></span> Buka Dashboard`;
+    }
+    btnAdmin.title = "Sesi Admin Aktif (Klik untuk langsung membuka Database View)";
   } else {
     btnAdmin.classList.remove("admin-logged-in");
+    if (btnIcon) {
+      btnIcon.className = "fa-solid fa-user-gear";
+    }
     if (btnText) {
       btnText.textContent = "Login Admin";
     }
@@ -923,9 +1004,37 @@ function updateAdminUIState() {
   }
 }
 
+// ------------------------------------------
+// ADMIN VIEW NAVIGATION (TWO-WAY TRANSITIONS)
+// ------------------------------------------
+function openAdminDatabaseView() {
+  const appShell = document.getElementById("app-shell");
+  const dbView = document.getElementById("admin-database-view");
+  if (appShell) appShell.style.display = "none";
+  if (dbView) dbView.style.display = "flex";
+  
+  // Default to POS table tab
+  switchAdminDbTab("pos");
+  renderPosTable();
+  fetchDirectoryFromSupabase();
+  fetchPosFromSupabase();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeAdminDatabaseView() {
+  const appShell = document.getElementById("app-shell");
+  const dbView = document.getElementById("admin-database-view");
+  if (dbView) dbView.style.display = "none";
+  if (appShell) appShell.style.display = "flex";
+  
+  updateAdminUIState();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function handleAdminNavClick() {
   if (isAdminLoggedIn) {
-    openModal("modal-logout-confirm");
+    // Langsung masuk ke tampilan Database View Dashboard
+    openAdminDatabaseView();
   } else {
     // Populate Supabase URL input if exists
     const urlInput = document.getElementById("supabase-url-input");
@@ -950,6 +1059,7 @@ function logoutAdmin() {
     supabaseClient.auth.signOut().catch(() => {});
   }
 
+  closeAdminDatabaseView();
   updateAdminUIState();
   showToast("Anda telah keluar dari Mode Admin.", "fa-solid fa-right-from-bracket text-gold");
 }
@@ -1049,7 +1159,7 @@ async function handleAdminLoginSubmit(e) {
 
     setTimeout(() => {
       closeModal("modal-admin-login");
-      showToast(`Login Supabase Berhasil! Selamat datang ${userEmail}.`, "fa-solid fa-user-shield text-emerald");
+      showToast(`Login Berhasil! Membuka Database View...`, "fa-solid fa-user-shield text-emerald");
 
       if (emailInput) emailInput.value = "";
       if (passwordInput) passwordInput.value = "";
@@ -1058,7 +1168,10 @@ async function handleAdminLoginSubmit(e) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span>Masuk via Supabase Auth</span>`;
       }
-    }, 800);
+
+      // Direct Transition to Database View after login
+      openAdminDatabaseView();
+    }, 700);
   }
 
   function showLoginFailure(msg) {
@@ -1077,12 +1190,496 @@ async function handleAdminLoginSubmit(e) {
   }
 }
 
+// ------------------------------------------
+// DATABASE VIEW SIDEBAR TAB SWITCHER
+// ------------------------------------------
+function switchAdminDbTab(tabKey) {
+  // Update sidebar buttons
+  const tabBtns = document.querySelectorAll(".sidebar-tab-btn");
+  tabBtns.forEach(btn => {
+    if (btn.getAttribute("data-dbtab") === tabKey) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+
+  // Update panels
+  const panels = document.querySelectorAll(".admin-panel");
+  panels.forEach(panel => {
+    if (panel.id === `panel-${tabKey}`) {
+      panel.classList.add("active");
+    } else {
+      panel.classList.remove("active");
+    }
+  });
+
+  if (tabKey === "pos") {
+    renderPosTable();
+  } else if (tabKey === "directory") {
+    renderDirectoryTable();
+  }
+}
+
+// ==========================================
+// 14. TABEL POS (PIANIST, OPERATOR, SOUNDMAN) ENGINE
+// ==========================================
+const defaultPosSchedule = [
+  { id: "pos-1", date: "2026-09-26", pianist: "Sdra. Meakhel", operator: "Sdra. Fabian", soundman: "Sdra. Fahrell" },
+  { id: "pos-2", date: "2026-09-19", pianist: "Sdra. Fabian", operator: "Sdra. Misaell", soundman: "Sdra. Meakhel" },
+  { id: "pos-3", date: "2026-09-12", pianist: "Sdra. Meakhel", operator: "Sdra. Fahrell", soundman: "Sdra. Misaell" },
+  { id: "pos-4", date: "2026-09-05", pianist: "Sdra. Fabian", operator: "Sdra. Meakhel", soundman: "Sdra. Fahrell" },
+  { id: "pos-5", date: "2026-08-29", pianist: "Sdra. Meakhel", operator: "Sdra. Misaell", soundman: "Sdra. Fabian" },
+  { id: "pos-6", date: "2026-08-22", pianist: "Sdra. Fabian", operator: "Sdra. Fahrell", soundman: "Sdra. Misaell" },
+  { id: "pos-7", date: "2026-08-15", pianist: "Sdra. Meakhel", operator: "Sdra. Fabian", soundman: "Sdra. Fahrell" },
+  { id: "pos-8", date: "2026-08-08", pianist: "Sdra. Fabian", operator: "Sdra. Misaell", soundman: "Sdra. Meakhel" },
+  { id: "pos-9", date: "2026-08-01", pianist: "Sdra. Meakhel", operator: "Sdra. Fahrell", soundman: "Sdra. Fabian" },
+  { id: "pos-10", date: "2026-07-25", pianist: "Sdra. Fabian", operator: "Sdra. Meakhel", soundman: "Sdra. Misaell" },
+  { id: "pos-11", date: "2026-07-18", pianist: "Sdra. Meakhel", operator: "Sdra. Misaell", soundman: "Sdra. Fahrell" },
+  { id: "pos-12", date: "2026-07-11", pianist: "Sdra. Fabian", operator: "Sdra. Fahrell", soundman: "Sdra. Meakhel" },
+  { id: "pos-13", date: "2026-07-04", pianist: "Sdra. Meakhel", operator: "Sdra. Fabian", soundman: "Sdra. Misaell" }
+];
+
+let posScheduleList = loadPosSchedule();
+let posSortField = "date";
+let posSortAsc = false; // Descending by default
+let posSearchQuery = "";
+
+function loadPosSchedule() {
+  const saved = localStorage.getItem("gmahk_pos_schedule");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to parse local POS schedule:", e);
+    }
+  }
+  return [...defaultPosSchedule];
+}
+
+function savePosSchedule() {
+  localStorage.setItem("gmahk_pos_schedule", JSON.stringify(posScheduleList));
+  syncNearestPosToWorship();
+}
+
+async function fetchPosFromSupabase() {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("pos_schedule")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.warn("Supabase fetch pos_schedule error:", error.message);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      posScheduleList = data.map(row => ({
+        id: row.id,
+        date: row.date,
+        pianist: row.pianist,
+        operator: row.operator,
+        soundman: row.soundman
+      }));
+      savePosSchedule();
+      renderPosTable();
+    }
+  } catch (err) {
+    console.warn("Error fetching pos_schedule from Supabase:", err);
+  }
+}
+
+function syncNearestPosToWorship() {
+  if (!posScheduleList || posScheduleList.length === 0) return;
+  
+  const sorted = [...posScheduleList].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const current = sorted[0];
+  if (current && worshipData && worshipData["sabat-raya"]) {
+    worshipData["sabat-raya"].generalInfo = [
+      { key: "Pianist", value: current.pianist },
+      { key: "Operator", value: current.operator },
+      { key: "Soundman", value: current.soundman }
+    ];
+    renderSubTab("sabat-raya");
+  }
+}
+
+function renderPosTable() {
+  const tbody = document.getElementById("pos-table-body");
+  const countDisp = document.getElementById("pos-count-displayed");
+  const countTotal = document.getElementById("pos-count-total");
+  if (!tbody) return;
+
+  let filtered = posScheduleList.filter(item => {
+    if (!posSearchQuery) return true;
+    const q = posSearchQuery.toLowerCase();
+    return (item.date && item.date.toLowerCase().includes(q)) ||
+           (item.pianist && item.pianist.toLowerCase().includes(q)) ||
+           (item.operator && item.operator.toLowerCase().includes(q)) ||
+           (item.soundman && item.soundman.toLowerCase().includes(q));
+  });
+
+  filtered.sort((a, b) => {
+    let valA = a[posSortField] || "";
+    let valB = b[posSortField] || "";
+    if (posSortField === "date") {
+      valA = new Date(valA).getTime() || 0;
+      valB = new Date(valB).getTime() || 0;
+    } else {
+      valA = valA.toLowerCase();
+      valB = valB.toLowerCase();
+    }
+    if (valA < valB) return posSortAsc ? -1 : 1;
+    if (valA > valB) return posSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  if (countDisp) countDisp.textContent = filtered.length;
+  if (countTotal) countTotal.textContent = posScheduleList.length;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+          <i class="fa-solid fa-calendar-xmark" style="font-size: 1.8rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+          Tidak ada data jadwal POS yang sesuai dengan pencarian.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => `
+    <tr>
+      <td>
+        <span class="td-date-badge">${formatDateIndo(item.date)}</span>
+      </td>
+      <td class="td-officer">${escapeHtml(item.pianist)}</td>
+      <td class="td-officer">${escapeHtml(item.operator)}</td>
+      <td class="td-officer">${escapeHtml(item.soundman)}</td>
+      <td class="th-actions">
+        <div class="td-actions-wrap">
+          <button class="btn-table-edit" onclick="openEditPosModal('${item.id}')" title="Edit Jadwal">Edit</button>
+          <button class="btn-table-delete" onclick="openDeletePosModal('${item.id}')" title="Hapus Jadwal">Hapus</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function formatDateIndo(dateStr) {
+  if (!dateStr) return "-";
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+}
+
+function sortPosTable(field) {
+  if (posSortField === field) {
+    posSortAsc = !posSortAsc;
+  } else {
+    posSortField = field;
+    posSortAsc = (field !== "date");
+  }
+
+  const fields = ["date", "pianist", "operator", "soundman"];
+  fields.forEach(f => {
+    const icon = document.getElementById(`sort-icon-${f}`);
+    if (icon) {
+      if (f === posSortField) {
+        icon.className = posSortAsc 
+          ? "fa-solid fa-sort-up th-sort-icon text-burgundy" 
+          : "fa-solid fa-sort-down th-sort-icon text-burgundy";
+      } else {
+        icon.className = "fa-solid fa-sort th-sort-icon";
+      }
+    }
+  });
+
+  renderPosTable();
+}
+
+function filterPosTable() {
+  const input = document.getElementById("pos-table-search");
+  const clearBtn = document.getElementById("pos-search-clear");
+  if (input) {
+    posSearchQuery = input.value.trim();
+    if (clearBtn) clearBtn.style.display = posSearchQuery ? "block" : "none";
+  }
+  renderPosTable();
+}
+
+function clearPosSearch() {
+  const input = document.getElementById("pos-table-search");
+  const clearBtn = document.getElementById("pos-search-clear");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.style.display = "none";
+  posSearchQuery = "";
+  renderPosTable();
+}
+
+async function shiftPosWeek(direction) {
+  const days = direction * 7;
+  posScheduleList.forEach(item => {
+    if (item.date) {
+      const d = new Date(item.date);
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() + days);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        item.date = `${yyyy}-${mm}-${dd}`;
+      }
+    }
+  });
+
+  savePosSchedule();
+  renderPosTable();
+  const label = direction > 0 ? "+7 Hari (Maju)" : "-7 Hari (Mundur)";
+  showToast(`Semua tanggal jadwal POS digeser ${label}!`, "fa-solid fa-calendar-check text-gold");
+
+  // Sync to Supabase in background
+  if (!supabaseClient) initSupabaseClient();
+  if (supabaseClient) {
+    try {
+      for (const item of posScheduleList) {
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+        if (isUUID) {
+          await supabaseClient.from("pos_schedule").update({ date: item.date }).eq("id", item.id);
+        }
+      }
+    } catch (e) {
+      console.warn("Supabase shift pos error:", e);
+    }
+  }
+}
+
+function openAddPosModal() {
+  const form = document.getElementById("pos-add-form");
+  if (form) form.reset();
+
+  const dateInput = document.getElementById("pos-add-date");
+  if (dateInput && posScheduleList.length > 0) {
+    const sorted = [...posScheduleList].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const latestDate = new Date(sorted[0].date);
+    if (!isNaN(latestDate.getTime())) {
+      latestDate.setDate(latestDate.getDate() + 7);
+      const yyyy = latestDate.getFullYear();
+      const mm = String(latestDate.getMonth() + 1).padStart(2, "0");
+      const dd = String(latestDate.getDate()).padStart(2, "0");
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
+  openModal("modal-pos-add");
+}
+
+async function handleSaveNewPos(e) {
+  e.preventDefault();
+  const dateInput = document.getElementById("pos-add-date");
+  const pianistInput = document.getElementById("pos-add-pianist");
+  const operatorInput = document.getElementById("pos-add-operator");
+  const soundmanInput = document.getElementById("pos-add-soundman");
+
+  const tempId = "pos-" + Date.now();
+  const newItem = {
+    id: tempId,
+    date: dateInput ? dateInput.value : "",
+    pianist: pianistInput ? pianistInput.value.trim() : "",
+    operator: operatorInput ? operatorInput.value.trim() : "",
+    soundman: soundmanInput ? soundmanInput.value.trim() : ""
+  };
+
+  posScheduleList.unshift(newItem);
+  savePosSchedule();
+  closeModal("modal-pos-add");
+  renderPosTable();
+  showToast(`Menyimpan jadwal tanggal ${newItem.date}...`, "fa-solid fa-spinner fa-spin text-gold");
+
+  // Sync to Supabase
+  if (!supabaseClient) initSupabaseClient();
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from("pos_schedule").insert([{
+        date: newItem.date,
+        pianist: newItem.pianist,
+        operator: newItem.operator,
+        soundman: newItem.soundman
+      }]).select();
+
+      if (error) {
+        console.error("Supabase insert pos error:", error);
+        showToast(`Tersimpan lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+      } else if (data && data[0]) {
+        newItem.id = data[0].id;
+        savePosSchedule();
+        renderPosTable();
+        showToast(`Jadwal POS ${newItem.date} tersimpan di Supabase & Web!`, "fa-solid fa-circle-check text-emerald");
+      }
+    } catch (err) {
+      console.error("Supabase insert pos exception:", err);
+    }
+  } else {
+    showToast(`Jadwal POS tanggal ${newItem.date} berhasil ditambahkan!`, "fa-solid fa-circle-check text-emerald");
+  }
+}
+
+function openEditPosModal(id) {
+  const item = posScheduleList.find(p => String(p.id) === String(id));
+  if (!item) return;
+
+  const idInput = document.getElementById("pos-edit-id");
+  const dateInput = document.getElementById("pos-edit-date");
+  const pianistInput = document.getElementById("pos-edit-pianist");
+  const operatorInput = document.getElementById("pos-edit-operator");
+  const soundmanInput = document.getElementById("pos-edit-soundman");
+
+  if (idInput) idInput.value = item.id;
+  if (dateInput) dateInput.value = item.date;
+  if (pianistInput) pianistInput.value = item.pianist;
+  if (operatorInput) operatorInput.value = item.operator;
+  if (soundmanInput) soundmanInput.value = item.soundman;
+
+  openModal("modal-pos-edit");
+}
+
+async function handleUpdatePos(e) {
+  e.preventDefault();
+  const idInput = document.getElementById("pos-edit-id");
+  const dateInput = document.getElementById("pos-edit-date");
+  const pianistInput = document.getElementById("pos-edit-pianist");
+  const operatorInput = document.getElementById("pos-edit-operator");
+  const soundmanInput = document.getElementById("pos-edit-soundman");
+
+  const targetId = idInput ? idInput.value : "";
+  const index = posScheduleList.findIndex(p => String(p.id) === String(targetId));
+
+  if (index !== -1) {
+    const oldItem = { ...posScheduleList[index] };
+    posScheduleList[index] = {
+      id: targetId,
+      date: dateInput ? dateInput.value : posScheduleList[index].date,
+      pianist: pianistInput ? pianistInput.value.trim() : "",
+      operator: operatorInput ? operatorInput.value.trim() : "",
+      soundman: soundmanInput ? soundmanInput.value.trim() : ""
+    };
+
+    savePosSchedule();
+    closeModal("modal-pos-edit");
+    renderPosTable();
+    showToast(`Memperbarui jadwal tanggal ${posScheduleList[index].date}...`, "fa-solid fa-spinner fa-spin text-gold");
+
+    // Sync to Supabase
+    if (!supabaseClient) initSupabaseClient();
+    if (supabaseClient) {
+      try {
+        let query = supabaseClient.from("pos_schedule").update({
+          date: posScheduleList[index].date,
+          pianist: posScheduleList[index].pianist,
+          operator: posScheduleList[index].operator,
+          soundman: posScheduleList[index].soundman
+        });
+
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+        if (isUUID) {
+          query = query.eq("id", targetId);
+        } else {
+          query = query.eq("date", oldItem.date);
+        }
+
+        const { error } = await query;
+        if (error) {
+          console.error("Supabase update pos error:", error);
+          showToast(`Tersimpan lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+        } else {
+          showToast(`Jadwal POS ${posScheduleList[index].date} diperbarui di Supabase & Web!`, "fa-solid fa-circle-check text-emerald");
+        }
+      } catch (err) {
+        console.error("Supabase update pos exception:", err);
+      }
+    }
+  }
+}
+
+function openDeletePosModal(id) {
+  const item = posScheduleList.find(p => String(p.id) === String(id));
+  if (!item) return;
+
+  const idInput = document.getElementById("pos-delete-id");
+  const dateText = document.getElementById("pos-delete-date-text");
+
+  if (idInput) idInput.value = item.id;
+  if (dateText) dateText.textContent = item.date;
+
+  openModal("modal-pos-delete");
+}
+
+async function confirmDeletePos() {
+  const idInput = document.getElementById("pos-delete-id");
+  const targetId = idInput ? idInput.value : "";
+
+  const index = posScheduleList.findIndex(p => String(p.id) === String(targetId));
+  if (index !== -1) {
+    const deletedItem = posScheduleList[index];
+    const deletedDate = deletedItem.date;
+    posScheduleList.splice(index, 1);
+    savePosSchedule();
+    closeModal("modal-pos-delete");
+    renderPosTable();
+    showToast(`Menghapus jadwal tanggal ${deletedDate}...`, "fa-solid fa-spinner fa-spin text-gold");
+
+    // Sync to Supabase
+    if (!supabaseClient) initSupabaseClient();
+    if (supabaseClient) {
+      try {
+        let query = supabaseClient.from("pos_schedule").delete();
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+        if (isUUID) {
+          query = query.eq("id", targetId);
+        } else {
+          query = query.eq("date", deletedDate);
+        }
+
+        const { error } = await query;
+        if (error) {
+          console.error("Supabase delete pos error:", error);
+          showToast(`Terhapus lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+        } else {
+          showToast(`Jadwal POS ${deletedDate} berhasil dihapus dari Supabase & Web!`, "fa-solid fa-trash-can text-gold");
+        }
+      } catch (err) {
+        console.error("Supabase delete pos exception:", err);
+      }
+    }
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function handleSubTabEditSubmit(e) {
   e.preventDefault();
   const progName = document.getElementById("edit-program-name").value;
   closeModal("modal-edit-subtab");
   showToast(`Perubahan susunan ${progName} berhasil disimpan! Siap sync ke Supabase.`, "fa-solid fa-floppy-disk text-gold");
 }
+
 
 function filterDirectory() {
   const input = document.getElementById("directory-search-input");
@@ -1097,6 +1694,393 @@ function filterDirectory() {
     const roleText = roleEl ? roleEl.textContent.toLowerCase() : "";
 
     if (nameText.includes(filter) || roleText.includes(filter)) {
+      item.style.display = "flex";
+    } else {
+      item.style.display = "none";
+    }
+  });
+}
+
+// ==========================================
+// 15. TABEL DIREKTORI JEMAAT & PENGURUS ENGINE (DINAMIS SUPABASE)
+// ==========================================
+// Data kontak sepenuhnya diambil secara aman & dinamis dari server Supabase
+const defaultDirectoryList = [];
+
+let directoryList = loadDirectoryData();
+let dirSortField = "category";
+let dirSortAsc = true;
+let dirSearchQuery = "";
+let dirCategoryFilter = "";
+
+function loadDirectoryData() {
+  const saved = localStorage.getItem("gmahk_directory_data");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Auto migrate any old majelis_anggota category to majelis_dept
+        parsed.forEach(item => {
+          if (item.category === "majelis_anggota") item.category = "majelis_dept";
+        });
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Failed to parse local directory data:", e);
+    }
+  }
+  return [];
+}
+
+function saveDirectoryData() {
+  localStorage.setItem("gmahk_directory_data", JSON.stringify(directoryList));
+  renderPublicDirectory();
+}
+
+async function fetchDirectoryFromSupabase() {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("directory")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.warn("Supabase fetch directory error:", error.message);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      directoryList = data.map(row => ({
+        id: row.id,
+        category: (row.category === "majelis_anggota" ? "majelis_dept" : row.category),
+        name: row.name,
+        role: row.role,
+        phone: row.phone,
+        avatarIcon: row.avatar_icon || "fa-user-shield"
+      }));
+      saveDirectoryData();
+      renderDirectoryTable();
+    }
+  } catch (err) {
+    console.warn("Error fetching directory from Supabase:", err);
+  }
+}
+
+function getCategoryBadge(cat) {
+  switch (cat) {
+    case "gembala":
+      return '<span class="badge-cat badge-gembala"><i class="fa-solid fa-crown"></i> Pendeta</span>';
+    case "officers":
+      return '<span class="badge-cat badge-officers"><i class="fa-solid fa-user-shield"></i> Officers</span>';
+    case "majelis_dept":
+    case "majelis_anggota":
+      return '<span class="badge-cat badge-majelis-dept"><i class="fa-solid fa-users"></i> Majelis Dept</span>';
+    default:
+      return `<span class="badge-cat">${escapeHtml(cat)}</span>`;
+  }
+}
+
+function cleanPhoneForWa(phone) {
+  if (!phone) return "";
+  let clean = phone.replace(/[^0-9]/g, "");
+  if (clean.startsWith("0")) {
+    clean = "62" + clean.substring(1);
+  }
+  return clean;
+}
+
+function renderDirectoryTable() {
+  const tbody = document.getElementById("directory-table-body");
+  const countDisp = document.getElementById("dir-count-displayed");
+  const countTotal = document.getElementById("dir-count-total");
+  if (!tbody) return;
+
+  const catFilterSelect = document.getElementById("directory-category-filter");
+  if (catFilterSelect) dirCategoryFilter = catFilterSelect.value;
+
+  let filtered = directoryList.filter(item => {
+    const itemCat = item.category === "majelis_anggota" ? "majelis_dept" : item.category;
+    if (dirCategoryFilter && itemCat !== dirCategoryFilter) return false;
+    if (!dirSearchQuery) return true;
+    const q = dirSearchQuery.toLowerCase();
+    return (item.name && item.name.toLowerCase().includes(q)) ||
+           (item.role && item.role.toLowerCase().includes(q)) ||
+           (item.phone && item.phone.toLowerCase().includes(q)) ||
+           (itemCat && itemCat.toLowerCase().includes(q));
+  });
+
+  filtered.sort((a, b) => {
+    let valA = (a[dirSortField] || "").toLowerCase();
+    let valB = (b[dirSortField] || "").toLowerCase();
+    if (valA < valB) return dirSortAsc ? -1 : 1;
+    if (valA > valB) return dirSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  if (countDisp) countDisp.textContent = filtered.length;
+  if (countTotal) countTotal.textContent = directoryList.length;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+          <i class="fa-solid fa-address-book" style="font-size: 1.8rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+          Tidak ada data kontak direktori yang sesuai.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => `
+    <tr>
+      <td>${getCategoryBadge(item.category)}</td>
+      <td style="font-weight: 700; color: var(--text-main);">${escapeHtml(item.name)}</td>
+      <td class="td-officer">${escapeHtml(item.role)}</td>
+      <td>
+        <a href="https://wa.me/${cleanPhoneForWa(item.phone)}" target="_blank" rel="noopener" style="color: #059669; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-family: monospace; font-size: 0.88rem;">
+          <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(item.phone)}
+        </a>
+      </td>
+      <td class="th-actions">
+        <div class="td-actions-wrap">
+          <button class="btn-table-edit" onclick="openEditDirectoryModal('${item.id}')" title="Edit Kontak">Edit</button>
+          <button class="btn-table-delete" onclick="openDeleteDirectoryModal('${item.id}')" title="Hapus Kontak">Hapus</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function sortDirectoryTable(field) {
+  if (dirSortField === field) {
+    dirSortAsc = !dirSortAsc;
+  } else {
+    dirSortField = field;
+    dirSortAsc = true;
+  }
+
+  const fields = ["category", "name", "role", "phone"];
+  fields.forEach(f => {
+    const icon = document.getElementById(`sort-icon-dir-${f}`);
+    if (icon) {
+      icon.className = (f === dirSortField)
+        ? (dirSortAsc ? "fa-solid fa-sort-up th-sort-icon text-burgundy" : "fa-solid fa-sort-down th-sort-icon text-burgundy")
+        : "fa-solid fa-sort th-sort-icon";
+    }
+  });
+  renderDirectoryTable();
+}
+
+function filterDirectoryTable() {
+  const input = document.getElementById("directory-table-search");
+  const clearBtn = document.getElementById("directory-search-clear");
+  if (input) {
+    dirSearchQuery = input.value.trim();
+    if (clearBtn) clearBtn.style.display = dirSearchQuery ? "block" : "none";
+  }
+  renderDirectoryTable();
+}
+
+function clearDirectorySearch() {
+  const input = document.getElementById("directory-table-search");
+  const clearBtn = document.getElementById("directory-search-clear");
+  if (input) input.value = "";
+  if (clearBtn) clearBtn.style.display = "none";
+  dirSearchQuery = "";
+  renderDirectoryTable();
+}
+
+function openAddDirectoryModal() {
+  const form = document.getElementById("directory-add-form");
+  if (form) form.reset();
+  openModal("modal-directory-add");
+}
+
+async function handleSaveNewDirectory(e) {
+  e.preventDefault();
+  const cat = document.getElementById("dir-add-category").value;
+  const name = document.getElementById("dir-add-name").value.trim();
+  const role = document.getElementById("dir-add-role").value.trim();
+  const phone = document.getElementById("dir-add-phone").value.trim();
+
+  let avatarIcon = "fa-user-shield";
+  if (cat === "gembala") avatarIcon = "fa-user-tie";
+  else if (role.toLowerCase().includes("sekretaris")) avatarIcon = "fa-file-signature";
+  else if (role.toLowerCase().includes("bendahara")) avatarIcon = "fa-vault";
+  else if (role.toLowerCase().includes("musik")) avatarIcon = "fa-music";
+
+  const tempId = "dir-" + Date.now();
+  const newItem = { id: tempId, category: cat, name, role, phone, avatarIcon };
+
+  directoryList.push(newItem);
+  saveDirectoryData();
+  closeModal("modal-directory-add");
+  renderDirectoryTable();
+  showToast(`Menyimpan kontak ${name}...`, "fa-solid fa-spinner fa-spin text-gold");
+
+  if (!supabaseClient) initSupabaseClient();
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from("directory").insert([{
+        category: cat, name, role, phone, avatar_icon: avatarIcon
+      }]).select();
+
+      if (error) {
+        showToast(`Tersimpan lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+      } else if (data && data[0]) {
+        newItem.id = data[0].id;
+        saveDirectoryData();
+        renderDirectoryTable();
+        showToast(`Kontak ${name} (${role}) tersimpan di Supabase!`, "fa-solid fa-circle-check text-emerald");
+      }
+    } catch (err) {
+      console.error("Supabase insert directory exception:", err);
+    }
+  }
+}
+
+function openEditDirectoryModal(id) {
+  const item = directoryList.find(d => String(d.id) === String(id));
+  if (!item) return;
+
+  document.getElementById("dir-edit-id").value = item.id;
+  document.getElementById("dir-edit-category").value = (item.category === "majelis_anggota" ? "majelis_dept" : item.category);
+  document.getElementById("dir-edit-name").value = item.name;
+  document.getElementById("dir-edit-role").value = item.role;
+  document.getElementById("dir-edit-phone").value = item.phone;
+  openModal("modal-directory-edit");
+}
+
+async function handleUpdateDirectory(e) {
+  e.preventDefault();
+  const id = document.getElementById("dir-edit-id").value;
+  const cat = document.getElementById("dir-edit-category").value;
+  const name = document.getElementById("dir-edit-name").value.trim();
+  const role = document.getElementById("dir-edit-role").value.trim();
+  const phone = document.getElementById("dir-edit-phone").value.trim();
+
+  const index = directoryList.findIndex(d => String(d.id) === String(id));
+  if (index !== -1) {
+    const oldItem = { ...directoryList[index] };
+    directoryList[index] = { ...directoryList[index], category: cat, name, role, phone };
+    saveDirectoryData();
+    closeModal("modal-directory-edit");
+    renderDirectoryTable();
+
+    if (!supabaseClient) initSupabaseClient();
+    if (supabaseClient) {
+      try {
+        let query = supabaseClient.from("directory").update({ category: cat, name, role, phone });
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
+        
+        if (error) {
+          showToast(`Tersimpan lokal. (Supabase error: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+        } else {
+          showToast(`Kontak ${name} berhasil diperbarui di Supabase!`, "fa-solid fa-circle-check text-emerald");
+        }
+      } catch (err) {
+        console.error("Supabase update directory exception:", err);
+      }
+    }
+  }
+}
+
+function openDeleteDirectoryModal(id) {
+  const item = directoryList.find(d => String(d.id) === String(id));
+  if (!item) return;
+  document.getElementById("dir-delete-id").value = item.id;
+  document.getElementById("dir-delete-name-text").textContent = `${item.name} (${item.role})`;
+  openModal("modal-directory-delete");
+}
+
+async function confirmDeleteDirectory() {
+  const id = document.getElementById("dir-delete-id").value;
+  const index = directoryList.findIndex(d => String(d.id) === String(id));
+  if (index !== -1) {
+    const deletedItem = directoryList[index];
+    directoryList.splice(index, 1);
+    saveDirectoryData();
+    closeModal("modal-directory-delete");
+    renderDirectoryTable();
+
+    if (!supabaseClient) initSupabaseClient();
+    if (supabaseClient) {
+      try {
+        let query = supabaseClient.from("directory").delete();
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", deletedItem.name));
+        
+        if (error) {
+          showToast(`Gagal hapus di Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
+        } else {
+          showToast(`Kontak ${deletedItem.name} berhasil dihapus!`, "fa-solid fa-trash-can text-gold");
+        }
+      } catch (err) {
+        console.error("Supabase delete directory exception:", err);
+      }
+    }
+  }
+}
+
+function renderPublicDirectory() {
+  const container = document.getElementById("directory-content");
+  if (!container) return;
+
+  if (!directoryList || directoryList.length === 0) {
+    container.innerHTML = `
+      <div class="directory-loading" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-burgundy);"></i>
+        <span style="font-size: 0.95rem; font-weight: 500;">Memuat data direktori dari database Supabase...</span>
+      </div>
+    `;
+    return;
+  }
+
+  const categories = [
+    { key: "gembala", title: '<i class="fa-solid fa-crown text-gold"></i> Pendeta / Gembala Jemaat' },
+    { key: "officers", title: '<i class="fa-solid fa-user-gear text-burgundy"></i> Officers Jemaat' },
+    { key: "majelis_dept", title: '<i class="fa-solid fa-users-line text-gold"></i> Majelis & Pengurus Departemen' }
+  ];
+
+  container.innerHTML = categories.map((cat, idx) => {
+    const items = directoryList.filter(d => (d.category === "majelis_anggota" ? "majelis_dept" : d.category) === cat.key);
+    if (items.length === 0) return "";
+    return `
+      <div class="directory-section-title ${idx > 0 ? 'mt-4' : ''}">${cat.title}</div>
+      <div class="directory-grid">${items.map(item => `
+        <div class="directory-card dir-item">
+          <div class="directory-info">
+            <div class="directory-avatar"><i class="fa-solid ${item.avatarIcon || 'fa-user-shield'}"></i></div>
+            <div class="directory-details">
+              <h5 class="dir-name">${escapeHtml(item.name)}</h5>
+              <p class="dir-role">${escapeHtml(item.role)}</p>
+              <span class="directory-phone">${escapeHtml(item.phone)}</span>
+            </div>
+          </div>
+          <a href="https://wa.me/${cleanPhoneForWa(item.phone)}" target="_blank" rel="noopener" class="btn-wa-contact"><i class="fa-brands fa-whatsapp"></i> Hubungi WA</a>
+        </div>`).join("")}
+      </div>`;
+  }).join("");
+}
+
+function filterDirectory() {
+  const input = document.getElementById("directory-search-input");
+  if (!input) return;
+  const filter = input.value.toLowerCase().trim();
+  const items = document.querySelectorAll("#directory-content .dir-item");
+
+  items.forEach(item => {
+    const nameEl = item.querySelector(".dir-name");
+    const roleEl = item.querySelector(".dir-role");
+    const nameText = nameEl ? nameEl.textContent.toLowerCase() : "";
+    const roleText = roleEl ? roleEl.textContent.toLowerCase() : "";
+
+    if (!filter || nameText.includes(filter) || roleText.includes(filter)) {
       item.style.display = "flex";
     } else {
       item.style.display = "none";

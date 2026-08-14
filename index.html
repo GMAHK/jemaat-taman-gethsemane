@@ -57,7 +57,7 @@
           </div>
           <div class="header-actions">
             <button id="btn-admin-login" class="header-btn btn-admin-nav" title="Login Admin / Pengurus" onclick="handleAdminNavClick()">
-              <i class="fa-solid fa-user-gear"></i> <span id="admin-btn-text" class="admin-btn-label">Login Admin</span>
+              <i id="admin-btn-icon" class="fa-solid fa-user-gear"></i> <span id="admin-btn-text" class="admin-btn-label">Login Admin</span>
             </button>
             <button id="btn-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang">
               <i class="fa-solid fa-moon"></i>
@@ -453,202 +453,13 @@
               </div>
             </div>
 
-            <!-- Directory Categorized Grid -->
+            <!-- Directory Categorized Grid (Dimuat Secara Dinamis dari Supabase) -->
             <div class="section-container mt-3">
               <div id="directory-content">
-
-                <!-- Section 1: Gembala Jemaat -->
-                <div class="directory-section-title">
-                  <i class="fa-solid fa-crown text-gold"></i> Gembala Jemaat
+                <div class="directory-loading" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-burgundy);"></i>
+                  <span style="font-size: 0.95rem; font-weight: 500;">Memuat data direktori dari database Supabase...</span>
                 </div>
-                <div class="directory-grid">
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-user-tie"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Pdt. Benny Lumbantobing</h5>
-                        <p class="dir-role">Gembala Jemaat</p>
-                        <span class="directory-phone">+62 812-3456-7890</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567890?text=Syalom%20Pendeta,%20saya%20jemaat%20GMAHK%20Taman%20Gethsemane..." target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-                </div>
-
-                <!-- Section 2: Officers Jemaat (Hanya 4 Officers) -->
-                <div class="directory-section-title mt-4">
-                  <i class="fa-solid fa-user-gear text-burgundy"></i> Officers Jemaat
-                </div>
-                <div class="directory-grid">
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-user-shield"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Bpk. Agus</h5>
-                        <p class="dir-role">Ketua Jemaat</p>
-                        <span class="directory-phone">+62 812-3456-7891</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567891" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-user-shield"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Bpk. Yonas Subagyo</h5>
-                        <p class="dir-role">Ketua Jemaat</p>
-                        <span class="directory-phone">+62 812-3456-7899</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567899" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-file-signature"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Ibu Dyah</h5>
-                        <p class="dir-role">Sekretaris Jemaat</p>
-                        <span class="directory-phone">+62 812-3456-7892</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567892" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-vault"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Bpk. Irfan</h5>
-                        <p class="dir-role">Bendahara Jemaat</p>
-                        <span class="directory-phone">+62 812-3456-7893</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567893" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-                </div>
-
-                <!-- Section 3: Majelis & Pengurus Departemen -->
-                <div class="directory-section-title mt-4">
-                  <i class="fa-solid fa-users-line text-gold"></i> Majelis & Pengurus Departemen
-                </div>
-                <div class="directory-grid">
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-users"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Sdra. Hansell</h5>
-                        <p class="dir-role">Ketua Pemuda Advent (PA)</p>
-                        <span class="directory-phone">+62 812-3456-7894</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567894" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-hand-holding-heart"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Sdra. Ricky</h5>
-                        <p class="dir-role">Kepala Diakon</p>
-                        <span class="directory-phone">+62 812-3456-7895</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567895" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-heart"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Ibu Ummi</h5>
-                        <p class="dir-role">Kepala Diakones</p>
-                        <span class="directory-phone">+62 812-3456-7896</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567896" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-                </div>
-
-                <!-- Section 3: Anggota Majelis Jemaat -->
-                <div class="directory-section-title mt-4">
-                  <i class="fa-solid fa-users-line text-gold"></i> Anggota Majelis Jemaat
-                </div>
-                <div class="directory-grid">
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-book-open"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Bpk. Frans</h5>
-                        <p class="dir-role">Majelis / Pemateri SS</p>
-                        <span class="directory-phone">+62 812-3456-7897</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567897" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-bullhorn"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Bpk. Micky K</h5>
-                        <p class="dir-role">Majelis / Pelayanan Perorangan</p>
-                        <span class="directory-phone">+62 812-3456-7898</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567898" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-tower-cell"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Sdra. Misaell</h5>
-                        <p class="dir-role">Majelis / Komunikasi & Media</p>
-                        <span class="directory-phone">+62 812-3456-7899</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567899" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-
-                  <div class="directory-card dir-item">
-                    <div class="directory-info">
-                      <div class="directory-avatar"><i class="fa-solid fa-music"></i></div>
-                      <div class="directory-details">
-                        <h5 class="dir-name">Sdra. Fabian</h5>
-                        <p class="dir-role">Majelis / Pelayanan Musik</p>
-                        <span class="directory-phone">+62 812-3456-7900</span>
-                      </div>
-                    </div>
-                    <a href="https://wa.me/6281234567900" target="_blank" rel="noopener" class="btn-wa-contact">
-                      <i class="fa-brands fa-whatsapp"></i> Hubungi WA
-                    </a>
-                  </div>
-                </div>
-
               </div>
             </div>
           </div>
@@ -761,6 +572,260 @@
         </div>
       </nav>
 
+    </div>
+
+    <!-- ==================== ADMIN DATABASE VIEW DASHBOARD ==================== -->
+    <div id="admin-database-view" class="admin-database-view" style="display: none;">
+      <!-- Admin Top Navigation Bar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button id="btn-back-to-webapp" class="btn-back-webapp" onclick="closeAdminDatabaseView()" title="Kembali ke Web App">
+            <i class="fa-solid fa-arrow-left"></i> <span>Kembali ke Web App</span>
+          </button>
+          <div class="admin-session-badge">
+            <span class="pulse-indicator"></span>
+            <span class="session-label"><i class="fa-solid fa-shield-halved"></i> Sesi Admin Aktif</span>
+          </div>
+        </div>
+        <div class="admin-topbar-right">
+          <button id="btn-admin-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang" onclick="toggleTheme()">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="btn-admin-logout" onclick="openModal('modal-logout-confirm')" title="Keluar / Logout Admin">
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Admin Dashboard Body Container -->
+      <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+          <div class="sidebar-heading-box">
+            <span class="sidebar-heading-text">TABEL DATABASE</span>
+          </div>
+          <nav class="sidebar-nav">
+            <button class="sidebar-tab-btn active" data-dbtab="pos" onclick="switchAdminDbTab('pos')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-table-list"></i></div>
+              <span class="tab-label">Tabel POS</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="directory" onclick="switchAdminDbTab('directory')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-address-book"></i></div>
+              <span class="tab-label">Tabel Direktori</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="sekolah-sabat" onclick="switchAdminDbTab('sekolah-sabat')">
+              <div class="tab-icon-wrap"><i class="fa-regular fa-square-check"></i></div>
+              <span class="tab-label">Sekolah Sabat</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="khotbah" onclick="switchAdminDbTab('khotbah')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <span class="tab-label">Tabel Khotbah</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="pemuda-advent" onclick="switchAdminDbTab('pemuda-advent')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-people-group"></i></div>
+              <span class="tab-label">Pemuda Advent</span>
+            </button>
+          </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main">
+          <!-- Panel: Tabel POS -->
+          <section id="panel-pos" class="admin-panel active">
+            <!-- Header Section -->
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel POS (Pianist, Operator, Soundman)</h2>
+                <p class="panel-subtitle">Kelola data jadwal ibadah permanen di database server Supabase</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" onclick="shiftPosWeek(1)" title="Majukan Tanggal Semua Baris 1 Minggu ke Depan (+7 Hari)">
+                  <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
+                </button>
+                <button class="btn-shift-week" onclick="shiftPosWeek(-1)" title="Mundurkan Tanggal Semua Baris 1 Minggu ke Belakang (-7 Hari)">
+                  <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-add-data" onclick="openAddPosModal()">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Toolbar -->
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="pos-table-search" class="table-search-input" placeholder="Cari tanggal atau nama petugas (Meakhel, Fabian, Fahrell, dll)..." onkeyup="filterPosTable()">
+                <button id="pos-search-clear" class="btn-clear-search" onclick="clearPosSearch()" style="display: none;">&times;</button>
+              </div>
+              <div class="table-stats-badge" id="pos-table-stats">
+                Menampilkan <strong id="pos-count-displayed">0</strong> dari <strong id="pos-count-total">0</strong> jadwal
+              </div>
+            </div>
+
+            <!-- Table Card Container -->
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead>
+                    <tr>
+                      <th class="th-date sortable" onclick="sortPosTable('date')">
+                        <div class="th-content">
+                          <span>Tanggal</span>
+                          <i class="fa-solid fa-sort-down th-sort-icon" id="sort-icon-date"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortPosTable('pianist')">
+                        <div class="th-content">
+                          <span>Pianist</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-pianist"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortPosTable('operator')">
+                        <div class="th-content">
+                          <span>Operator</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-operator"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortPosTable('soundman')">
+                        <div class="th-content">
+                          <span>Soundman</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-soundman"></i>
+                        </div>
+                      </th>
+                      <th class="th-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pos-table-body">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Panel: Tabel Direktori Jemaat & Pengurus -->
+          <section id="panel-directory" class="admin-panel">
+            <!-- Header Section -->
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Direktori Jemaat & Pengurus</h2>
+                <p class="panel-subtitle">Kelola nama, jabatan, kategori pelayan, dan nomor telepon WhatsApp</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-add-data" onclick="openAddDirectoryModal()">
+                  <i class="fa-solid fa-user-plus"></i> <span>Tambah Kontak</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Toolbar -->
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="directory-table-search" class="table-search-input" placeholder="Cari nama, jabatan, atau nomor telepon..." onkeyup="filterDirectoryTable()">
+                <button id="directory-search-clear" class="btn-clear-search" onclick="clearDirectorySearch()" style="display: none;">&times;</button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <select id="directory-category-filter" class="form-input-styled" style="padding: 7px 12px; font-size: 0.82rem; width: auto; font-weight: 600;" onchange="filterDirectoryTable()">
+                  <option value="">Semua Kategori (3 Kategori)</option>
+                  <option value="gembala">1. Pendeta / Gembala Jemaat</option>
+                  <option value="officers">2. Officers Jemaat</option>
+                  <option value="majelis_dept">3. Majelis & Pengurus Departemen</option>
+                </select>
+                <div class="table-stats-badge" id="directory-table-stats">
+                  Menampilkan <strong id="dir-count-displayed">0</strong> dari <strong id="dir-count-total">0</strong> kontak
+                </div>
+              </div>
+            </div>
+
+            <!-- Table Card Container -->
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead>
+                    <tr>
+                      <th class="sortable" onclick="sortDirectoryTable('category')">
+                        <div class="th-content">
+                          <span>Kategori</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-category"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortDirectoryTable('name')">
+                        <div class="th-content">
+                          <span>Nama Lengkap</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-name"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortDirectoryTable('role')">
+                        <div class="th-content">
+                          <span>Jabatan / Pelayanan</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-role"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortDirectoryTable('phone')">
+                        <div class="th-content">
+                          <span>Nomor Telepon / WA</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-phone"></i>
+                        </div>
+                      </th>
+                      <th class="th-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="directory-table-body">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Panel: Sekolah Sabat (Placeholder ready) -->
+          <section id="panel-sekolah-sabat" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Sekolah Sabat</h2>
+                <p class="panel-subtitle">Kelola susunan program dan petugas Sekolah Sabat GMAHK Taman Gethsemane</p>
+              </div>
+            </div>
+            <div class="admin-placeholder-card">
+              <div class="placeholder-icon-wrap"><i class="fa-regular fa-square-check"></i></div>
+              <h3>Modul Tabel Sekolah Sabat</h3>
+              <p>Struktur kolom dan integrasi database untuk Sekolah Sabat siap dikonfigurasi pada langkah berikutnya sesuai arahan Anda.</p>
+            </div>
+          </section>
+
+          <!-- Panel: Tabel Khotbah (Placeholder ready) -->
+          <section id="panel-khotbah" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Khotbah (Kebaktian Utama)</h2>
+                <p class="panel-subtitle">Kelola pengkhotbah, tema khotbah, dan petugas mimbar ibadah Sabat</p>
+              </div>
+            </div>
+            <div class="admin-placeholder-card">
+              <div class="placeholder-icon-wrap"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <h3>Modul Tabel Khotbah</h3>
+              <p>Struktur kolom dan integrasi data Khotbah siap dikonfigurasi pada langkah berikutnya sesuai arahan Anda.</p>
+            </div>
+          </section>
+
+          <!-- Panel: Pemuda Advent (Placeholder ready) -->
+          <section id="panel-pemuda-advent" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Pemuda Advent (PA)</h2>
+                <p class="panel-subtitle">Kelola jadwal acara Pemuda Advent, pembicara, dan pengisi acara</p>
+              </div>
+            </div>
+            <div class="admin-placeholder-card">
+              <div class="placeholder-icon-wrap"><i class="fa-solid fa-people-group"></i></div>
+              <h3>Modul Tabel Pemuda Advent</h3>
+              <p>Struktur kolom dan integrasi database Pemuda Advent siap dikonfigurasi pada langkah berikutnya sesuai arahan Anda.</p>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   </div>
 
@@ -1068,6 +1133,264 @@
     </div>
   </div>
 
+  <!-- Modal: Tambah Data Jadwal POS -->
+  <div id="modal-pos-add" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+            <i class="fa-solid fa-calendar-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Jadwal POS</h4>
+            <span class="auth-subtitle">Pianist, Operator & Soundman</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-pos-add')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="pos-add-form" onsubmit="handleSaveNewPos(event)">
+          <div class="form-group">
+            <label class="form-label">Tanggal Ibadah Sabat</label>
+            <input type="date" id="pos-add-date" class="form-input-styled" required>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Pianist</label>
+            <input type="text" id="pos-add-pianist" placeholder="Contoh: Sdra. Meakhel" class="form-input-styled" required list="pos-officer-suggestions">
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Operator</label>
+            <input type="text" id="pos-add-operator" placeholder="Contoh: Sdra. Fabian" class="form-input-styled" required list="pos-officer-suggestions">
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Soundman</label>
+            <input type="text" id="pos-add-soundman" placeholder="Contoh: Sdra. Fahrell" class="form-input-styled" required list="pos-officer-suggestions">
+          </div>
+
+          <datalist id="pos-officer-suggestions">
+            <option value="Sdra. Meakhel"></option>
+            <option value="Sdra. Fabian"></option>
+            <option value="Sdra. Fahrell"></option>
+            <option value="Sdra. Misaell"></option>
+            <option value="Sdra. Ricky"></option>
+            <option value="Sdra. Jimmy"></option>
+            <option value="Sdra. Hansell"></option>
+          </datalist>
+
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Jadwal ke Database</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Data Jadwal POS -->
+  <div id="modal-pos-edit" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Edit Jadwal POS</h4>
+            <span class="auth-subtitle">Pianist, Operator & Soundman</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-pos-edit')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="pos-edit-form" onsubmit="handleUpdatePos(event)">
+          <input type="hidden" id="pos-edit-id">
+          <div class="form-group">
+            <label class="form-label">Tanggal Ibadah Sabat</label>
+            <input type="date" id="pos-edit-date" class="form-input-styled" required>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Pianist</label>
+            <input type="text" id="pos-edit-pianist" class="form-input-styled" required list="pos-officer-suggestions">
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Operator</label>
+            <input type="text" id="pos-edit-operator" class="form-input-styled" required list="pos-officer-suggestions">
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Soundman</label>
+            <input type="text" id="pos-edit-soundman" class="form-input-styled" required list="pos-officer-suggestions">
+          </div>
+
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+            <i class="fa-solid fa-check"></i> <span>Perbarui Jadwal</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Hapus Jadwal POS -->
+  <div id="modal-pos-delete" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-trash-can"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
+            <span class="auth-subtitle" style="color: #ef4444;">Tabel POS</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-pos-delete')">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="padding: 24px;">
+        <input type="hidden" id="pos-delete-id">
+        <p style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+          Hapus jadwal ibadah tanggal <span id="pos-delete-date-text" style="color: #ef4444; font-family: monospace;">-</span>?
+        </p>
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Data jadwal petugas ini akan dihapus dari database server Supabase.
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-subtab-pill" style="flex: 1; padding: 11px; font-weight: 700; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main);" onclick="closeModal('modal-pos-delete')">
+            Batal
+          </button>
+          <button class="btn-primary" style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="confirmDeletePos()">
+            <i class="fa-solid fa-trash-can"></i> Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Kontak Direktori -->
+  <div id="modal-directory-add" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Kontak Direktori</h4>
+            <span class="auth-subtitle">Pengurus & Majelis Jemaat</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-directory-add')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="directory-add-form" onsubmit="handleSaveNewDirectory(event)">
+          <div class="form-group">
+            <label class="form-label">Kategori Pelayanan</label>
+            <select id="dir-add-category" class="form-input-styled" required>
+              <option value="gembala">Pendeta / Gembala Jemaat</option>
+              <option value="officers">Officers Jemaat</option>
+              <option value="majelis_dept">Majelis & Pengurus Departemen</option>
+            </select>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" id="dir-add-name" placeholder="Contoh: Pdt. Benny Lumbantobing / Bpk. Agus" class="form-input-styled" required>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Jabatan / Peran</label>
+            <input type="text" id="dir-add-role" placeholder="Contoh: Gembala Jemaat / Ketua Jemaat / Sekretaris" class="form-input-styled" required>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nomor WhatsApp / Telepon</label>
+            <input type="tel" id="dir-add-phone" placeholder="Contoh: +62 812-3456-7890" class="form-input-styled" required>
+          </div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan ke Database</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Kontak Direktori -->
+  <div id="modal-directory-edit" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+            <i class="fa-solid fa-user-pen"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Edit Kontak Direktori</h4>
+            <span class="auth-subtitle">Ubah Nama & Nomor Telepon</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-directory-edit')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="directory-edit-form" onsubmit="handleUpdateDirectory(event)">
+          <input type="hidden" id="dir-edit-id">
+          <div class="form-group">
+            <label class="form-label">Kategori Pelayanan</label>
+            <select id="dir-edit-category" class="form-input-styled" required>
+              <option value="gembala">Pendeta / Gembala Jemaat</option>
+              <option value="officers">Officers Jemaat</option>
+              <option value="majelis_dept">Majelis & Pengurus Departemen</option>
+            </select>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" id="dir-edit-name" class="form-input-styled" required>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Jabatan / Peran</label>
+            <input type="text" id="dir-edit-role" class="form-input-styled" required>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nomor WhatsApp / Telepon</label>
+            <input type="tel" id="dir-edit-phone" class="form-input-styled" required>
+          </div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+            <i class="fa-solid fa-check"></i> <span>Perbarui Kontak</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Hapus Kontak Direktori -->
+  <div id="modal-directory-delete" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-trash-can"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
+            <span class="auth-subtitle" style="color: #ef4444;">Kontak Direktori</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-directory-delete')">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="padding: 24px;">
+        <input type="hidden" id="dir-delete-id">
+        <p style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+          Hapus kontak <span id="dir-delete-name-text" style="color: #ef4444;">-</span>?
+        </p>
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Kontak ini akan dihapus dari direktori jemaat dan database server Supabase.
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-subtab-pill" style="flex: 1; padding: 11px; font-weight: 700; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main);" onclick="closeModal('modal-directory-delete')">
+            Batal
+          </button>
+          <button class="btn-primary" style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="confirmDeleteDirectory()">
+            <i class="fa-solid fa-trash-can"></i> Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Lightbox Modal for Photo Gallery -->
   <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
     <div class="lightbox-container" onclick="event.stopPropagation()">
@@ -1090,6 +1413,9 @@
     <i id="toast-icon" class="fa-solid fa-check-circle"></i>
     <span id="toast-message">Pesan notifikasi</span>
   </div>
+
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- JavaScript File -->
   <script src="script.js"></script>
