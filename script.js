@@ -31,24 +31,10 @@ const galleryData = [
   }
 ];
 
-// Sample Hymnal / Lagu Zion Collection
-const hymnalSongs = [
-  { num: 1, title: "Di Hadapan Hadirat-Mu (LSEL 1)" },
-  { num: 3, title: "Suci, Suci, Suci! Tuhan Maha Kuasa" },
-  { num: 12, title: "Hari Sabat yang Kudus" },
-  { num: 24, title: "Pujilah Tuhan, Sang Raja" },
-  { num: 45, title: "Kasih Allah Lebih Besar" },
-  { num: 88, title: "Hadirat-Mu Membawa Damai" },
-  { num: 110, title: "Batu Zaman yang Terbelah" },
-  { num: 145, title: "Di Bawah Kepak Sayap-Nya" },
-  { num: 180, title: "Yesus Kawan yang Sejati" },
-  { num: 215, title: "Bekerja Selagi Hari Siang" },
-  { num: 240, title: "Tuhan Beserta Engkau Sampai Bertemu Lagi" },
-  { num: 260, title: "Bawa Persembahanmu (LSEL 260)" },
-  { num: 515, title: "Tuhan Ada Dalam Bait Allah (LSEL 515)" },
-  { num: 520, title: "Kami Datang Dalam Doa (LSEL 520)" },
-  { num: 523, title: "Tuhan Dengar Doa Kami (LSEL 523)" }
-];
+// Catalogs are loaded from Supabase; empty tables stay empty in the UI.
+let lselSongs = [];
+let aysSongs = [];
+let hymnalSongs = [];
 
 let currentLightboxIndex = 0;
 let userRatingScore = 0;
@@ -62,9 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initCountdown();
   initRatingSystem();
   initProgramTabs();
+  initWorshipSubTabs();
   initHymnal();
   initGlobalKeyboard();
-  initWorshipSubTabs();
   initAdminState();
   renderPublicDirectory();
 });
@@ -421,6 +407,7 @@ function initProgramTabs() {
 // ==========================================
 function initHymnal() {
   renderHymnalList(hymnalSongs);
+  fetchHymnalData();
 }
 
 function renderHymnalList(songs) {
@@ -435,8 +422,8 @@ function renderHymnalList(songs) {
   container.innerHTML = songs.map(s => `
     <div class="hymnal-item">
       <div>
-        <span class="hymnal-num">Lagu Zion No. ${s.num}</span>
-        <div class="hymnal-title">${s.title}</div>
+        <span class="hymnal-num">${s.book || "LSEL"} No. ${escapeHtml(String(s.num))}</span>
+        <div class="hymnal-title">${escapeHtml(s.title)}</div>
       </div>
       <button class="btn-copy" onclick="showToast('Nomor Lagu ${s.num} disalin')">
         <i class="fa-solid fa-bookmark"></i>
@@ -452,10 +439,49 @@ function filterHymnal() {
     return;
   }
 
-  const filtered = hymnalSongs.filter(s => 
-    s.num.toString().includes(query) || s.title.toLowerCase().includes(query)
+  const filtered = hymnalSongs.filter(s =>
+    String(s.num).includes(query) || s.title.toLowerCase().includes(query)
   );
   renderHymnalList(filtered);
+}
+
+async function fetchHymnalData() {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+
+  try {
+    const [{ data: lselData, error: lselError }, { data: aysData, error: aysError }] = await Promise.all([
+      supabaseClient.from("Tabel LSEL").select("id, nomor, judul").order("nomor", { ascending: true }),
+      supabaseClient.from("Tabel AYS").select("id, number, title").order("number", { ascending: true })
+    ]);
+
+    if (lselError) throw new Error(`Tabel LSEL: ${lselError.message}`);
+    if (aysError) throw new Error(`Tabel AYS: ${aysError.message}`);
+
+    if (lselData && lselData.length > 0) {
+      lselSongs = lselData.map(song => ({
+        id: song.id,
+        num: song.nomor,
+        title: song.judul,
+        book: "LSEL"
+      }));
+    }
+
+    if (aysData) {
+      aysSongs = aysData.map(song => ({
+        id: song.id,
+        num: song.number,
+        title: song.title,
+        book: "AYS"
+      }));
+    }
+
+    hymnalSongs = [...lselSongs, ...aysSongs];
+    renderHymnalList(hymnalSongs);
+    ["sabat-raya", "pa", "rabu-malam"].forEach(renderSubTab);
+  } catch (error) {
+    console.warn("Gagal mengambil katalog lagu dari Supabase:", error.message);
+  }
 }
 
 // ==========================================
@@ -565,68 +591,65 @@ function showToast(message, iconClass = "fa-solid fa-circle-check") {
 // ==========================================
 // 12. WORSHIP DATA ENGINE & INLINE EDITOR
 // ==========================================
-const WORSHIP_DATA_VERSION = "2.3";
+const WORSHIP_DATA_VERSION = "2.8";
 
 const defaultWorshipData = {
   "sabat-raya": {
-    title: "Ibadah Sabat Raya",
-    subtitle: "Sabtu, 15 Agustus 2026",
-    dateNum: "15",
-    dateMonth: "AGT",
+    title: "Susunan Ibadah Kebaktian Sabat Ke-12",
+    subtitle: "Sabtu, 19 September 2026",
+    dateNum: "19",
+    dateMonth: "SEP",
     generalInfo: [
-      { key: "Pianist", value: "Sdra. Meakhel" },
-      { key: "Operator", value: "Sdra. Fabian" },
-      { key: "Soundman", value: "Sdra. Fahrell" }
+      { key: "Pianis", value: "Sdri. Rachel Sianturi" }
     ],
     sections: [
       {
-        title: "II. Ibadah Sekolah Sabat (09:00 – 10:30)",
+        title: "Ibadah Sekolah Sabat (Pkl 09.00 - 10.00 WIB)",
         items: [
-          { time: "09:00", name: "Pemimpin Acara", officer: "Sdra. Misaell", type: "text" },
-          { time: "09:10", name: "Lagu Buka Sekolah Sabat", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "09:15", name: "Ayat Inti SS & Doa Buka", officer: "Ibu Dyah", type: "text" },
-          { time: "09:20", name: "Bacaan Berita Mission", officer: "Ibu Ummi", type: "text" },
-          { 
-            time: "09:30", 
-            name: "Diskusi Sekolah Sabat", 
-            type: "group", 
+          { time: "1", name: "Pemimpin Acara", officer: "Bpk. Michael", type: "text" },
+          { time: "2", name: "Lagu Buka", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "3", name: "Ayat Inti - Doa Buka", officer: "Ibu Eni", type: "text" },
+          { time: "4", name: "Berita Mission", officer: "Bpk. Okta", type: "text" },
+          {
+            time: "5",
+            name: "Diskusi Sekolah Sabat",
+            type: "group",
             highlight: true,
             subItems: [
-              { label: "Orang Muda", officer: "Sdra. Rolando" },
-              { label: "Orang Tua", officer: "Bpk. Frans" }
-            ] 
+              { label: "Orang Muda", officer: "Sdr. Hizkia" },
+              { label: "Orang Tua", officer: "Sdr. Sapto" }
+            ]
           },
-          { time: "09:55", name: "Lagu Pujian", officer: "-", type: "text" },
-          { time: "10:00", name: "Promosi Pelayanan Perorangan", officer: "Bpk. Micky K", type: "text" },
-          { time: "10:10", name: "Lagu Tutup Sekolah Sabat", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "10:15", name: "Doa Tutup Sekolah Sabat", officer: "Bpk. Micky K", type: "text" },
-          { time: "10:20", name: "Pengumuman Jemaat", officer: "Tua-Tua / Officers Jemaat", type: "text" },
-          { time: "10:25", name: "Cerita Alkitab Anak-Anak", officer: "-", type: "text" }
+          { time: "6", name: "Lagu Pujian", officer: "Orang Muda", type: "text" },
+          { time: "7", name: "Lagu Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "8", name: "Promosi Pelayanan Perorangan", officer: "Ibu Tabita", type: "text" },
+          { time: "9", name: "Diakon & Diakones", officer: "Sdr. Adit & Sdr. Diaz", type: "text" },
+          { time: "10", name: "Cerita Anak", officer: "Ibu Teresia", type: "text" }
         ]
       },
       {
-        title: "III. Ibadah Khotbah (10:30 – 12:00)",
+        title: "Ibadah Khotbah (Pkl 10.10 - 12.00 WIB)",
         items: [
-          { time: "10:30", name: "Diakon & Diakones Bertugas", officer: "Sdra. Ricky & Sdra. Jimmy", type: "text" },
-          { time: "10:35", name: "Pemimpin Lagu", officer: "Ibu Dyah", type: "text" },
-          { time: "10:38", name: "Lagu Pengiring Partisipan Mimbar", officer: "", type: "song", songBook: "LSEL No.", songNo: "515", songTitle: "Tuhan Ada Dalam Bait Allah" },
-          { time: "10:40", name: "Lagu Sambutan", officer: "", type: "song", songBook: "LSEL No.", songNo: "1", songTitle: "Di Hadapan Hadirat-Mu" },
-          { time: "10:43", name: "Doa Buka", officer: "Bpk. Agus", type: "text" },
-          { time: "10:46", name: "Pembacaan Ayat Bersahutan", officer: "Sdra. Rolando", type: "text" },
-          { time: "10:50", name: "Lagu Buka Kebaktian", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "10:55", name: "Lagu Pengantar Doa Syafaat", officer: "", type: "song", songBook: "LSEL No.", songNo: "520", songTitle: "Kami Datang Dalam Doa" },
-          { time: "10:58", name: "Doa Syafaat Bersama", officer: "Sdra. Rolando", type: "text" },
-          { time: "11:05", name: "Bacaan Persembahan & Persepuluhan", officer: "Bpk. Irfan", type: "text" },
-          { time: "11:08", name: "Lagu Persembahan", officer: "", type: "song", songBook: "LSEL No.", songNo: "260", songTitle: "Bawa Persembahanmu" },
-          { time: "11:12", name: "Doa Persembahan", officer: "Bpk. Irfan", type: "text" },
-          { time: "11:15", name: "Pembacaan Ayat Inti & Visi Misi", officer: "Bpk. Irfan", type: "text" },
-          { time: "11:18", name: "Lagu Tema", officer: "MISI KITA", type: "text" },
-          { time: "11:20", name: "Khotbah / Renungan Firman Tuhan", officer: "Bpk. Agus", type: "text", highlight: true },
-          { time: "11:50", name: "Lagu Tutup Kebaktian", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "11:55", name: "Doa Tutup", officer: "Pdt. Benny Lumbantobing", type: "text" },
-          { time: "11:58", name: "Lagu Sambutan Doa Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "523", songTitle: "Tuhan Dengar Doa Kami" }
+          { time: "1", name: "Lagu Pengiring Partisipan Mimbar", officer: "", type: "song", songBook: "LSEL No.", songNo: "515", songTitle: "" },
+          { time: "2", name: "Lagu Sambutan", officer: "", type: "song", songBook: "LSEL No.", songNo: "1 ayat 1", songTitle: "" },
+          { time: "3", name: "MC/Ayat Bersahutan", officer: "Bpk. William", type: "text" },
+          { time: "4", name: "Lagu Buka", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "5", name: "Doa Syafaat", officer: "Bpk. Warno", type: "text" },
+          { time: "6", name: "Bacaan Persembahan", officer: "Bpk. William", type: "text" },
+          { time: "7", name: "Lagu Persembahan", officer: "", type: "song", songBook: "LSEL No.", songNo: "260", songTitle: "" },
+          { time: "8", name: "Lagu Persembahan Lanjutan", officer: "", type: "song", songBook: "LSEL No.", songNo: "21", songTitle: "" },
+          { time: "9", name: "Doa Persembahan", officer: "Bpk. William", type: "text" },
+          { time: "10", name: "Lagu Pujian", officer: "Jemaat yang lahir bulan September - Desember", type: "text" },
+          { time: "11", name: "Ayat Inti & Visi Misi", officer: "Bpk. Warno", type: "text" },
+          { time: "12", name: "Lagu Tema", officer: "Misi Kita", type: "text" },
+          { time: "13", name: "Khotbah", officer: "Bpk. M Simangunsong", sermonTitle: "", type: "text", highlight: true },
+          { time: "15", name: "Lagu Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "16", name: "Doa Tutup", officer: "Bpk. M Sinangunsong", type: "text" }
         ]
       }
+    ],
+    notes: [
+      "Bagi partisipan yang berhalangan, diharapkan untuk mencari pengganti secara mandiri.",
     ]
   },
   "pa": {
@@ -658,27 +681,32 @@ const defaultWorshipData = {
     ]
   },
   "rabu-malam": {
-    title: "Persekutuan Doa Rabu Malam",
-    subtitle: "Rabu, 19 Agustus 2026",
-    dateNum: "19",
-    dateMonth: "AGT",
+    title: "Ibadah Permintaan Doa",
+    subtitle: "Rabu, 23 September 2026 | 19.00 WIB",
+    dateNum: "23",
+    dateMonth: "SEP",
     generalInfo: [
-      { key: "Host / Moderator", value: "Sdra. Ricky" }
+      { key: "Pianis", value: "Sdri. Rachel" }
     ],
     sections: [
       {
-        title: "Susunan Acara Persekutuan Doa",
+        title: "Susunan Acara Ibadah Permintaan Doa",
         items: [
-          { time: "1", name: "Host", officer: "-", type: "text" },
-          { time: "2", name: "MC & Doa Buka", officer: "-", type: "text" },
-          { time: "3", name: "Kesaksian", officer: "-", type: "text" },
-          { time: "4", name: "Lagu Pujian", officer: "Host", type: "text" },
-          { time: "5", name: "Doa Syafaat", officer: "-", type: "text" },
-          { time: "6", name: "Firman Tuhan", officer: "-", type: "text", highlight: true },
-          { time: "7", name: "Doa Tutup", officer: "-", type: "text" },
-          { time: "8", name: "Ucapan Terima Kasih & Pengumuman", officer: "Ketua Jemaat", type: "text" }
+          { time: "1", name: "Protokol & Doa Buka", officer: "Sdr. Alden", type: "text" },
+          { time: "2", name: "Lagu Buka", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "3", name: "Kesaksian-Kesaksian", officer: "Jemaat", type: "text" },
+          { time: "4", name: "Yang Didoakan", officer: "Keluarga Ibu Fenny", type: "text" },
+          { time: "5", name: "Renungan", officer: "Bpk. Warno (Minggu Sembahyang Pathfinder)", type: "text", highlight: true },
+          { time: "6", name: "Doa Syafaat", officer: "Ibu Yayuk", type: "text" },
+          { time: "7", name: "Lagu Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
+          { time: "8", name: "Doa Tutup", officer: "Bpk. Warno", type: "text" },
+          { time: "9", name: "Pengumuman", officer: "Ketua Jemaat / Officers Jemaat", type: "text" }
         ]
       }
+    ],
+    notes: [
+      "Seluruh yang melayani wajib berpakaian rapi. Pria menggunakan kemeja, dasi, atau batik; wanita menggunakan rok di bawah lutut.",
+      "Bagi yang berhalangan diharapkan mencari pengganti dan menginformasikannya supaya ibadah tetap berjalan dengan lancar."
     ]
   }
 };
@@ -686,6 +714,20 @@ const defaultWorshipData = {
 function loadWorshipData() {
   const savedVersion = localStorage.getItem("gmahk_worship_version");
   if (savedVersion !== WORSHIP_DATA_VERSION) {
+    const saved = localStorage.getItem("gmahk_worship_data");
+    if (saved) {
+      try {
+        const migratedData = JSON.parse(saved);
+        migratedData["sabat-raya"] = JSON.parse(JSON.stringify(defaultWorshipData["sabat-raya"]));
+        migratedData["rabu-malam"] = JSON.parse(JSON.stringify(defaultWorshipData["rabu-malam"]));
+        const syncedData = syncWorshipEventNames(migratedData);
+        localStorage.setItem("gmahk_worship_version", WORSHIP_DATA_VERSION);
+        localStorage.setItem("gmahk_worship_data", JSON.stringify(syncedData));
+        return syncedData;
+      } catch (e) {
+        console.warn("Migrate worship data error:", e);
+      }
+    }
     localStorage.setItem("gmahk_worship_version", WORSHIP_DATA_VERSION);
     localStorage.setItem("gmahk_worship_data", JSON.stringify(defaultWorshipData));
     return JSON.parse(JSON.stringify(defaultWorshipData));
@@ -693,12 +735,38 @@ function loadWorshipData() {
   const saved = localStorage.getItem("gmahk_worship_data");
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const syncedData = syncWorshipEventNames(JSON.parse(saved));
+      localStorage.setItem("gmahk_worship_data", JSON.stringify(syncedData));
+      return syncedData;
     } catch (e) {
       console.warn("Parse worship data error:", e);
     }
   }
   return JSON.parse(JSON.stringify(defaultWorshipData));
+}
+
+function syncWorshipEventNames(savedData) {
+  const syncedData = JSON.parse(JSON.stringify(savedData));
+
+  Object.keys(defaultWorshipData).forEach(key => {
+    const defaultProgram = defaultWorshipData[key];
+    const savedProgram = syncedData[key];
+    if (!savedProgram || !savedProgram.sections) return;
+
+    defaultProgram.sections.forEach((defaultSection, secIdx) => {
+      const savedSection = savedProgram.sections[secIdx];
+      if (!savedSection || !savedSection.items) return;
+
+      savedSection.title = defaultSection.title;
+      defaultSection.items.forEach((defaultItem, itemIdx) => {
+        if (savedSection.items[itemIdx]) {
+          savedSection.items[itemIdx].name = defaultItem.name;
+        }
+      });
+    });
+  });
+
+  return syncedData;
 }
 
 let worshipData = loadWorshipData();
@@ -718,6 +786,55 @@ function initWorshipSubTabs() {
   renderSubTab("rabu-malam");
 }
 
+function getUpcomingWorshipDate(targetDay) {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysUntilTarget = (targetDay - date.getDay() + 7) % 7;
+  date.setDate(date.getDate() + daysUntilTarget);
+  return date;
+}
+
+function formatWorshipDate(date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+function getSabbathNumberInQuarter(date) {
+  const quarterStartMonth = Math.floor(date.getMonth() / 3) * 3;
+  const quarterStart = new Date(date.getFullYear(), quarterStartMonth, 1);
+  const daysUntilFirstSaturday = (6 - quarterStart.getDay() + 7) % 7;
+  const firstSaturday = new Date(
+    date.getFullYear(),
+    quarterStartMonth,
+    1 + daysUntilFirstSaturday
+  );
+  const daysSinceFirstSaturday = Math.round((date - firstSaturday) / (24 * 60 * 60 * 1000));
+  return Math.floor(daysSinceFirstSaturday / 7) + 1;
+}
+
+function getDynamicWorshipTitle(key, fallbackTitle) {
+  if (key !== "sabat-raya") return fallbackTitle;
+
+  const upcomingSaturday = getUpcomingWorshipDate(6);
+  const sabbathNumber = getSabbathNumberInQuarter(upcomingSaturday);
+  return `Susunan Ibadah Kebaktian Sabat Ke-${sabbathNumber}`;
+}
+
+function getDynamicWorshipSubtitle(key) {
+  if (key === "rabu-malam") {
+    return `${formatWorshipDate(getUpcomingWorshipDate(3))} | 19.00 WIB`;
+  }
+
+  const dateText = formatWorshipDate(getUpcomingWorshipDate(6));
+  return key === "pa"
+    ? `Sabtu Sore, ${dateText.replace(/^Sabtu, /, "")}`
+    : `${dateText}`;
+}
+
 function renderSubTab(key) {
   const container = document.getElementById(`subtab-container-${key}`);
   if (!container) return;
@@ -731,10 +848,10 @@ function renderSubTab(key) {
     <div class="subtab-header-card">
       <div class="subtab-header-left">
         <div class="subtab-header-titles">
-          <h3>${data.title}</h3>
+          <h3>${escapeHtml(getDynamicWorshipTitle(key, data.title))}</h3>
           <div class="subtab-date-pill">
             <i class="fa-solid fa-calendar-day text-gold"></i>
-            <span>${data.subtitle}</span>
+            <span>${escapeHtml(getDynamicWorshipSubtitle(key))}</span>
           </div>
         </div>
       </div>
@@ -796,17 +913,24 @@ function renderSubTab(key) {
               <span class="lit-time">${item.time}</span>
               <div class="lit-info">
                 <div class="lit-main">
-                  <h5>${item.name}</h5>
+                  <h5>${escapeHtml(item.name)}</h5>
                 </div>
                 <div class="lit-right">
                   ${isEditing ? (
                     item.type === 'song' ? `
                       <div class="edit-song-group">
                         <span class="song-icon"><i class="fa-solid fa-music text-gold"></i></span>
-                        <input type="text" class="song-no-pill" placeholder="No." value="${escapeHtml(item.songNo || '')}"
-                          oninput="updateSongNo('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                        <div class="song-no-picker">
+                          <input type="text" class="song-no-pill" placeholder="No." value="${escapeHtml(item.songNo || '')}"
+                            oninput="updateSongNo('${key}', ${secIdx}, ${itemIdx}, this.value); showSongSuggestions(this, '${key}', ${secIdx}, ${itemIdx})"
+                            onfocus="showSongSuggestions(this, '${key}', ${secIdx}, ${itemIdx})"
+                            onblur="setTimeout(() => hideSongSuggestions(this), 150)">
+                        </div>
                         <input type="text" class="song-title-pill" placeholder="Judul Lagu..." value="${escapeHtml(item.songTitle || '')}"
-                          oninput="updateSongTitle('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                          oninput="updateSongTitle('${key}', ${secIdx}, ${itemIdx}, this.value); showSongSuggestions(this, '${key}', ${secIdx}, ${itemIdx})"
+                          onfocus="showSongSuggestions(this, '${key}', ${secIdx}, ${itemIdx})"
+                          onblur="setTimeout(() => hideSongSuggestions(this), 150)">
+                        <div class="song-suggestions" id="song-suggestions-${key}-${secIdx}-${itemIdx}"></div>
                       </div>
                     ` : (item.type === 'group' || item.subItems) ? `
                       <div class="edit-subitems-group">
@@ -819,8 +943,17 @@ function renderSubTab(key) {
                         `).join('')}
                       </div>
                     ` : `
-                      <input type="text" class="edit-pill-input" value="${escapeHtml(item.officer || '')}"
-                        oninput="updateOfficer('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                      ${item.sermonTitle !== undefined ? `
+                        <div class="sermon-edit-group">
+                          <input type="text" class="edit-pill-input" value="${escapeHtml(item.officer || '')}"
+                            oninput="updateOfficer('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                          <input type="text" class="edit-pill-input sermon-title-input" placeholder="Judul khotbah..." value="${escapeHtml(item.sermonTitle || '')}"
+                            oninput="updateSermonTitle('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                        </div>
+                      ` : `
+                        <input type="text" class="edit-pill-input" value="${escapeHtml(item.officer || '')}"
+                          oninput="updateOfficer('${key}', ${secIdx}, ${itemIdx}, this.value)">
+                      `}
                     `
                   ) : (
                     item.type === 'song' ? `
@@ -835,7 +968,14 @@ function renderSubTab(key) {
                         `).join('')}
                       </div>
                     ` : `
-                      <span class="lit-officer">${escapeHtml(item.officer || '-')}</span>
+                      ${item.sermonTitle !== undefined ? `
+                        <div class="sermon-meta">
+                          <span class="lit-officer">${escapeHtml(item.officer || '-')}</span>
+                          <span class="sermon-title-label">Judul: ${escapeHtml(item.sermonTitle || '-')}</span>
+                        </div>
+                      ` : `
+                        <span class="lit-officer">${escapeHtml(item.officer || '-')}</span>
+                      `}
                     `
                   )}
                 </div>
@@ -846,6 +986,17 @@ function renderSubTab(key) {
       </div>
     `;
   });
+
+  if (data.notes && data.notes.length > 0) {
+    html += `
+      <div class="worship-notes">
+        <h4><i class="fa-solid fa-note-sticky text-gold"></i> Catatan</h4>
+        <ol>
+          ${data.notes.map(note => `<li>${escapeHtml(note)}</li>`).join('')}
+        </ol>
+      </div>
+    `;
+  }
 
   container.innerHTML = html;
 }
@@ -858,11 +1009,75 @@ function escapeHtml(str) {
 function formatSongDisplay(item) {
   if (!item.songNo && !item.songTitle) return '-';
   const book = item.songBook || 'LSEL No.';
-  let res = `${book} ${item.songNo || ''}`;
-  if (item.songTitle) {
-    res += `: - "${item.songTitle}"`;
+  const catalog = /AYS/i.test(book) ? aysSongs : lselSongs;
+  const songNumber = String(item.songNo || '');
+  const catalogNumber = songNumber.match(/\d+/)?.[0];
+  const catalogSong = !item.songTitle && catalogNumber
+    ? catalog.find(song => String(song.num) === catalogNumber)
+    : null;
+  const songTitle = item.songTitle || (catalogSong && catalogSong.title);
+  let res = `${escapeHtml(book)} ${escapeHtml(songNumber)}`;
+  if (songTitle) {
+    res += `: - "${escapeHtml(songTitle)}"`;
   }
   return res;
+}
+
+function getSongCatalogForBook(songBook) {
+  return /AYS/i.test(songBook || '') ? aysSongs : lselSongs;
+}
+
+function showSongSuggestions(input, key, secIdx, itemIdx) {
+  const songGroup = input.closest('.edit-song-group');
+  const suggestions = songGroup && songGroup.querySelector('.song-suggestions');
+  if (!suggestions) return;
+
+  const item = worshipData[key]?.sections[secIdx]?.items[itemIdx];
+  const catalog = getSongCatalogForBook(item?.songBook);
+  const query = input.value.trim().toLowerCase();
+  const isNumberSearch = /^\d+$/.test(query);
+  const minimumCharacters = isNumberSearch ? 1 : 3;
+
+  if (!query || query.length < minimumCharacters) {
+    suggestions.innerHTML = '';
+    suggestions.classList.remove('show');
+    return;
+  }
+
+  const filtered = catalog
+    .filter(song => isNumberSearch
+      ? String(song.num).includes(query)
+      : String(song.title).toLowerCase().includes(query))
+    .slice(0, 8);
+
+  suggestions.innerHTML = filtered.map(song => `
+    <button type="button" class="song-suggestion-item"
+      data-key="${key}" data-sec="${secIdx}" data-item="${itemIdx}"
+      data-song-no="${escapeHtml(String(song.num))}"
+      data-song-title="${escapeHtml(String(song.title))}"
+      onmousedown="selectSongSuggestion(this); return false;">
+      <span class="song-suggestion-number">${escapeHtml(String(item?.songBook || 'LSEL No.'))} ${escapeHtml(String(song.num))}</span>
+      <span class="song-suggestion-title">${escapeHtml(String(song.title))}</span>
+    </button>
+  `).join('');
+
+  suggestions.classList.toggle('show', filtered.length > 0);
+}
+
+function hideSongSuggestions(input) {
+  const songGroup = input.closest('.edit-song-group');
+  const suggestions = songGroup && songGroup.querySelector('.song-suggestions');
+  if (suggestions) suggestions.classList.remove('show');
+}
+
+function selectSongSuggestion(button) {
+  const { key, sec, item, songNo, songTitle } = button.dataset;
+  if (!worshipData[key]?.sections[sec]?.items[item]) return;
+
+  worshipData[key].sections[sec].items[item].songNo = songNo;
+  worshipData[key].sections[sec].items[item].songTitle = songTitle;
+  saveWorshipDataToStorage();
+  renderSubTab(key);
 }
 
 function toggleEditSubTab(key) {
@@ -893,6 +1108,13 @@ function updateGenInfo(key, idx, val) {
 function updateOfficer(key, secIdx, itemIdx, val) {
   if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
     worshipData[key].sections[secIdx].items[itemIdx].officer = val;
+    saveWorshipDataToStorage();
+  }
+}
+
+function updateSermonTitle(key, secIdx, itemIdx, val) {
+  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
+    worshipData[key].sections[secIdx].items[itemIdx].sermonTitle = val;
     saveWorshipDataToStorage();
   }
 }
@@ -961,6 +1183,7 @@ function initAdminState() {
   syncNearestPosToWorship();
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
+  fetchSabbathProgramData();
 }
 
 function updateAdminUIState() {
@@ -1018,6 +1241,7 @@ function openAdminDatabaseView() {
   renderPosTable();
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
+  fetchSabbathProgramData();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1113,23 +1337,25 @@ async function handleAdminLoginSubmit(e) {
 
   if (client) {
     // Direct Supabase Authentication Call
+    let authResult;
     try {
-      const { data, error } = await client.auth.signInWithPassword({
+      authResult = await client.auth.signInWithPassword({
         email: email,
         password: password
       });
-
-      if (error) {
-        showLoginFailure(error.message || "Gagal masuk Supabase. Periksa Email & Password.");
-        return;
-      }
-
-      if (data && data.user) {
-        showLoginSuccess(data.user.email);
-        return;
-      }
     } catch (err) {
       showLoginFailure("Gagal menghubungi Supabase: " + err.message);
+      return;
+    }
+
+    const { data, error } = authResult;
+    if (error) {
+      showLoginFailure(error.message || "Gagal masuk Supabase. Periksa Email & Password.");
+      return;
+    }
+
+    if (data && data.user) {
+      showLoginSuccess(data.user.email);
       return;
     }
   }
@@ -1222,46 +1448,30 @@ function switchAdminDbTab(tabKey) {
 }
 
 // ==========================================
-// 14. TABEL POS (PIANIST, OPERATOR, SOUNDMAN) ENGINE
+// 14. TABEL PIANIS ENGINE
 // ==========================================
-const defaultPosSchedule = [
-  { id: "pos-1", date: "2026-09-26", pianist: "Sdra. Meakhel", operator: "Sdra. Fabian", soundman: "Sdra. Fahrell" },
-  { id: "pos-2", date: "2026-09-19", pianist: "Sdra. Fabian", operator: "Sdra. Misaell", soundman: "Sdra. Meakhel" },
-  { id: "pos-3", date: "2026-09-12", pianist: "Sdra. Meakhel", operator: "Sdra. Fahrell", soundman: "Sdra. Misaell" },
-  { id: "pos-4", date: "2026-09-05", pianist: "Sdra. Fabian", operator: "Sdra. Meakhel", soundman: "Sdra. Fahrell" },
-  { id: "pos-5", date: "2026-08-29", pianist: "Sdra. Meakhel", operator: "Sdra. Misaell", soundman: "Sdra. Fabian" },
-  { id: "pos-6", date: "2026-08-22", pianist: "Sdra. Fabian", operator: "Sdra. Fahrell", soundman: "Sdra. Misaell" },
-  { id: "pos-7", date: "2026-08-15", pianist: "Sdra. Meakhel", operator: "Sdra. Fabian", soundman: "Sdra. Fahrell" },
-  { id: "pos-8", date: "2026-08-08", pianist: "Sdra. Fabian", operator: "Sdra. Misaell", soundman: "Sdra. Meakhel" },
-  { id: "pos-9", date: "2026-08-01", pianist: "Sdra. Meakhel", operator: "Sdra. Fahrell", soundman: "Sdra. Fabian" },
-  { id: "pos-10", date: "2026-07-25", pianist: "Sdra. Fabian", operator: "Sdra. Meakhel", soundman: "Sdra. Misaell" },
-  { id: "pos-11", date: "2026-07-18", pianist: "Sdra. Meakhel", operator: "Sdra. Misaell", soundman: "Sdra. Fahrell" },
-  { id: "pos-12", date: "2026-07-11", pianist: "Sdra. Fabian", operator: "Sdra. Fahrell", soundman: "Sdra. Meakhel" },
-  { id: "pos-13", date: "2026-07-04", pianist: "Sdra. Meakhel", operator: "Sdra. Fabian", soundman: "Sdra. Misaell" }
-];
-
 let posScheduleList = loadPosSchedule();
 let posSortField = "date";
 let posSortAsc = false; // Descending by default
 let posSearchQuery = "";
 
 function loadPosSchedule() {
-  const saved = localStorage.getItem("gmahk_pos_schedule");
+  const saved = localStorage.getItem("gmahk_pianist_schedule");
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.filter(item => !/^pos-(?:[1-9]|1[0-3])$/.test(String(item.id)));
       }
     } catch (e) {
       console.warn("Failed to parse local POS schedule:", e);
     }
   }
-  return [...defaultPosSchedule];
+  return [];
 }
 
 function savePosSchedule() {
-  localStorage.setItem("gmahk_pos_schedule", JSON.stringify(posScheduleList));
+  localStorage.setItem("gmahk_pianist_schedule", JSON.stringify(posScheduleList));
   syncNearestPosToWorship();
 }
 
@@ -1271,41 +1481,409 @@ async function fetchPosFromSupabase() {
 
   try {
     const { data, error } = await supabaseClient
-      .from("pos_schedule")
-      .select("*")
+      .from("Tabel Pianis")
+      .select("id, date, pianist")
       .order("date", { ascending: false });
 
     if (error) {
-      console.warn("Supabase fetch pos_schedule error:", error.message);
+      console.warn("Supabase fetch Tabel Pianis error:", error.message);
       return;
     }
 
-    if (data && data.length > 0) {
+    if (data) {
       posScheduleList = data.map(row => ({
         id: row.id,
         date: row.date,
-        pianist: row.pianist,
-        operator: row.operator,
-        soundman: row.soundman
+        pianist: row.pianist
       }));
       savePosSchedule();
       renderPosTable();
     }
   } catch (err) {
-    console.warn("Error fetching pos_schedule from Supabase:", err);
+    console.warn("Error fetching Tabel Pianis from Supabase:", err);
   }
+}
+
+const ssTableColumns = [
+  ["date", "Tanggal"],
+  ["pemimpin_acara", "Pemimpin Acara"],
+  ["lagu_buka", "Lagu Buka"],
+  ["ayat_inti_doa_buka", "Ayat Inti - Doa Buka"],
+  ["mission", "Mission"],
+  ["diskusi_gabungan", "Diskusi Orang Muda / Orang Tua"],
+  ["lagu_pujian", "Lagu Pujian"],
+  ["lagu_tutup", "Lagu Tutup"],
+  ["pp", "PP"],
+  ["diakon_es", "Diakon/es"],
+  ["cerita_anak", "Cerita Anak"]
+];
+
+const khotbahTableColumns = [
+  ["date", "Tanggal"],
+  ["lagu_pengiring_partisipan_mimbar", "Lagu Pengiring Partisipan Mimbar"],
+  ["lagu_sambutan", "Lagu Sambutan"],
+  ["mc_ayat_bersahutan", "MC & Ayat Bersahutan"],
+  ["lagu_buka", "Lagu Buka"],
+  ["doa_syafaat", "Doa Syafaat"],
+  ["bacaan_persembahan", "Bacaan Persembahan"],
+  ["lagu_persembahan", "Lagu Persembahan"],
+  ["lagu_persembahan_lanjutan", "Lagu Persembahan Lanjutan"],
+  ["doa_persembahan", "Doa Persembahan"],
+  ["lagu_pujian", "Lagu Pujian"],
+  ["ayat_inti_visi_misi", "Ayat Inti & Visi Misi"],
+  ["lagu_tema", "Lagu Tema"],
+  ["pengkhotbah", "Pengkhotbah"],
+  ["judul", "Judul"],
+  ["lagu_tutup", "Lagu Tutup"],
+  ["doa_tutup", "Doa Tutup"]
+];
+
+let ssScheduleList = [];
+let khotbahScheduleList = [];
+const sabbathTableSort = {
+  ss: { field: 'date', ascending: false },
+  khotbah: { field: 'date', ascending: false }
+};
+
+function renderSabbathDatabaseTable(tableKey, rows, columns, emptyMessage = "Belum ada data pada tabel Supabase.") {
+  const head = document.getElementById(`${tableKey}-table-head`);
+  const body = document.getElementById(`${tableKey}-table-body`);
+  if (!head || !body) return;
+
+  const sortState = sabbathTableSort[tableKey];
+  head.innerHTML = `<tr>${columns.map(([key, label]) => `
+    <th class="sortable" onclick="sortSabbathTable('${tableKey}', '${key}')">
+      <div class="th-content"><span>${escapeHtml(label)}</span><i class="fa-solid fa-sort${sortState.field === key ? (sortState.ascending ? '-up' : '-down') : ''} th-sort-icon"></i></div>
+    </th>
+  `).join('')}<th class="th-actions">Aksi</th></tr>`;
+  const searchInput = document.getElementById(`${tableKey}-table-search`);
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  const filteredRows = (rows || []).filter(row => !query || columns.some(([key]) =>
+    getSabbathTableValue(row, key).toLowerCase().includes(query)
+  ));
+  const displayed = document.getElementById(`${tableKey}-count-displayed`);
+  const total = document.getElementById(`${tableKey}-count-total`);
+  if (displayed) displayed.textContent = filteredRows.length;
+  if (total) total.textContent = rows?.length || 0;
+
+  if (filteredRows.length === 0) {
+    body.innerHTML = `<tr><td colspan="${columns.length + 1}" style="text-align:center; padding:40px 16px; color:var(--text-muted);">${escapeHtml(emptyMessage)}</td></tr>`;
+    return;
+  }
+
+  filteredRows.sort((a, b) => {
+    const first = getSabbathTableValue(a, sortState.field).toLowerCase();
+    const second = getSabbathTableValue(b, sortState.field).toLowerCase();
+    if (first === second) return 0;
+    const result = first < second ? -1 : 1;
+    return sortState.ascending ? result : -result;
+  });
+
+  body.innerHTML = filteredRows.map(row => `
+    <tr>
+      ${columns.map(([key]) => key === 'date'
+        ? `<td><span class="td-date-badge">${escapeHtml(getSabbathTableValue(row, key))}</span></td>`
+        : `<td class="td-officer${key === 'diskusi_gabungan' ? ' sabbath-discussion-cell' : ''}">${escapeHtml(getSabbathTableValue(row, key))}</td>`
+      ).join('')}
+      <td class="th-actions"><div class="td-actions-wrap">
+        <button class="btn-table-edit" onclick="openSabbathTableEditModal('${tableKey}', '${escapeHtml(row.id)}')" title="Edit Data">Edit</button>
+        <button class="btn-table-delete" onclick="deleteSabbathTableEntry('${tableKey}', '${escapeHtml(row.id)}')" title="Hapus Data">Hapus</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+function getSabbathTableValue(row, key) {
+  if (key === "diskusi_gabungan") {
+    return `Orang Muda: ${row.diskusi_orang_muda || '-'}\nOrang Tua: ${row.diskusi_orang_tua || '-'}`;
+  }
+  return String(row[key] ?? '-');
+}
+
+function getSabbathTableConfig(tableKey) {
+  return tableKey === 'ss'
+    ? { table: 'Tabel SS', rows: ssScheduleList, columns: ssTableColumns }
+    : { table: 'Tabel Khotbah', rows: khotbahScheduleList, columns: khotbahTableColumns };
+}
+
+function filterSabbathTable(tableKey) {
+  const config = getSabbathTableConfig(tableKey);
+  renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
+}
+
+function sortSabbathTable(tableKey, field) {
+  const sortState = sabbathTableSort[tableKey];
+  if (sortState.field === field) {
+    sortState.ascending = !sortState.ascending;
+  } else {
+    sortState.field = field;
+    sortState.ascending = true;
+  }
+  filterSabbathTable(tableKey);
+}
+
+function clearSabbathTableSearch(tableKey) {
+  const input = document.getElementById(`${tableKey}-table-search`);
+  if (input) input.value = '';
+  filterSabbathTable(tableKey);
+}
+
+async function shiftSabbathTableWeek(tableKey, direction) {
+  const config = getSabbathTableConfig(tableKey);
+  const updatedRows = config.rows.map(row => ({ ...row }));
+
+  updatedRows.forEach(row => {
+    const date = new Date(`${row.date}T00:00:00`);
+    if (!Number.isNaN(date.getTime())) {
+      date.setDate(date.getDate() + direction * 7);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      row.date = `${year}-${month}-${day}`;
+    }
+  });
+
+  config.rows.splice(0, config.rows.length, ...updatedRows);
+  renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
+
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+  try {
+    await Promise.all(updatedRows.map(row => supabaseClient
+      .from(config.table)
+      .update({ date: row.date })
+      .eq('id', row.id)));
+  } catch (error) {
+    console.warn(`Gagal menggeser ${config.table}:`, error);
+  }
+}
+
+function getSabbathFormFields(tableKey) {
+  const config = getSabbathTableConfig(tableKey);
+  const fields = config.columns
+    .filter(([key]) => key !== 'diskusi_gabungan')
+    .map(([key, label]) => [key, label]);
+  if (tableKey === 'ss') {
+    const insertAt = fields.findIndex(([key]) => key === 'lagu_pujian');
+    fields.splice(insertAt, 0, ['diskusi_orang_muda', 'Orang Muda']);
+    fields.splice(insertAt + 1, 0, ['diskusi_orang_tua', 'Orang Tua']);
+  }
+  return fields;
+}
+
+function openSabbathTableAddModal(tableKey) {
+  const title = document.getElementById('sabbath-table-add-title');
+  const fieldsContainer = document.getElementById('sabbath-table-add-fields');
+  const form = document.getElementById('sabbath-table-add-form');
+  if (!title || !fieldsContainer || !form) return;
+
+  const config = getSabbathTableConfig(tableKey);
+  title.textContent = `Tambah Data ${tableKey === 'ss' ? 'Sekolah Sabat' : 'Khotbah'}`;
+  form.dataset.tableKey = tableKey;
+  delete form.dataset.editId;
+  fieldsContainer.innerHTML = getSabbathFormFields(tableKey).map(([key, label]) => `
+    <div class="form-group">
+      <label class="form-label" for="sabbath-field-${key}">${escapeHtml(label)}</label>
+      <input id="sabbath-field-${key}" name="${key}" type="${key === 'date' ? 'date' : 'text'}" class="form-input-styled" ${key === 'date' ? 'required' : ''}>
+    </div>
+  `).join('');
+  openModal('modal-sabbath-table-add');
+}
+
+function openSabbathTableEditModal(tableKey, id) {
+  const config = getSabbathTableConfig(tableKey);
+  const row = config.rows.find(item => String(item.id) === String(id));
+  if (!row) return;
+
+  openSabbathTableAddModal(tableKey);
+  const form = document.getElementById('sabbath-table-add-form');
+  const title = document.getElementById('sabbath-table-add-title');
+  if (!form || !title) return;
+
+  form.dataset.editId = id;
+  title.textContent = `Edit Data ${tableKey === 'ss' ? 'Sekolah Sabat' : 'Khotbah'}`;
+  getSabbathFormFields(tableKey).forEach(([key]) => {
+    const input = form.querySelector(`[name="${key}"]`);
+    if (input) input.value = row[key] || '';
+  });
+}
+
+async function handleSaveSabbathTableEntry(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const tableKey = form.dataset.tableKey;
+  const config = getSabbathTableConfig(tableKey);
+  const payload = {};
+
+  getSabbathFormFields(tableKey).forEach(([key]) => {
+    const input = form.querySelector(`[name="${key}"]`);
+    payload[key] = input ? input.value.trim() : '';
+  });
+
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+  try {
+    const editId = form.dataset.editId;
+    const query = editId
+      ? supabaseClient.from(config.table).update(payload).eq('id', editId).select()
+      : supabaseClient.from(config.table).insert([payload]).select();
+    const { data, error } = await query;
+    if (error) throw error;
+    if (data?.[0]) {
+      const rowIndex = config.rows.findIndex(row => String(row.id) === String(editId));
+      if (rowIndex >= 0) config.rows[rowIndex] = data[0];
+      else config.rows.unshift(data[0]);
+    }
+    closeModal('modal-sabbath-table-add');
+    renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
+    applySabbathDatabaseRows();
+  } catch (error) {
+    showToast(`Gagal menyimpan data: ${error.message}`, 'fa-solid fa-triangle-exclamation');
+  }
+}
+
+async function deleteSabbathTableEntry(tableKey, id) {
+  if (!window.confirm('Hapus data ini dari Supabase?')) return;
+  const config = getSabbathTableConfig(tableKey);
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+
+  try {
+    const { error } = await supabaseClient.from(config.table).delete().eq('id', id);
+    if (error) throw error;
+    const rowIndex = config.rows.findIndex(row => String(row.id) === String(id));
+    if (rowIndex >= 0) config.rows.splice(rowIndex, 1);
+    renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
+    applySabbathDatabaseRows();
+  } catch (error) {
+    showToast(`Gagal menghapus data: ${error.message}`, 'fa-solid fa-triangle-exclamation');
+  }
+}
+
+function getUpcomingSaturdayIso() {
+  const date = getUpcomingWorshipDate(6);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getNearestSabbathRow(rows) {
+  if (!rows || rows.length === 0) return null;
+  const targetDate = getUpcomingSaturdayIso();
+  return rows.find(row => row.date === targetDate) || [...rows]
+    .filter(row => row.date >= targetDate)
+    .sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+}
+
+function setSabbathSong(item, value) {
+  const songValue = String(value || '');
+  if (!songValue || /kosong/i.test(songValue)) {
+    item.songNo = '';
+    item.songTitle = '';
+    return;
+  }
+
+  item.songNo = songValue.replace(/^.*?No\.\s*/i, '').trim();
+  item.songTitle = '';
+}
+
+function applySabbathDatabaseRows() {
+  const sabat = worshipData["sabat-raya"];
+  if (!sabat) return;
+
+  const ssRow = getNearestSabbathRow(ssScheduleList);
+  const khotbahRow = getNearestSabbathRow(khotbahScheduleList);
+  const ssItems = sabat.sections[0]?.items || [];
+  const khotbahItems = sabat.sections[1]?.items || [];
+
+  if (ssRow) {
+    if (ssItems[0]) ssItems[0].officer = ssRow.pemimpin_acara || '';
+    if (ssItems[1]) setSabbathSong(ssItems[1], ssRow.lagu_buka);
+    if (ssItems[2]) ssItems[2].officer = ssRow.ayat_inti_doa_buka || '';
+    if (ssItems[3]) ssItems[3].officer = ssRow.mission || '';
+    if (ssItems[4]?.subItems) {
+      ssItems[4].subItems[0].officer = ssRow.diskusi_orang_muda || '';
+      ssItems[4].subItems[1].officer = ssRow.diskusi_orang_tua || '';
+    }
+    if (ssItems[5]) ssItems[5].officer = ssRow.lagu_pujian || '';
+    if (ssItems[6]) setSabbathSong(ssItems[6], ssRow.lagu_tutup);
+    if (ssItems[7]) ssItems[7].officer = ssRow.pp || '';
+    if (ssItems[8]) ssItems[8].officer = ssRow.diakon_es || '';
+    if (ssItems[9]) ssItems[9].officer = ssRow.cerita_anak || '';
+  }
+
+  if (khotbahRow) {
+    if (khotbahItems[0]) setSabbathSong(khotbahItems[0], khotbahRow.lagu_pengiring_partisipan_mimbar);
+    if (khotbahItems[1]) setSabbathSong(khotbahItems[1], khotbahRow.lagu_sambutan);
+    if (khotbahItems[2]) khotbahItems[2].officer = khotbahRow.mc_ayat_bersahutan || '';
+    if (khotbahItems[3]) setSabbathSong(khotbahItems[3], khotbahRow.lagu_buka);
+    if (khotbahItems[4]) khotbahItems[4].officer = khotbahRow.doa_syafaat || '';
+    if (khotbahItems[5]) khotbahItems[5].officer = khotbahRow.bacaan_persembahan || '';
+    if (khotbahItems[6]) setSabbathSong(khotbahItems[6], khotbahRow.lagu_persembahan);
+    if (khotbahItems[7]) setSabbathSong(khotbahItems[7], khotbahRow.lagu_persembahan_lanjutan);
+    if (khotbahItems[8]) khotbahItems[8].officer = khotbahRow.doa_persembahan || '';
+    if (khotbahItems[9]) khotbahItems[9].officer = khotbahRow.lagu_pujian || '';
+    if (khotbahItems[10]) khotbahItems[10].officer = khotbahRow.ayat_inti_visi_misi || '';
+    if (khotbahItems[11]) khotbahItems[11].officer = khotbahRow.lagu_tema || '';
+    if (khotbahItems[12]) {
+      khotbahItems[12].officer = khotbahRow.pengkhotbah || '';
+      khotbahItems[12].sermonTitle = khotbahRow.judul || '';
+    }
+    if (khotbahItems[13]) setSabbathSong(khotbahItems[13], khotbahRow.lagu_tutup);
+    if (khotbahItems[14]) khotbahItems[14].officer = khotbahRow.doa_tutup || '';
+  }
+
+  saveWorshipDataToStorage();
+  renderSubTab("sabat-raya");
+}
+
+async function fetchSabbathProgramData() {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+
+  const [ssResult, khotbahResult] = await Promise.allSettled([
+    supabaseClient.from("Tabel SS").select("*").order("date", { ascending: false }),
+    supabaseClient.from("Tabel Khotbah").select("*").order("date", { ascending: false })
+  ]);
+
+  if (ssResult.status === "fulfilled" && !ssResult.value.error) {
+    ssScheduleList = ssResult.value.data || [];
+    renderSabbathDatabaseTable('ss', ssScheduleList, ssTableColumns);
+  } else {
+    const message = ssResult.status === "fulfilled"
+      ? ssResult.value.error.message
+      : ssResult.reason?.message;
+    console.warn("Supabase fetch Tabel SS error:", message);
+    ssScheduleList = [];
+    renderSabbathDatabaseTable('ss', [], ssTableColumns, "Tabel SS belum dapat dimuat.");
+  }
+
+  if (khotbahResult.status === "fulfilled" && !khotbahResult.value.error) {
+    khotbahScheduleList = khotbahResult.value.data || [];
+    renderSabbathDatabaseTable('khotbah', khotbahScheduleList, khotbahTableColumns);
+  } else {
+    const message = khotbahResult.status === "fulfilled"
+      ? khotbahResult.value.error.message
+      : khotbahResult.reason?.message;
+    console.warn("Supabase fetch Tabel Khotbah error:", message);
+    khotbahScheduleList = [];
+    renderSabbathDatabaseTable('khotbah', [], khotbahTableColumns, "Tabel Khotbah belum dapat dimuat.");
+  }
+
+  applySabbathDatabaseRows();
 }
 
 function syncNearestPosToWorship() {
   if (!posScheduleList || posScheduleList.length === 0) return;
   
-  const sorted = [...posScheduleList].sort((a, b) => new Date(b.date) - new Date(a.date));
-  const current = sorted[0];
+  const targetDate = getUpcomingSaturdayIso();
+  const current = posScheduleList.find(item => item.date === targetDate) || [...posScheduleList]
+    .filter(item => item.date >= targetDate)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
   if (current && worshipData && worshipData["sabat-raya"]) {
     worshipData["sabat-raya"].generalInfo = [
-      { key: "Pianist", value: current.pianist },
-      { key: "Operator", value: current.operator },
-      { key: "Soundman", value: current.soundman }
+      { key: "Pianis", value: current.pianist }
     ];
     renderSubTab("sabat-raya");
   }
@@ -1321,9 +1899,7 @@ function renderPosTable() {
     if (!posSearchQuery) return true;
     const q = posSearchQuery.toLowerCase();
     return (item.date && item.date.toLowerCase().includes(q)) ||
-           (item.pianist && item.pianist.toLowerCase().includes(q)) ||
-           (item.operator && item.operator.toLowerCase().includes(q)) ||
-           (item.soundman && item.soundman.toLowerCase().includes(q));
+           (item.pianist && item.pianist.toLowerCase().includes(q));
   });
 
   filtered.sort((a, b) => {
@@ -1362,8 +1938,6 @@ function renderPosTable() {
         <span class="td-date-badge">${formatDateIndo(item.date)}</span>
       </td>
       <td class="td-officer">${escapeHtml(item.pianist)}</td>
-      <td class="td-officer">${escapeHtml(item.operator)}</td>
-      <td class="td-officer">${escapeHtml(item.soundman)}</td>
       <td class="th-actions">
         <div class="td-actions-wrap">
           <button class="btn-table-edit" onclick="openEditPosModal('${item.id}')" title="Edit Jadwal">Edit</button>
@@ -1391,7 +1965,7 @@ function sortPosTable(field) {
     posSortAsc = (field !== "date");
   }
 
-  const fields = ["date", "pianist", "operator", "soundman"];
+  const fields = ["date", "pianist"];
   fields.forEach(f => {
     const icon = document.getElementById(`sort-icon-${f}`);
     if (icon) {
@@ -1454,7 +2028,7 @@ async function shiftPosWeek(direction) {
       for (const item of posScheduleList) {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
         if (isUUID) {
-          await supabaseClient.from("pos_schedule").update({ date: item.date }).eq("id", item.id);
+          await supabaseClient.from("Tabel Pianis").update({ date: item.date }).eq("id", item.id);
         }
       }
     } catch (e) {
@@ -1487,16 +2061,12 @@ async function handleSaveNewPos(e) {
   e.preventDefault();
   const dateInput = document.getElementById("pos-add-date");
   const pianistInput = document.getElementById("pos-add-pianist");
-  const operatorInput = document.getElementById("pos-add-operator");
-  const soundmanInput = document.getElementById("pos-add-soundman");
 
   const tempId = "pos-" + Date.now();
   const newItem = {
     id: tempId,
     date: dateInput ? dateInput.value : "",
-    pianist: pianistInput ? pianistInput.value.trim() : "",
-    operator: operatorInput ? operatorInput.value.trim() : "",
-    soundman: soundmanInput ? soundmanInput.value.trim() : ""
+    pianist: pianistInput ? pianistInput.value.trim() : ""
   };
 
   posScheduleList.unshift(newItem);
@@ -1509,11 +2079,9 @@ async function handleSaveNewPos(e) {
   if (!supabaseClient) initSupabaseClient();
   if (supabaseClient) {
     try {
-      const { data, error } = await supabaseClient.from("pos_schedule").insert([{
+      const { data, error } = await supabaseClient.from("Tabel Pianis").insert([{
         date: newItem.date,
-        pianist: newItem.pianist,
-        operator: newItem.operator,
-        soundman: newItem.soundman
+        pianist: newItem.pianist
       }]).select();
 
       if (error) {
@@ -1540,14 +2108,10 @@ function openEditPosModal(id) {
   const idInput = document.getElementById("pos-edit-id");
   const dateInput = document.getElementById("pos-edit-date");
   const pianistInput = document.getElementById("pos-edit-pianist");
-  const operatorInput = document.getElementById("pos-edit-operator");
-  const soundmanInput = document.getElementById("pos-edit-soundman");
 
   if (idInput) idInput.value = item.id;
   if (dateInput) dateInput.value = item.date;
   if (pianistInput) pianistInput.value = item.pianist;
-  if (operatorInput) operatorInput.value = item.operator;
-  if (soundmanInput) soundmanInput.value = item.soundman;
 
   openModal("modal-pos-edit");
 }
@@ -1557,8 +2121,6 @@ async function handleUpdatePos(e) {
   const idInput = document.getElementById("pos-edit-id");
   const dateInput = document.getElementById("pos-edit-date");
   const pianistInput = document.getElementById("pos-edit-pianist");
-  const operatorInput = document.getElementById("pos-edit-operator");
-  const soundmanInput = document.getElementById("pos-edit-soundman");
 
   const targetId = idInput ? idInput.value : "";
   const index = posScheduleList.findIndex(p => String(p.id) === String(targetId));
@@ -1568,9 +2130,7 @@ async function handleUpdatePos(e) {
     posScheduleList[index] = {
       id: targetId,
       date: dateInput ? dateInput.value : posScheduleList[index].date,
-      pianist: pianistInput ? pianistInput.value.trim() : "",
-      operator: operatorInput ? operatorInput.value.trim() : "",
-      soundman: soundmanInput ? soundmanInput.value.trim() : ""
+      pianist: pianistInput ? pianistInput.value.trim() : ""
     };
 
     savePosSchedule();
@@ -1582,11 +2142,9 @@ async function handleUpdatePos(e) {
     if (!supabaseClient) initSupabaseClient();
     if (supabaseClient) {
       try {
-        let query = supabaseClient.from("pos_schedule").update({
+        let query = supabaseClient.from("Tabel Pianis").update({
           date: posScheduleList[index].date,
-          pianist: posScheduleList[index].pianist,
-          operator: posScheduleList[index].operator,
-          soundman: posScheduleList[index].soundman
+          pianist: posScheduleList[index].pianist
         });
 
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
@@ -1641,7 +2199,7 @@ async function confirmDeletePos() {
     if (!supabaseClient) initSupabaseClient();
     if (supabaseClient) {
       try {
-        let query = supabaseClient.from("pos_schedule").delete();
+        let query = supabaseClient.from("Tabel Pianis").delete();
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
         if (isUUID) {
           query = query.eq("id", targetId);
@@ -1743,12 +2301,12 @@ async function fetchDirectoryFromSupabase() {
 
   try {
     const { data, error } = await supabaseClient
-      .from("directory")
-      .select("*")
-      .order("created_at", { ascending: true });
+      .from("Tabel Direktori")
+      .select("*");
 
     if (error) {
       console.warn("Supabase fetch directory error:", error.message);
+      renderDirectoryStatus("Direktori belum dapat dimuat dari Supabase.");
       return;
     }
 
@@ -1763,10 +2321,25 @@ async function fetchDirectoryFromSupabase() {
       }));
       saveDirectoryData();
       renderDirectoryTable();
+    } else {
+      renderDirectoryStatus("Belum ada data direktori yang tersedia.");
     }
   } catch (err) {
     console.warn("Error fetching directory from Supabase:", err);
+    renderDirectoryStatus("Direktori belum dapat dimuat dari Supabase.");
   }
+}
+
+function renderDirectoryStatus(message) {
+  const container = document.getElementById("directory-content");
+  if (!container || directoryList.length > 0) return;
+
+  container.innerHTML = `
+    <div class="directory-loading" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+      <i class="fa-solid fa-circle-exclamation" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--accent-gold);"></i>
+      <span style="font-size: 0.95rem; font-weight: 500;">${escapeHtml(message)}</span>
+    </div>
+  `;
 }
 
 function getCategoryBadge(cat) {
@@ -1925,7 +2498,7 @@ async function handleSaveNewDirectory(e) {
   if (!supabaseClient) initSupabaseClient();
   if (supabaseClient) {
     try {
-      const { data, error } = await supabaseClient.from("directory").insert([{
+      const { data, error } = await supabaseClient.from("Tabel Direktori").insert([{
         category: cat, name, role, phone, avatar_icon: avatarIcon
       }]).select();
 
@@ -1974,7 +2547,7 @@ async function handleUpdateDirectory(e) {
     if (!supabaseClient) initSupabaseClient();
     if (supabaseClient) {
       try {
-        let query = supabaseClient.from("directory").update({ category: cat, name, role, phone });
+        let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone });
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
         
@@ -2011,7 +2584,7 @@ async function confirmDeleteDirectory() {
     if (!supabaseClient) initSupabaseClient();
     if (supabaseClient) {
       try {
-        let query = supabaseClient.from("directory").delete();
+        let query = supabaseClient.from("Tabel Direktori").delete();
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", deletedItem.name));
         

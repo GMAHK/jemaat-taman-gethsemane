@@ -1190,6 +1190,34 @@ html, body {
   color: var(--text-main);
 }
 
+.worship-notes {
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-gold);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.worship-notes h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+  font-size: 0.95rem;
+}
+
+.worship-notes ol {
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.worship-notes li + li {
+  margin-top: 0.35rem;
+}
+
 .time-tag {
   font-size: 0.78rem;
   font-weight: 600;
@@ -1261,6 +1289,10 @@ html, body {
   font-weight: 800;
   color: var(--text-main);
   margin-bottom: 2px;
+}
+
+.sabbath-discussion-cell {
+  white-space: pre-line;
 }
 
 .directory-details p {
@@ -1478,7 +1510,26 @@ html, body {
   border-color: var(--accent-gold);
 }
 
+.sermon-edit-group,
+.sermon-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.sermon-title-input {
+  min-width: 220px;
+}
+
+.sermon-title-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
 .edit-song-group {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1517,8 +1568,74 @@ html, body {
   text-align: center;
 }
 
+.song-no-picker {
+  position: relative;
+}
+
+.song-suggestions {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 420px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+}
+
+.song-suggestions.show {
+  display: flex;
+  flex-direction: column;
+}
+
+.song-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.song-suggestion-item:hover {
+  background: rgba(217, 119, 6, 0.1);
+}
+
+.song-suggestion-number {
+  flex-shrink: 0;
+  color: var(--primary-navy);
+  font-weight: 800;
+}
+
+.song-suggestion-title {
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .edit-song-group .song-title-pill {
   width: 180px;
+}
+
+@media (max-width: 600px) {
+  .song-suggestions {
+    right: auto;
+    left: 0;
+    width: min(360px, calc(100vw - 48px));
+  }
 }
 
 /* Liturgy List */

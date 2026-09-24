@@ -602,20 +602,20 @@
         <!-- Sidebar Navigation -->
         <aside class="admin-sidebar">
           <div class="sidebar-heading-box">
-            <span class="sidebar-heading-text">TABEL DATABASE</span>
+            <span class="sidebar-heading-text">MANAJEMEN DATABASE</span>
           </div>
           <nav class="sidebar-nav">
-            <button class="sidebar-tab-btn active" data-dbtab="pos" onclick="switchAdminDbTab('pos')">
-              <div class="tab-icon-wrap"><i class="fa-solid fa-table-list"></i></div>
-              <span class="tab-label">Tabel POS</span>
-            </button>
-            <button class="sidebar-tab-btn" data-dbtab="directory" onclick="switchAdminDbTab('directory')">
+            <button class="sidebar-tab-btn active" data-dbtab="directory" onclick="switchAdminDbTab('directory')">
               <div class="tab-icon-wrap"><i class="fa-solid fa-address-book"></i></div>
               <span class="tab-label">Tabel Direktori</span>
             </button>
+            <button class="sidebar-tab-btn" data-dbtab="pos" onclick="switchAdminDbTab('pos')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-table-list"></i></div>
+              <span class="tab-label">Tabel Pianis</span>
+            </button>
             <button class="sidebar-tab-btn" data-dbtab="sekolah-sabat" onclick="switchAdminDbTab('sekolah-sabat')">
               <div class="tab-icon-wrap"><i class="fa-regular fa-square-check"></i></div>
-              <span class="tab-label">Sekolah Sabat</span>
+              <span class="tab-label">Tabel SS</span>
             </button>
             <button class="sidebar-tab-btn" data-dbtab="khotbah" onclick="switchAdminDbTab('khotbah')">
               <div class="tab-icon-wrap"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
@@ -635,8 +635,8 @@
             <!-- Header Section -->
             <div class="admin-panel-header">
               <div class="panel-header-info">
-                <h2 class="panel-title">Tabel POS (Pianist, Operator, Soundman)</h2>
-                <p class="panel-subtitle">Kelola data jadwal ibadah permanen di database server Supabase</p>
+                <h2 class="panel-title">Tabel Pianis</h2>
+                <p class="panel-subtitle">Kelola jadwal pianis ibadah dari database Supabase</p>
               </div>
               <div class="panel-header-actions">
                 <button class="btn-shift-week" onclick="shiftPosWeek(1)" title="Majukan Tanggal Semua Baris 1 Minggu ke Depan (+7 Hari)">
@@ -655,7 +655,7 @@
             <div class="admin-table-toolbar">
               <div class="table-search-box">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="pos-table-search" class="table-search-input" placeholder="Cari tanggal atau nama petugas (Meakhel, Fabian, Fahrell, dll)..." onkeyup="filterPosTable()">
+                <input type="text" id="pos-table-search" class="table-search-input" placeholder="Cari tanggal atau nama pianis..." onkeyup="filterPosTable()">
                 <button id="pos-search-clear" class="btn-clear-search" onclick="clearPosSearch()" style="display: none;">&times;</button>
               </div>
               <div class="table-stats-badge" id="pos-table-stats">
@@ -679,18 +679,6 @@
                         <div class="th-content">
                           <span>Pianist</span>
                           <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-pianist"></i>
-                        </div>
-                      </th>
-                      <th class="sortable" onclick="sortPosTable('operator')">
-                        <div class="th-content">
-                          <span>Operator</span>
-                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-operator"></i>
-                        </div>
-                      </th>
-                      <th class="sortable" onclick="sortPosTable('soundman')">
-                        <div class="th-content">
-                          <span>Soundman</span>
-                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-soundman"></i>
                         </div>
                       </th>
                       <th class="th-actions">Aksi</th>
@@ -780,33 +768,77 @@
             </div>
           </section>
 
-          <!-- Panel: Sekolah Sabat (Placeholder ready) -->
+          <!-- Panel: Tabel Sekolah Sabat -->
           <section id="panel-sekolah-sabat" class="admin-panel">
             <div class="admin-panel-header">
               <div class="panel-header-info">
                 <h2 class="panel-title">Tabel Sekolah Sabat</h2>
-                <p class="panel-subtitle">Kelola susunan program dan petugas Sekolah Sabat GMAHK Taman Gethsemane</p>
+                <p class="panel-subtitle">Data petugas dan acara Sekolah Sabat dari Supabase</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('ss', 1)">
+                  <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
+                </button>
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('ss', -1)">
+                  <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-add-data" onclick="openSabbathTableAddModal('ss')">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
+                </button>
               </div>
             </div>
-            <div class="admin-placeholder-card">
-              <div class="placeholder-icon-wrap"><i class="fa-regular fa-square-check"></i></div>
-              <h3>Modul Tabel Sekolah Sabat</h3>
-              <p>Struktur kolom dan integrasi database untuk Sekolah Sabat siap dikonfigurasi pada langkah berikutnya sesuai arahan Anda.</p>
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="ss-table-search" class="table-search-input" placeholder="Cari nama atau tanggal..." onkeyup="filterSabbathTable('ss')">
+                <button id="ss-search-clear" class="btn-clear-search" onclick="clearSabbathTableSearch('ss')" style="display:none;">&times;</button>
+              </div>
+              <div class="table-stats-badge">Menampilkan <strong id="ss-count-displayed">0</strong> dari <strong id="ss-count-total">0</strong> jadwal</div>
+            </div>
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead id="ss-table-head"></thead>
+                  <tbody id="ss-table-body"></tbody>
+                </table>
+              </div>
             </div>
           </section>
 
-          <!-- Panel: Tabel Khotbah (Placeholder ready) -->
+          <!-- Panel: Tabel Khotbah -->
           <section id="panel-khotbah" class="admin-panel">
             <div class="admin-panel-header">
               <div class="panel-header-info">
                 <h2 class="panel-title">Tabel Khotbah (Kebaktian Utama)</h2>
-                <p class="panel-subtitle">Kelola pengkhotbah, tema khotbah, dan petugas mimbar ibadah Sabat</p>
+                <p class="panel-subtitle">Data petugas dan acara khotbah dari Supabase</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('khotbah', 1)">
+                  <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
+                </button>
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('khotbah', -1)">
+                  <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-add-data" onclick="openSabbathTableAddModal('khotbah')">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
+                </button>
               </div>
             </div>
-            <div class="admin-placeholder-card">
-              <div class="placeholder-icon-wrap"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-              <h3>Modul Tabel Khotbah</h3>
-              <p>Struktur kolom dan integrasi data Khotbah siap dikonfigurasi pada langkah berikutnya sesuai arahan Anda.</p>
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="khotbah-table-search" class="table-search-input" placeholder="Cari nama atau tanggal..." onkeyup="filterSabbathTable('khotbah')">
+                <button id="khotbah-search-clear" class="btn-clear-search" onclick="clearSabbathTableSearch('khotbah')" style="display:none;">&times;</button>
+              </div>
+              <div class="table-stats-badge">Menampilkan <strong id="khotbah-count-displayed">0</strong> dari <strong id="khotbah-count-total">0</strong> jadwal</div>
+            </div>
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead id="khotbah-table-head"></thead>
+                  <tbody id="khotbah-table-body"></tbody>
+                </table>
+              </div>
             </div>
           </section>
 
@@ -986,7 +1018,7 @@
   <div id="modal-hymnal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
-        <h4><i class="fa-solid fa-music text-gold"></i> Pencarian & Daftar Lagu Zion</h4>
+        <h4><i class="fa-solid fa-music text-gold"></i> Pencarian & Daftar Lagu LSEL / AYS</h4>
         <button class="modal-close" onclick="closeModal('modal-hymnal')">&times;</button>
       </div>
       <div class="modal-body">
@@ -1067,6 +1099,30 @@
     </div>
   </div>
 
+  <!-- Modal: Tambah Data SS / Khotbah -->
+  <div id="modal-sabbath-table-add" class="modal-overlay">
+    <div class="modal-card modal-card-auth modal-card-wide">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge"><i class="fa-solid fa-calendar-plus"></i></div>
+          <div>
+            <h4 id="sabbath-table-add-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Data</h4>
+            <span class="auth-subtitle">Data jadwal Supabase</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-sabbath-table-add')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="sabbath-table-add-form" onsubmit="handleSaveSabbathTableEntry(event)">
+          <div id="sabbath-table-add-fields" class="form-grid-two"></div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="width: 100%;">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan ke Supabase</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Konfirmasi Logout Admin -->
   <div id="modal-logout-confirm" class="modal-overlay">
     <div class="modal-card modal-card-auth">
@@ -1143,7 +1199,7 @@
           </div>
           <div>
             <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Jadwal POS</h4>
-            <span class="auth-subtitle">Pianist, Operator & Soundman</span>
+            <span class="auth-subtitle">Jadwal Pianis</span>
           </div>
         </div>
         <button class="modal-close" onclick="closeModal('modal-pos-add')">&times;</button>
@@ -1158,23 +1214,9 @@
             <label class="form-label">Pianist</label>
             <input type="text" id="pos-add-pianist" placeholder="Contoh: Sdra. Meakhel" class="form-input-styled" required list="pos-officer-suggestions">
           </div>
-          <div class="form-group mt-3">
-            <label class="form-label">Operator</label>
-            <input type="text" id="pos-add-operator" placeholder="Contoh: Sdra. Fabian" class="form-input-styled" required list="pos-officer-suggestions">
-          </div>
-          <div class="form-group mt-3">
-            <label class="form-label">Soundman</label>
-            <input type="text" id="pos-add-soundman" placeholder="Contoh: Sdra. Fahrell" class="form-input-styled" required list="pos-officer-suggestions">
-          </div>
-
           <datalist id="pos-officer-suggestions">
             <option value="Sdra. Meakhel"></option>
-            <option value="Sdra. Fabian"></option>
-            <option value="Sdra. Fahrell"></option>
-            <option value="Sdra. Misaell"></option>
-            <option value="Sdra. Ricky"></option>
-            <option value="Sdra. Jimmy"></option>
-            <option value="Sdra. Hansell"></option>
+            <option value="Sdri. Rachel"></option>
           </datalist>
 
           <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
@@ -1195,7 +1237,7 @@
           </div>
           <div>
             <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Edit Jadwal POS</h4>
-            <span class="auth-subtitle">Pianist, Operator & Soundman</span>
+            <span class="auth-subtitle">Jadwal Pianis</span>
           </div>
         </div>
         <button class="modal-close" onclick="closeModal('modal-pos-edit')">&times;</button>
@@ -1211,15 +1253,6 @@
             <label class="form-label">Pianist</label>
             <input type="text" id="pos-edit-pianist" class="form-input-styled" required list="pos-officer-suggestions">
           </div>
-          <div class="form-group mt-3">
-            <label class="form-label">Operator</label>
-            <input type="text" id="pos-edit-operator" class="form-input-styled" required list="pos-officer-suggestions">
-          </div>
-          <div class="form-group mt-3">
-            <label class="form-label">Soundman</label>
-            <input type="text" id="pos-edit-soundman" class="form-input-styled" required list="pos-officer-suggestions">
-          </div>
-
           <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
             <i class="fa-solid fa-check"></i> <span>Perbarui Jadwal</span>
           </button>
@@ -1238,7 +1271,7 @@
           </div>
           <div>
             <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
-            <span class="auth-subtitle" style="color: #ef4444;">Tabel POS</span>
+            <span class="auth-subtitle" style="color: #ef4444;">Tabel Pianis</span>
           </div>
         </div>
         <button class="modal-close" onclick="closeModal('modal-pos-delete')">&times;</button>
