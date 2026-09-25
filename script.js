@@ -79,13 +79,13 @@ function toggleTheme() {
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("gmahk_theme", theme);
-  const icon = theme === "dark" 
-    ? '<i class="fa-solid fa-sun text-gold"></i>' 
+  const icon = theme === "dark"
+    ? '<i class="fa-solid fa-sun text-gold"></i>'
     : '<i class="fa-solid fa-moon"></i>';
-    
+
   const themeBtn = document.getElementById("btn-theme-toggle");
   if (themeBtn) themeBtn.innerHTML = icon;
-  
+
   const adminThemeBtn = document.getElementById("btn-admin-theme-toggle");
   if (adminThemeBtn) adminThemeBtn.innerHTML = icon;
 }
@@ -250,16 +250,16 @@ function initRatingSystem() {
   const editRatingBtn = document.getElementById("btn-edit-rating");
 
   stars.forEach(star => {
-    star.addEventListener("mouseover", function() {
+    star.addEventListener("mouseover", function () {
       const val = parseInt(this.getAttribute("data-value"));
       highlightStars(val, "hover");
     });
 
-    star.addEventListener("mouseout", function() {
+    star.addEventListener("mouseout", function () {
       highlightStars(userRatingScore, "active");
     });
 
-    star.addEventListener("click", function() {
+    star.addEventListener("click", function () {
       userRatingScore = parseInt(this.getAttribute("data-value"));
       highlightStars(userRatingScore, "active");
       const labels = ["", "Kurang", "Cukup", "Baik", "Sangat Baik", "Luar Biasa & Diberkati!"];
@@ -268,7 +268,7 @@ function initRatingSystem() {
   });
 
   if (ratingForm) {
-    ratingForm.addEventListener("submit", function(e) {
+    ratingForm.addEventListener("submit", function (e) {
       e.preventDefault();
       if (userRatingScore === 0) {
         showToast("Silakan pilih rating 1 - 5 bintang terlebih dahulu", "fa-solid fa-triangle-exclamation");
@@ -316,7 +316,7 @@ function highlightStars(count, className) {
 
 function saveUserRating(ratingObj) {
   localStorage.setItem("gmahk_my_rating", JSON.stringify(ratingObj));
-  
+
   let allRatings = JSON.parse(localStorage.getItem("gmahk_all_ratings") || "[]");
   allRatings.unshift(ratingObj);
   allRatings = allRatings.slice(0, 5);
@@ -384,15 +384,15 @@ function renderCommunityReviews() {
 function initProgramTabs() {
   const btns = document.querySelectorAll(".program-tab-btn");
   btns.forEach(btn => {
-    btn.addEventListener("click", function() {
+    btn.addEventListener("click", function () {
       const targetProg = this.getAttribute("data-program");
-      
+
       btns.forEach(b => b.classList.remove("active"));
       this.classList.add("active");
 
       const progs = document.querySelectorAll(".program-content");
       progs.forEach(p => p.classList.remove("active"));
-      
+
       const activeProg = document.getElementById(`prog-${targetProg}`);
       if (activeProg) {
         activeProg.classList.add("active");
@@ -604,7 +604,7 @@ const defaultWorshipData = {
     ],
     sections: [
       {
-        title: "Ibadah Sekolah Sabat (Pkl 09.00 - 10.00 WIB)",
+        title: "Ibadah Sekolah Sabat (Pukul 09.00 - 10.00 WIB)",
         items: [
           { time: "1", name: "Pemimpin Acara", officer: "Bpk. Michael", type: "text" },
           { time: "2", name: "Lagu Buka", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
@@ -628,7 +628,7 @@ const defaultWorshipData = {
         ]
       },
       {
-        title: "Ibadah Khotbah (Pkl 10.10 - 12.00 WIB)",
+        title: "Ibadah Khotbah (Pukul 10.10 - 12.00 WIB)",
         items: [
           { time: "1", name: "Lagu Pengiring Partisipan Mimbar", officer: "", type: "song", songBook: "LSEL No.", songNo: "515", songTitle: "" },
           { time: "2", name: "Lagu Sambutan", officer: "", type: "song", songBook: "LSEL No.", songNo: "1 ayat 1", songTitle: "" },
@@ -857,7 +857,7 @@ function renderSubTab(key) {
       </div>
       <div class="subtab-actions-group">
         ${isAdminLoggedIn ? (
-          isEditing ? `
+      isEditing ? `
             <button class="btn-subtab-pill btn-pill-reset" onclick="resetSubTabData('${key}')">
               <i class="fa-solid fa-rotate-left"></i> Reset
             </button>
@@ -869,7 +869,7 @@ function renderSubTab(key) {
               <i class="fa-solid fa-pen-to-square"></i> Edit Susunan
             </button>
           `
-        ) : ''}
+    ) : ''}
       </div>
     </div>
   `;
@@ -917,7 +917,7 @@ function renderSubTab(key) {
                 </div>
                 <div class="lit-right">
                   ${isEditing ? (
-                    item.type === 'song' ? `
+        item.type === 'song' ? `
                       <div class="edit-song-group">
                         <span class="song-icon"><i class="fa-solid fa-music text-gold"></i></span>
                         <div class="song-no-picker">
@@ -955,8 +955,8 @@ function renderSubTab(key) {
                           oninput="updateOfficer('${key}', ${secIdx}, ${itemIdx}, this.value)">
                       `}
                     `
-                  ) : (
-                    item.type === 'song' ? `
+      ) : (
+        item.type === 'song' ? `
                       <span class="lit-officer">${formatSongDisplay(item)}</span>
                     ` : (item.type === 'group' || item.subItems) ? `
                       <div class="lit-subitems-list-right">
@@ -977,7 +977,7 @@ function renderSubTab(key) {
                         <span class="lit-officer">${escapeHtml(item.officer || '-')}</span>
                       `}
                     `
-                  )}
+      )}
                 </div>
               </div>
             </div>
@@ -1190,7 +1190,7 @@ function updateAdminUIState() {
   const btnAdmin = document.getElementById("btn-admin-login");
   const btnText = document.getElementById("admin-btn-text");
   const btnIcon = document.getElementById("admin-btn-icon");
-  
+
   if (!isAdminLoggedIn) {
     subtabEditState = {
       "sabat-raya": false,
@@ -1235,7 +1235,7 @@ function openAdminDatabaseView() {
   const dbView = document.getElementById("admin-database-view");
   if (appShell) appShell.style.display = "none";
   if (dbView) dbView.style.display = "flex";
-  
+
   // Default to POS table tab
   switchAdminDbTab("pos");
   renderPosTable();
@@ -1250,7 +1250,7 @@ function closeAdminDatabaseView() {
   const dbView = document.getElementById("admin-database-view");
   if (dbView) dbView.style.display = "none";
   if (appShell) appShell.style.display = "flex";
-  
+
   updateAdminUIState();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1277,10 +1277,10 @@ function confirmLogoutAdmin() {
 function logoutAdmin() {
   isAdminLoggedIn = false;
   localStorage.removeItem("is_admin_logged_in");
-  
+
   // Sign out from Supabase Auth session if active
   if (supabaseClient && supabaseClient.auth) {
-    supabaseClient.auth.signOut().catch(() => {});
+    supabaseClient.auth.signOut().catch(() => { });
   }
 
   closeAdminDatabaseView();
@@ -1520,18 +1520,15 @@ const ssTableColumns = [
 
 const khotbahTableColumns = [
   ["date", "Tanggal"],
-  ["lagu_pengiring_partisipan_mimbar", "Lagu Pengiring Partisipan Mimbar"],
-  ["lagu_sambutan", "Lagu Sambutan"],
+  // Kolom paten dihapus: lagu_pengiring_partisipan_mimbar (515), lagu_sambutan (1),
+  // lagu_persembahan (260), lagu_persembahan_lanjutan (21), lagu_tema (Misi Kita)
   ["mc_ayat_bersahutan", "MC & Ayat Bersahutan"],
   ["lagu_buka", "Lagu Buka"],
   ["doa_syafaat", "Doa Syafaat"],
   ["bacaan_persembahan", "Bacaan Persembahan"],
-  ["lagu_persembahan", "Lagu Persembahan"],
-  ["lagu_persembahan_lanjutan", "Lagu Persembahan Lanjutan"],
   ["doa_persembahan", "Doa Persembahan"],
   ["lagu_pujian", "Lagu Pujian"],
   ["ayat_inti_visi_misi", "Ayat Inti & Visi Misi"],
-  ["lagu_tema", "Lagu Tema"],
   ["pengkhotbah", "Pengkhotbah"],
   ["judul", "Judul"],
   ["lagu_tutup", "Lagu Tutup"],
@@ -1582,9 +1579,9 @@ function renderSabbathDatabaseTable(tableKey, rows, columns, emptyMessage = "Bel
   body.innerHTML = filteredRows.map(row => `
     <tr>
       ${columns.map(([key]) => key === 'date'
-        ? `<td><span class="td-date-badge">${escapeHtml(getSabbathTableValue(row, key))}</span></td>`
-        : `<td class="td-officer${key === 'diskusi_gabungan' ? ' sabbath-discussion-cell' : ''}">${escapeHtml(getSabbathTableValue(row, key))}</td>`
-      ).join('')}
+    ? `<td><span class="td-date-badge">${escapeHtml(getSabbathTableValue(row, key))}</span></td>`
+    : `<td class="td-officer${key === 'diskusi_gabungan' ? ' sabbath-discussion-cell' : ''}">${escapeHtml(getSabbathTableValue(row, key))}</td>`
+  ).join('')}
       <td class="th-actions"><div class="td-actions-wrap">
         <button class="btn-table-edit" onclick="openSabbathTableEditModal('${tableKey}', '${escapeHtml(row.id)}')" title="Edit Data">Edit</button>
         <button class="btn-table-delete" onclick="deleteSabbathTableEntry('${tableKey}', '${escapeHtml(row.id)}')" title="Hapus Data">Hapus</button>
@@ -1813,19 +1810,21 @@ function applySabbathDatabaseRows() {
     if (ssItems[9]) ssItems[9].officer = ssRow.cerita_anak || '';
   }
 
+  // Hardcode lagu-lagu paten (tidak lagi diambil dari Supabase)
+  if (khotbahItems[0]) setSabbathSong(khotbahItems[0], '515');    // Lagu Pengiring Partisipan Mimbar - paten
+  if (khotbahItems[1]) setSabbathSong(khotbahItems[1], '1');      // Lagu Sambutan - paten
+
   if (khotbahRow) {
-    if (khotbahItems[0]) setSabbathSong(khotbahItems[0], khotbahRow.lagu_pengiring_partisipan_mimbar);
-    if (khotbahItems[1]) setSabbathSong(khotbahItems[1], khotbahRow.lagu_sambutan);
     if (khotbahItems[2]) khotbahItems[2].officer = khotbahRow.mc_ayat_bersahutan || '';
     if (khotbahItems[3]) setSabbathSong(khotbahItems[3], khotbahRow.lagu_buka);
     if (khotbahItems[4]) khotbahItems[4].officer = khotbahRow.doa_syafaat || '';
     if (khotbahItems[5]) khotbahItems[5].officer = khotbahRow.bacaan_persembahan || '';
-    if (khotbahItems[6]) setSabbathSong(khotbahItems[6], khotbahRow.lagu_persembahan);
-    if (khotbahItems[7]) setSabbathSong(khotbahItems[7], khotbahRow.lagu_persembahan_lanjutan);
+    if (khotbahItems[6]) setSabbathSong(khotbahItems[6], '260');   // Lagu Persembahan - paten
+    if (khotbahItems[7]) setSabbathSong(khotbahItems[7], '21');    // Lagu Persembahan Lanjutan - paten
     if (khotbahItems[8]) khotbahItems[8].officer = khotbahRow.doa_persembahan || '';
     if (khotbahItems[9]) khotbahItems[9].officer = khotbahRow.lagu_pujian || '';
     if (khotbahItems[10]) khotbahItems[10].officer = khotbahRow.ayat_inti_visi_misi || '';
-    if (khotbahItems[11]) khotbahItems[11].officer = khotbahRow.lagu_tema || '';
+    if (khotbahItems[11]) khotbahItems[11].officer = 'Misi Kita';  // Lagu Tema - paten
     if (khotbahItems[12]) {
       khotbahItems[12].officer = khotbahRow.pengkhotbah || '';
       khotbahItems[12].sermonTitle = khotbahRow.judul || '';
@@ -1876,7 +1875,7 @@ async function fetchSabbathProgramData() {
 
 function syncNearestPosToWorship() {
   if (!posScheduleList || posScheduleList.length === 0) return;
-  
+
   const targetDate = getUpcomingSaturdayIso();
   const current = posScheduleList.find(item => item.date === targetDate) || [...posScheduleList]
     .filter(item => item.date >= targetDate)
@@ -1899,7 +1898,7 @@ function renderPosTable() {
     if (!posSearchQuery) return true;
     const q = posSearchQuery.toLowerCase();
     return (item.date && item.date.toLowerCase().includes(q)) ||
-           (item.pianist && item.pianist.toLowerCase().includes(q));
+      (item.pianist && item.pianist.toLowerCase().includes(q));
   });
 
   filtered.sort((a, b) => {
@@ -1970,8 +1969,8 @@ function sortPosTable(field) {
     const icon = document.getElementById(`sort-icon-${f}`);
     if (icon) {
       if (f === posSortField) {
-        icon.className = posSortAsc 
-          ? "fa-solid fa-sort-up th-sort-icon text-burgundy" 
+        icon.className = posSortAsc
+          ? "fa-solid fa-sort-up th-sort-icon text-burgundy"
           : "fa-solid fa-sort-down th-sort-icon text-burgundy";
       } else {
         icon.className = "fa-solid fa-sort th-sort-icon";
@@ -2380,9 +2379,9 @@ function renderDirectoryTable() {
     if (!dirSearchQuery) return true;
     const q = dirSearchQuery.toLowerCase();
     return (item.name && item.name.toLowerCase().includes(q)) ||
-           (item.role && item.role.toLowerCase().includes(q)) ||
-           (item.phone && item.phone.toLowerCase().includes(q)) ||
-           (itemCat && itemCat.toLowerCase().includes(q));
+      (item.role && item.role.toLowerCase().includes(q)) ||
+      (item.phone && item.phone.toLowerCase().includes(q)) ||
+      (itemCat && itemCat.toLowerCase().includes(q));
   });
 
   filtered.sort((a, b) => {
@@ -2550,7 +2549,7 @@ async function handleUpdateDirectory(e) {
         let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone });
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
-        
+
         if (error) {
           showToast(`Tersimpan lokal. (Supabase error: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
         } else {
@@ -2587,7 +2586,7 @@ async function confirmDeleteDirectory() {
         let query = supabaseClient.from("Tabel Direktori").delete();
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", deletedItem.name));
-        
+
         if (error) {
           showToast(`Gagal hapus di Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
         } else {
