@@ -1184,12 +1184,18 @@ function initAdminState() {
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
   fetchSabbathProgramData();
+  fetchPengumuman();
 }
 
 function updateAdminUIState() {
   const btnAdmin = document.getElementById("btn-admin-login");
   const btnText = document.getElementById("admin-btn-text");
   const btnIcon = document.getElementById("admin-btn-icon");
+  const btnEditPengumuman = document.getElementById("btn-edit-pengumuman");
+  
+  if (btnEditPengumuman) {
+    btnEditPengumuman.style.display = isAdminLoggedIn ? "inline-block" : "none";
+  }
 
   if (!isAdminLoggedIn) {
     subtabEditState = {
@@ -1236,9 +1242,8 @@ function openAdminDatabaseView() {
   if (appShell) appShell.style.display = "none";
   if (dbView) dbView.style.display = "flex";
 
-  // Default to POS table tab
-  switchAdminDbTab("pos");
-  renderPosTable();
+  // Default to the first database tab
+  switchAdminDbTab("directory");
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
   fetchSabbathProgramData();
@@ -2294,6 +2299,39 @@ function saveDirectoryData() {
   renderPublicDirectory();
 }
 
+function getDirectoryAvatarIcon(category, role) {
+  const normalizedCategory = category === "majelis_anggota" ? "majelis_dept" : category;
+  const normalizedRole = String(role || "").toLowerCase();
+  const roleIconRules = [
+    { keywords: ["sekolah sabat", "sabbath school", "departemen ss", "dept ss", "ss/pp", "ss/pa"], icon: "fa-book-open" },
+    { keywords: ["pelayanan anak", "departemen pa", "pemimpin departemen pa"], icon: "fa-people-group" },
+    { keywords: ["pianis", "musik", "paduan suara", "vokalis", "pelayanan lagu", "organis"], icon: "fa-music" },
+    { keywords: ["sekretaris", "administrasi"], icon: "fa-file-signature" },
+    { keywords: ["bendahara", "keuangan", "kasir"], icon: "fa-vault" },
+    { keywords: ["kesehatan", "health"], icon: "fa-heart-pulse" },
+    { keywords: ["bakti wanita", "wanita", "bwa"], icon: "fa-person-dress" },
+    { keywords: ["komunikasi", "teknologi informasi", " it"], icon: "fa-laptop-code" },
+    { keywords: ["public campus", "pcm", "kampus"], icon: "fa-graduation-cap" },
+    { keywords: ["adventurer", "penjelajah"], icon: "fa-compass" },
+    { keywords: ["pembangunan", "pengadaan", "renovasi", "rumah ibadah"], icon: "fa-hammer" },
+    { keywords: ["pemuda advent", "pemuda"], icon: "fa-people-group" },
+    { keywords: ["penginjilan", "evangelisasi", "misionaris"], icon: "fa-bullhorn" },
+    { keywords: ["diaken", "diakones", "doa", "kerohanian"], icon: "fa-hands-praying" },
+    { keywords: ["pendeta", "gembala"], icon: "fa-crown" }
+  ];
+  const matchingRule = roleIconRules.find(rule =>
+    rule.keywords.some(keyword => normalizedRole.includes(keyword))
+  );
+  if (matchingRule) return matchingRule.icon;
+
+  const categoryIcons = {
+    gembala: "fa-crown",
+    officers: "fa-user-shield",
+    majelis_dept: "fa-users"
+  };
+  return categoryIcons[normalizedCategory] || "fa-user-shield";
+}
+
 async function fetchDirectoryFromSupabase() {
   if (!supabaseClient) initSupabaseClient();
   if (!supabaseClient) return;
@@ -2310,14 +2348,17 @@ async function fetchDirectoryFromSupabase() {
     }
 
     if (data && data.length > 0) {
-      directoryList = data.map(row => ({
-        id: row.id,
-        category: (row.category === "majelis_anggota" ? "majelis_dept" : row.category),
-        name: row.name,
-        role: row.role,
-        phone: row.phone,
-        avatarIcon: row.avatar_icon || "fa-user-shield"
-      }));
+      directoryList = data.map(row => {
+        const category = row.category === "majelis_anggota" ? "majelis_dept" : row.category;
+        return {
+          id: row.id,
+          category,
+          name: row.name,
+          role: row.role,
+          phone: row.phone,
+          avatarIcon: getDirectoryAvatarIcon(category, row.role)
+        };
+      });
       saveDirectoryData();
       renderDirectoryTable();
     } else {
@@ -2472,6 +2513,18 @@ function openAddDirectoryModal() {
   openModal("modal-directory-add");
 }
 
+function updateDirectoryCategoryIcon(select) {
+  const icon = select.parentElement.querySelector(".category-field-icon");
+  if (!icon) return;
+
+  const iconByCategory = {
+    gembala: "fa-crown",
+    officers: "fa-user-shield",
+    majelis_dept: "fa-users"
+  };
+  icon.className = `input-icon category-field-icon fa-solid ${iconByCategory[select.value] || "fa-address-card"}`;
+}
+
 async function handleSaveNewDirectory(e) {
   e.preventDefault();
   const cat = document.getElementById("dir-add-category").value;
@@ -2479,11 +2532,7 @@ async function handleSaveNewDirectory(e) {
   const role = document.getElementById("dir-add-role").value.trim();
   const phone = document.getElementById("dir-add-phone").value.trim();
 
-  let avatarIcon = "fa-user-shield";
-  if (cat === "gembala") avatarIcon = "fa-user-tie";
-  else if (role.toLowerCase().includes("sekretaris")) avatarIcon = "fa-file-signature";
-  else if (role.toLowerCase().includes("bendahara")) avatarIcon = "fa-vault";
-  else if (role.toLowerCase().includes("musik")) avatarIcon = "fa-music";
+  const avatarIcon = getDirectoryAvatarIcon(cat, role);
 
   const tempId = "dir-" + Date.now();
   const newItem = { id: tempId, category: cat, name, role, phone, avatarIcon };
@@ -2521,6 +2570,7 @@ function openEditDirectoryModal(id) {
 
   document.getElementById("dir-edit-id").value = item.id;
   document.getElementById("dir-edit-category").value = (item.category === "majelis_anggota" ? "majelis_dept" : item.category);
+  updateDirectoryCategoryIcon(document.getElementById("dir-edit-category"));
   document.getElementById("dir-edit-name").value = item.name;
   document.getElementById("dir-edit-role").value = item.role;
   document.getElementById("dir-edit-phone").value = item.phone;
@@ -2538,7 +2588,8 @@ async function handleUpdateDirectory(e) {
   const index = directoryList.findIndex(d => String(d.id) === String(id));
   if (index !== -1) {
     const oldItem = { ...directoryList[index] };
-    directoryList[index] = { ...directoryList[index], category: cat, name, role, phone };
+    const avatarIcon = getDirectoryAvatarIcon(cat, role);
+    directoryList[index] = { ...directoryList[index], category: cat, name, role, phone, avatarIcon };
     saveDirectoryData();
     closeModal("modal-directory-edit");
     renderDirectoryTable();
@@ -2546,7 +2597,7 @@ async function handleUpdateDirectory(e) {
     if (!supabaseClient) initSupabaseClient();
     if (supabaseClient) {
       try {
-        let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone });
+        let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone, avatar_icon: avatarIcon });
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
 
@@ -2627,7 +2678,7 @@ function renderPublicDirectory() {
       <div class="directory-grid">${items.map(item => `
         <div class="directory-card dir-item">
           <div class="directory-info">
-            <div class="directory-avatar"><i class="fa-solid ${item.avatarIcon || 'fa-user-shield'}"></i></div>
+            <div class="directory-avatar"><i class="fa-solid ${getDirectoryAvatarIcon(item.category, item.role)}"></i></div>
             <div class="directory-details">
               <h5 class="dir-name">${escapeHtml(item.name)}</h5>
               <p class="dir-role">${escapeHtml(item.role)}</p>
@@ -2658,4 +2709,69 @@ function filterDirectory() {
       item.style.display = "none";
     }
   });
+}
+
+// ==========================================
+// 15. PENGUMUMAN (SUPABASE)
+// ==========================================
+async function fetchPengumuman() {
+  if (!supabaseClient) return;
+  const teksEl = document.getElementById("teks-pengumuman");
+  
+  try {
+    const { data, error } = await supabaseClient
+      .from('Pengumuman')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      if (teksEl) teksEl.innerText = data[0].content;
+      const inputEl = document.getElementById("input-pengumuman");
+      if (inputEl) inputEl.value = data[0].content;
+    } else {
+      if (teksEl) teksEl.innerText = "Belum ada pengumuman saat ini.";
+    }
+  } catch (err) {
+    console.error("Error fetching pengumuman:", err);
+    if (teksEl) teksEl.innerText = "Gagal memuat pengumuman.";
+  }
+}
+
+async function simpanPengumuman() {
+  if (!supabaseClient) {
+    showToast("Gagal: Koneksi database terputus", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+  
+  const inputEl = document.getElementById("input-pengumuman");
+  if (!inputEl) return;
+  const content = inputEl.value.trim();
+  
+  if (!content) {
+    showToast("Gagal: Pengumuman tidak boleh kosong", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  const btn = document.getElementById("btn-simpan-pengumuman");
+  if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+  
+  try {
+    const { error } = await supabaseClient
+      .from('Pengumuman')
+      .insert([{ content: content }]);
+
+    if (error) throw error;
+    
+    showToast("Pengumuman berhasil disimpan!", "fa-solid fa-circle-check");
+    closeModal("modal-edit-pengumuman");
+    fetchPengumuman(); // Refresh data di layar
+  } catch (err) {
+    console.error("Error saving pengumuman:", err);
+    showToast("Gagal menyimpan pengumuman.", "fa-solid fa-triangle-exclamation");
+  } finally {
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan ke Supabase';
+  }
 }

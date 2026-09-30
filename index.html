@@ -159,14 +159,16 @@
             <!-- Live Announcement & Sabbath Verse Card -->
             <div class="section-container">
               <div class="info-card info-card-gradient">
-                <div class="info-header">
-                  <i class="fa-solid fa-bullhorn text-gold"></i>
-                  <h4>Pengumuman Penting Sabat Ini</h4>
+                <div class="info-header" style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-bullhorn text-gold"></i>
+                    <h4 style="margin: 0;">Pengumuman Penting Sabat Ini</h4>
+                  </div>
+                  <button class="btn-edit" onclick="openModal('modal-edit-pengumuman')" id="btn-edit-pengumuman" style="background: var(--accent-emerald); border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85rem; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </button>
                 </div>
-                <p class="info-body">
-                  Syalom Anggota Jemaat GMAHK Taman Gethsemane, Selamat beribadah di Hari Sabat yang suci. Mari
-                  persiapkan hati dan jiwa untuk menyambut hadirat Tuhan.
-                </p>
+                <p class="info-body" id="teks-pengumuman" style="white-space: pre-line;">Memuat pengumuman...</p>
                 <div class="info-footer">
                   <span class="badge-pill"><i class="fa-regular fa-calendar"></i> Sabat, 08:30 WIB</span>
                   <span class="badge-pill"><i class="fa-solid fa-location-dot"></i> Gedung Gereja Utama</span>
@@ -457,7 +459,7 @@
             <div class="section-container mt-3">
               <div id="directory-content">
                 <div class="directory-loading" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
-                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-burgundy);"></i>
+                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-navy);"></i>
                   <span style="font-size: 0.95rem; font-weight: 500;">Memuat data direktori dari database Supabase...</span>
                 </div>
               </div>
@@ -490,26 +492,11 @@
             <div class="section-container mt-3">
               <div class="donate-page-grid">
                 <div class="donate-banks-row">
-                  <!-- Bank Card 1: BCA -->
-                  <div class="donate-page-card">
-                    <div class="bank-header">
-                      <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK BCA</span>
-                      <span class="bank-chip">Persepuluhan & Persembahan</span>
-                    </div>
-                    <div class="bank-number-box">
-                      <span class="bank-num-text">8820-1928-3741</span>
-                      <button class="btn-copy" onclick="copyToClipboard('8820-1928-3741', 'No. Rekening BCA')">
-                        <i class="fa-solid fa-copy"></i> Salin Rekening
-                      </button>
-                    </div>
-                    <p class="bank-holder">a.n. GMAHK Jemaat Taman Gethsemane</p>
-                  </div>
-
-                  <!-- Bank Card 2: MANDIRI -->
+                  <!-- Bank Card: MANDIRI -->
                   <div class="donate-page-card">
                     <div class="bank-header">
                       <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK MANDIRI</span>
-                      <span class="bank-chip chip-gold">Pembangunan Gereja</span>
+                      <span class="bank-chip chip-gold">Persepuluhan & Persembahan</span>
                     </div>
                     <div class="bank-number-box">
                       <span class="bank-num-text">142-00-9988776-5</span>
@@ -631,7 +618,7 @@
         <!-- Main Content Area -->
         <main class="admin-main">
           <!-- Panel: Tabel POS -->
-          <section id="panel-pos" class="admin-panel active">
+          <section id="panel-pos" class="admin-panel">
             <!-- Header Section -->
             <div class="admin-panel-header">
               <div class="panel-header-info">
@@ -699,7 +686,7 @@
           </section>
 
           <!-- Panel: Tabel Direktori Jemaat & Pengurus -->
-          <section id="panel-directory" class="admin-panel">
+          <section id="panel-directory" class="admin-panel active">
             <!-- Header Section -->
             <div class="admin-panel-header">
               <div class="panel-header-info">
@@ -944,6 +931,22 @@
     </div>
   </div>
 
+  <!-- Modal Edit Pengumuman -->
+  <div id="modal-edit-pengumuman" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-pen text-gold"></i> Edit Pengumuman</h4>
+        <button class="modal-close" onclick="closeModal('modal-edit-pengumuman')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="input-pengumuman" class="form-control" rows="6" style="width: 100%; border-radius: 8px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-color);" placeholder="Tulis pengumuman di sini..."></textarea>
+        <button class="btn-primary" onclick="simpanPengumuman()" style="width: 100%;" id="btn-simpan-pengumuman">
+          <i class="fa-solid fa-save"></i> Simpan ke Supabase
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Donasi & Persembahan -->
   <div id="modal-donate" class="modal-overlay">
     <div class="modal-card">
@@ -959,22 +962,8 @@
 
         <div class="bank-card">
           <div class="bank-header">
-            <span class="bank-name">BANK BCA</span>
-            <span class="bank-chip">Persepuluhan & Persembahan</span>
-          </div>
-          <div class="bank-number">
-            <span id="account-bca">8820-1928-3741</span>
-            <button class="btn-copy" onclick="copyToClipboard('8820-1928-3741', 'No. Rekening BCA')">
-              <i class="fa-solid fa-copy"></i> Salin
-            </button>
-          </div>
-          <p class="bank-holder">a.n. GMAHK Jemaat Taman Gethsemane</p>
-        </div>
-
-        <div class="bank-card">
-          <div class="bank-header">
             <span class="bank-name">BANK MANDIRI</span>
-            <span class="bank-chip">Pembangunan Gereja</span>
+            <span class="bank-chip">Persepuluhan & Persembahan</span>
           </div>
           <div class="bank-number">
             <span id="account-mandiri">142-00-9988776-5</span>
@@ -1220,7 +1209,7 @@
     <div class="modal-card modal-card-auth">
       <div class="modal-header auth-header">
         <div class="auth-header-title">
-          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
             <i class="fa-solid fa-calendar-plus"></i>
           </div>
           <div>
@@ -1245,7 +1234,7 @@
             <option value="Sdri. Rachel"></option>
           </datalist>
 
-          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: var(--primary-navy); border-color: var(--primary-navy);">
             <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Jadwal ke Database</span>
           </button>
         </form>
@@ -1258,7 +1247,7 @@
     <div class="modal-card modal-card-auth">
       <div class="modal-header auth-header">
         <div class="auth-header-title">
-          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
             <i class="fa-solid fa-pen-to-square"></i>
           </div>
           <div>
@@ -1279,7 +1268,7 @@
             <label class="form-label">Pianist</label>
             <input type="text" id="pos-edit-pianist" class="form-input-styled" required list="pos-officer-suggestions">
           </div>
-          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: var(--primary-navy); border-color: var(--primary-navy);">
             <i class="fa-solid fa-check"></i> <span>Perbarui Jadwal</span>
           </button>
         </form>
@@ -1328,7 +1317,7 @@
     <div class="modal-card modal-card-auth">
       <div class="modal-header auth-header">
         <div class="auth-header-title">
-          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
             <i class="fa-solid fa-user-plus"></i>
           </div>
           <div>
@@ -1342,25 +1331,37 @@
         <form id="directory-add-form" onsubmit="handleSaveNewDirectory(event)">
           <div class="form-group">
             <label class="form-label">Kategori Pelayanan</label>
-            <select id="dir-add-category" class="form-input-styled" required>
-              <option value="gembala">Pendeta / Gembala Jemaat</option>
-              <option value="officers">Officers Jemaat</option>
-              <option value="majelis_dept">Majelis & Pengurus Departemen</option>
-            </select>
+            <div class="input-with-icon">
+              <i class="input-icon category-field-icon fa-solid fa-crown"></i>
+              <select id="dir-add-category" class="form-input-styled" onchange="updateDirectoryCategoryIcon(this)" required>
+                <option value="gembala">Pendeta / Gembala Jemaat</option>
+                <option value="officers">Officers Jemaat</option>
+                <option value="majelis_dept">Majelis & Pengurus Departemen</option>
+              </select>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Nama Lengkap</label>
-            <input type="text" id="dir-add-name" placeholder="Contoh: Bpk. Daniel / Ibu Tabita" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-user"></i>
+              <input type="text" id="dir-add-name" placeholder="Contoh: Bpk. Daniel / Ibu Tabita" class="form-input-styled" required>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Nama Jabatan / Peran</label>
-            <input type="text" id="dir-add-role" placeholder="Contoh: Gembala Jemaat / Ketua Jemaat / Sekretaris" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-briefcase"></i>
+              <input type="text" id="dir-add-role" placeholder="Contoh: Gembala Jemaat / Ketua Jemaat / Sekretaris" class="form-input-styled" required>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Nomor WhatsApp / Telepon</label>
-            <input type="tel" id="dir-add-phone" placeholder="Contoh: +62 812-3456-7890" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-brands fa-whatsapp"></i>
+              <input type="tel" id="dir-add-phone" placeholder="Contoh: +62 812-3456-7890" class="form-input-styled" required>
+            </div>
           </div>
-          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: var(--primary-navy); border-color: var(--primary-navy);">
             <i class="fa-solid fa-floppy-disk"></i> <span>Simpan ke Database</span>
           </button>
         </form>
@@ -1373,7 +1374,7 @@
     <div class="modal-card modal-card-auth">
       <div class="modal-header auth-header">
         <div class="auth-header-title">
-          <div class="auth-icon-badge" style="background: rgba(136, 19, 55, 0.12); color: #881337;">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
             <i class="fa-solid fa-user-pen"></i>
           </div>
           <div>
@@ -1388,25 +1389,37 @@
           <input type="hidden" id="dir-edit-id">
           <div class="form-group">
             <label class="form-label">Kategori Pelayanan</label>
-            <select id="dir-edit-category" class="form-input-styled" required>
-              <option value="gembala">Pendeta / Gembala Jemaat</option>
-              <option value="officers">Officers Jemaat</option>
-              <option value="majelis_dept">Majelis & Pengurus Departemen</option>
-            </select>
+            <div class="input-with-icon">
+              <i class="input-icon category-field-icon fa-solid fa-crown"></i>
+              <select id="dir-edit-category" class="form-input-styled" onchange="updateDirectoryCategoryIcon(this)" required>
+                <option value="gembala">Pendeta / Gembala Jemaat</option>
+                <option value="officers">Officers Jemaat</option>
+                <option value="majelis_dept">Majelis & Pengurus Departemen</option>
+              </select>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Nama Lengkap</label>
-            <input type="text" id="dir-edit-name" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-user"></i>
+              <input type="text" id="dir-edit-name" class="form-input-styled" required>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Nama Jabatan / Peran</label>
-            <input type="text" id="dir-edit-role" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-briefcase"></i>
+              <input type="text" id="dir-edit-role" class="form-input-styled" required>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Nomor WhatsApp / Telepon</label>
-            <input type="tel" id="dir-edit-phone" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-brands fa-whatsapp"></i>
+              <input type="tel" id="dir-edit-phone" class="form-input-styled" required>
+            </div>
           </div>
-          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: #881337; border-color: #881337;">
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: var(--primary-navy); border-color: var(--primary-navy);">
             <i class="fa-solid fa-check"></i> <span>Perbarui Kontak</span>
           </button>
         </form>
