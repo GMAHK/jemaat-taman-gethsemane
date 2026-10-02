@@ -8,28 +8,11 @@
 // ==========================================
 
 // Gallery Data for Lightbox Modal
-const galleryData = [
-  {
-    src: "https://images.unsplash.com/photo-1548625361-18569c76251b?auto=format&fit=crop&w=1200&q=80",
-    title: "Gedung Gereja Perdana (1992)",
-    desc: "Suasana peletakan batu pertama dan pembangunan awal tempat ibadah GMAHK Taman Gethsemane."
-  },
-  {
-    src: "https://images.unsplash.com/photo-1510563800743-aed236490d08?auto=format&fit=crop&w=1200&q=80",
-    title: "Kebaktian Sabat Pertama",
-    desc: "Persekutuan suci jemaat mula-mula dengan penuh sukacita dan kehangatan persaudaraan."
-  },
-  {
-    src: "https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=1200&q=80",
-    title: "Tim Paduan Suara Jemaat (2010)",
-    desc: "Pelayanan pujian dan musik rohani yang memperindah ibadah Sabat."
-  },
-  {
-    src: "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&w=1200&q=80",
-    title: "Kegiatan Bakti Sosial Masyarakat",
-    desc: "Wujud kepedulian jemaat kepada sesama masyarakat Taman Gethsemane melalui pembagian sembako & pengobatan gratis."
-  }
-];
+let galleryEvents = [];
+let galleryEventsLoadError = "";
+let currentGalleryEventId = null;
+let galleryOrderMode = false;
+let galleryOrderDraft = [];
 
 // Catalogs are loaded from Supabase; empty tables stay empty in the UI.
 let lselSongs = [];
@@ -45,6 +28,7 @@ let userRatingScore = 0;
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initRouter();
+  initMinisterFamilyTransitions();
   initCountdown();
   initRatingSystem();
   initProgramTabs();
@@ -54,6 +38,80 @@ document.addEventListener("DOMContentLoaded", () => {
   initAdminState();
   renderPublicDirectory();
 });
+
+function initMinisterFamilyTransitions() {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  document.querySelectorAll(".minister-family").forEach(family => {
+    const summary = family.querySelector("summary");
+    const card = family.closest(".minister-card");
+    if (!summary || !card) return;
+
+    let desiredOpen = family.open;
+    let cardAnimation = null;
+    let pendingFrame = 0;
+
+    summary.addEventListener("click", event => {
+      event.preventDefault();
+
+      const startHeight = card.getBoundingClientRect().height;
+      if (cardAnimation) {
+        cardAnimation.cancel();
+        cardAnimation = null;
+      }
+      if (pendingFrame) {
+        cancelAnimationFrame(pendingFrame);
+        pendingFrame = 0;
+      }
+
+      const shouldOpen = !desiredOpen;
+      desiredOpen = shouldOpen;
+      family.classList.toggle("is-closing", !shouldOpen);
+      family.open = true;
+      card.style.height = "auto";
+      let endHeight = card.getBoundingClientRect().height;
+
+      if (!shouldOpen) {
+        family.open = false;
+        card.style.height = "auto";
+        endHeight = card.getBoundingClientRect().height;
+        family.open = true;
+      }
+
+      card.style.height = `${startHeight}px`;
+      card.style.overflow = "hidden";
+      card.classList.add("is-family-animating");
+      card.offsetHeight;
+
+      const finish = () => {
+        if (desiredOpen !== shouldOpen) return;
+        family.open = shouldOpen;
+        family.classList.remove("is-closing");
+        card.style.height = "";
+        card.style.overflow = "";
+        card.classList.remove("is-family-animating");
+        cardAnimation = null;
+      };
+
+      if (reduceMotion.matches || Math.abs(endHeight - startHeight) < 1) {
+        finish();
+        return;
+      }
+
+      pendingFrame = requestAnimationFrame(() => {
+        pendingFrame = 0;
+        const animation = card.animate(
+          [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
+          { duration: 240, easing: "cubic-bezier(.2, .7, .2, 1)" }
+        );
+        cardAnimation = animation;
+        animation.onfinish = () => {
+          if (cardAnimation === animation) finish();
+        };
+      });
+    });
+  });
+}
 
 // ==========================================
 // 4. THEME & VIEWPORT TOGGLE
@@ -99,7 +157,8 @@ const tabToHashMap = {
   "tab-history": "sejarah",
   "tab-worship": "ibadah",
   "tab-directory": "direktori",
-  "tab-donate": "persembahan"
+  "tab-donate": "persembahan",
+  "tab-gallery-viewer": "galeri"
 };
 
 const hashToTabMap = {
@@ -112,8 +171,20 @@ const hashToTabMap = {
   "direktori": "tab-directory",
   "directory": "tab-directory",
   "persembahan": "tab-donate",
-  "donate": "tab-donate"
+  "donate": "tab-donate",
+  "galeri": "tab-gallery-viewer"
 };
+
+function getTabIdFromHash(hash) {
+  if (hashToTabMap[hash]) return hashToTabMap[hash];
+  return hash.startsWith("galeri-") ? "tab-gallery-viewer" : "tab-home";
+}
+
+function renderGalleryViewerFromHash(hash) {
+  if (!hash.startsWith("galeri-")) return;
+  currentGalleryEventId = hash.slice("galeri-".length);
+  renderGalleryViewer(currentGalleryEventId);
+}
 
 function switchTab(tabId, updateHistory = true) {
   // Hide all tabs
@@ -130,19 +201,29 @@ function switchTab(tabId, updateHistory = true) {
   const navItems = document.querySelectorAll(".nav-item");
   navItems.forEach(item => item.classList.remove("active"));
 
-  const targetNavBtn = document.getElementById(`nav-${tabId}`);
+  const navTabId = tabId === "tab-gallery-viewer" ? "tab-home" : tabId;
+  const targetNavBtn = document.getElementById(`nav-${navTabId}`);
   if (targetNavBtn) {
     targetNavBtn.classList.add("active");
   }
 
   // Save active tab ID to localStorage
-  localStorage.setItem("gmahk_active_tab", tabId);
+  localStorage.setItem("gmahk_active_tab", navTabId);
 
   // Update URL Hash and Browser History
-  const hash = tabToHashMap[tabId] || "beranda";
+  const hash = tabId === "tab-gallery-viewer" && currentGalleryEventId
+    ? `galeri-${currentGalleryEventId}`
+    : tabToHashMap[tabId] || "beranda";
   if (updateHistory) {
     if (window.location.hash !== `#${hash}`) {
-      window.history.pushState({ tabId: tabId }, "", `#${hash}`);
+      const state = {
+        tabId,
+        galleryViewer: tabId === "tab-gallery-viewer",
+        galleryEventId: tabId === "tab-gallery-viewer" ? currentGalleryEventId : null
+      };
+      const replaceViewerEntry = tabId === "tab-gallery-viewer"
+        && window.location.hash.replace("#", "").startsWith("galeri-");
+      window.history[replaceViewerEntry ? "replaceState" : "pushState"](state, "", `#${hash}`);
     }
   }
 
@@ -154,33 +235,32 @@ function switchTab(tabId, updateHistory = true) {
 }
 
 function initRouter() {
-  // Listen for browser Back / Forward buttons and mobile back gestures
-  window.addEventListener("popstate", (e) => {
-    if (e.state && e.state.tabId) {
-      switchTab(e.state.tabId, false);
-    } else {
-      const hash = window.location.hash.replace("#", "").toLowerCase();
-      const tabId = hashToTabMap[hash] || "tab-home";
-      switchTab(tabId, false);
-    }
-  });
-
-  window.addEventListener("hashchange", () => {
+  const applyHashRoute = event => {
     const hash = window.location.hash.replace("#", "").toLowerCase();
-    const tabId = hashToTabMap[hash];
-    if (tabId) {
-      switchTab(tabId, false);
+    if (event?.type === "popstate" && hash.startsWith("galeri-")) {
+      currentGalleryEventId = null;
+      window.history.replaceState({ tabId: "tab-home" }, "", "#beranda");
+      switchTab("tab-home", false);
+      return;
     }
-  });
+    const tabId = getTabIdFromHash(hash);
+    if (tabId === "tab-gallery-viewer") renderGalleryViewerFromHash(hash);
+    switchTab(tabId, false);
+  };
+
+  // Listen for browser Back / Forward buttons and mobile back gestures
+  window.addEventListener("popstate", applyHashRoute);
+  window.addEventListener("hashchange", applyHashRoute);
 
   // Restore initial tab on page load or refresh
   const initialHash = window.location.hash.replace("#", "").toLowerCase();
-  const tabFromHash = hashToTabMap[initialHash];
+  const tabFromHash = hashToTabMap[initialHash] || (initialHash.startsWith("galeri-") ? "tab-gallery-viewer" : null);
   const savedTab = localStorage.getItem("gmahk_active_tab");
 
   if (tabFromHash) {
+    if (tabFromHash === "tab-gallery-viewer") renderGalleryViewerFromHash(initialHash);
     switchTab(tabFromHash, false);
-  } else if (savedTab && document.getElementById(savedTab)) {
+  } else if (savedTab && savedTab !== "tab-gallery-viewer" && document.getElementById(savedTab)) {
     switchTab(savedTab, true);
   } else {
     switchTab("tab-home", true);
@@ -198,14 +278,14 @@ function initCountdown() {
     let daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
 
     if (dayOfWeek === 6) {
-      target.setHours(8, 30, 0, 0);
+      target.setHours(9, 0, 0, 0);
       if (now > target) {
         daysUntilSaturday = 7;
       }
     }
 
     target.setDate(now.getDate() + daysUntilSaturday);
-    target.setHours(8, 30, 0, 0);
+    target.setHours(9, 0, 0, 0);
 
     const diff = target - now;
 
@@ -478,7 +558,7 @@ async function fetchHymnalData() {
 
     hymnalSongs = [...lselSongs, ...aysSongs];
     renderHymnalList(hymnalSongs);
-    ["sabat-raya", "pa", "rabu-malam"].forEach(renderSubTab);
+    ["sabat-raya", "rabu-malam"].forEach(renderSubTab);
   } catch (error) {
     console.warn("Gagal mengambil katalog lagu dari Supabase:", error.message);
   }
@@ -507,47 +587,11 @@ document.addEventListener("click", (e) => {
   }
 });
 
-function openLightbox(index) {
-  if (index < 0 || index >= galleryData.length) return;
-  currentLightboxIndex = index;
-
-  const item = galleryData[currentLightboxIndex];
-  const modal = document.getElementById("lightbox-modal");
-  const img = document.getElementById("lightbox-img");
-  const title = document.getElementById("lightbox-title");
-  const desc = document.getElementById("lightbox-desc");
-
-  if (img) img.src = item.src;
-  if (title) title.textContent = item.title;
-  if (desc) desc.textContent = item.desc;
-
-  if (modal) modal.classList.add("active");
-}
-
-function closeLightbox() {
-  const modal = document.getElementById("lightbox-modal");
-  if (modal) modal.classList.remove("active");
-}
-
-function navigateLightbox(direction) {
-  let newIndex = currentLightboxIndex + direction;
-  if (newIndex < 0) newIndex = galleryData.length - 1;
-  if (newIndex >= galleryData.length) newIndex = 0;
-  openLightbox(newIndex);
-}
-
 function initGlobalKeyboard() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      closeLightbox();
       const activeModals = document.querySelectorAll(".modal-overlay.active");
       activeModals.forEach(m => m.classList.remove("active"));
-    } else if (e.key === "ArrowLeft") {
-      const modal = document.getElementById("lightbox-modal");
-      if (modal && modal.classList.contains("active")) navigateLightbox(-1);
-    } else if (e.key === "ArrowRight") {
-      const modal = document.getElementById("lightbox-modal");
-      if (modal && modal.classList.contains("active")) navigateLightbox(1);
     }
   });
 }
@@ -652,6 +696,7 @@ const defaultWorshipData = {
       "Bagi partisipan yang berhalangan, diharapkan untuk mencari pengganti secara mandiri.",
     ]
   },
+  /*
   "pa": {
     title: "Pemuda Advent (PA)",
     subtitle: "Sabtu Sore, 15 Agustus 2026",
@@ -680,6 +725,7 @@ const defaultWorshipData = {
       }
     ]
   },
+  */
   "rabu-malam": {
     title: "Ibadah Permintaan Doa",
     subtitle: "Rabu, 23 September 2026 | 19.00 WIB",
@@ -772,7 +818,6 @@ function syncWorshipEventNames(savedData) {
 let worshipData = loadWorshipData();
 let subtabEditState = {
   "sabat-raya": false,
-  "pa": false,
   "rabu-malam": false
 };
 
@@ -782,7 +827,6 @@ function saveWorshipDataToStorage() {
 
 function initWorshipSubTabs() {
   renderSubTab("sabat-raya");
-  renderSubTab("pa");
   renderSubTab("rabu-malam");
 }
 
@@ -830,14 +874,23 @@ function getDynamicWorshipSubtitle(key) {
   }
 
   const dateText = formatWorshipDate(getUpcomingWorshipDate(6));
-  return key === "pa"
-    ? `Sabtu Sore, ${dateText.replace(/^Sabtu, /, "")}`
-    : `${dateText}`;
+  return dateText;
 }
 
 function renderSubTab(key) {
   const container = document.getElementById(`subtab-container-${key}`);
   if (!container) return;
+
+  if (key === "pa") {
+    container.innerHTML = `
+      <div class="coming-soon-card">
+        <i class="fa-solid fa-clock" aria-hidden="true"></i>
+        <h3>Pemuda Advent</h3>
+        <p>Segera hadir</p>
+      </div>
+    `;
+    return;
+  }
 
   const data = worshipData[key];
   if (!data) return;
@@ -1148,12 +1201,6 @@ function updateSongTitle(key, secIdx, itemIdx, val) {
 
 
 
-function openEditSubTabModal(programName) {
-  const keyMap = { "Sabat Raya": "sabat-raya", "Pemuda Advent": "pa", "Rabu Malam": "rabu-malam" };
-  const key = keyMap[programName] || "sabat-raya";
-  toggleEditSubTab(key);
-}
-
 // ==========================================
 // 13. SUPABASE INTEGRATION, ADMIN AUTH & DATABASE VIEW ENGINE
 // ==========================================
@@ -1176,6 +1223,445 @@ function initSupabaseClient() {
 // Initial client creation attempt
 initSupabaseClient();
 
+async function fetchGalleryEvents() {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    galleryEventsLoadError = "Supabase belum terhubung.";
+    renderGalleryEvents();
+    renderGalleryAdminPanel();
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("Kegiatan Jemaat")
+      .select("id, slot, title, subtitle, slides_url")
+      .order("slot", { ascending: true });
+
+    if (error) throw error;
+    galleryEvents = (data || []).slice(0, 3);
+    galleryEventsLoadError = "";
+  } catch (error) {
+    galleryEvents = [];
+    galleryEventsLoadError = error.message || "Gagal memuat dokumentasi.";
+    console.warn("Supabase fetch gallery events error:", galleryEventsLoadError);
+  }
+
+  renderGalleryEvents();
+  renderGalleryAdminPanel();
+  const currentHash = window.location.hash.replace("#", "").toLowerCase();
+  if (currentHash.startsWith("galeri-")) renderGalleryViewerFromHash(currentHash);
+}
+
+function renderGalleryEvents() {
+  const grid = document.getElementById("gallery-event-grid");
+  if (!grid) return;
+
+  grid.dataset.count = String(galleryEvents.length);
+  if (galleryEvents.length === 0) {
+    grid.innerHTML = `<div class="gallery-events-empty"><i class="fa-regular fa-images"></i><span>Belum ada dokumentasi kegiatan.</span></div>`;
+    return;
+  }
+
+  grid.innerHTML = galleryEvents.map(event => `
+    <button class="gallery-event-card" type="button" onclick="openGalleryEvent('${escapeHtml(String(event.id))}')">
+      <span class="gallery-event-media">
+        <img class="gallery-event-thumbnail" src="${escapeHtml(getGoogleSlidesThumbnailUrl(event.slides_url))}"
+          alt="" loading="lazy" decoding="async"
+          data-fallback-src="${escapeHtml(getGoogleSlidesThumbnailFallbackUrl(event.slides_url))}"
+          onerror="if (this.dataset.fallbackSrc) { this.src = this.dataset.fallbackSrc; this.dataset.fallbackSrc = ''; } else { this.closest('.gallery-event-media').classList.add('is-unavailable'); this.remove(); }">
+        <i class="gallery-thumbnail-placeholder fa-solid fa-photo-film" aria-hidden="true"></i>
+      </span>
+      <span class="gallery-event-copy">
+        <span class="gallery-event-title">${escapeHtml(event.title)}</span>
+        <span class="gallery-event-subtitle">${escapeHtml(event.subtitle)}</span>
+        <span class="gallery-event-action">Lihat presentasi <i class="fa-solid fa-arrow-right"></i></span>
+      </span>
+    </button>
+  `).join("");
+}
+
+function renderGalleryAdminPanel() {
+  const list = document.getElementById("gallery-admin-list");
+  const status = document.getElementById("gallery-admin-status");
+  const addButton = document.getElementById("btn-add-gallery-event");
+  const orderButton = document.getElementById("btn-gallery-order");
+  const cancelOrderButton = document.getElementById("btn-cancel-gallery-order");
+  const saveOrderButton = document.getElementById("btn-save-gallery-order");
+  if (!list) return;
+
+  const isAtCapacity = galleryEvents.length >= 3;
+  if (addButton) {
+    addButton.disabled = isAtCapacity || Boolean(galleryEventsLoadError);
+    addButton.hidden = galleryOrderMode;
+    addButton.style.display = galleryOrderMode ? "none" : ""; // Sembunyikan Tambah Event saat Atur Slot aktif
+    addButton.title = isAtCapacity ? "Maksimal tiga event sudah tercapai." : "";
+  }
+  
+  if (orderButton) {
+    orderButton.disabled = galleryEvents.length === 0 || Boolean(galleryEventsLoadError);
+    orderButton.setAttribute("aria-pressed", String(galleryOrderMode));
+    
+    // Ubah warna Atur Slot berdasarkan mode
+    if (galleryOrderMode) {
+      orderButton.style.background = "var(--primary-navy)";
+      orderButton.style.color = "#ffffff";
+      orderButton.style.borderColor = "var(--primary-navy)";
+    } else {
+      orderButton.style.background = ""; // Reset ke css default
+      orderButton.style.color = "";
+      orderButton.style.borderColor = "";
+    }
+  }
+  
+  if (cancelOrderButton) {
+    cancelOrderButton.hidden = !galleryOrderMode;
+    cancelOrderButton.style.display = galleryOrderMode ? "" : "none";
+    // Sesuaikan warna Batal (Terang/Transparan)
+    cancelOrderButton.style.background = "var(--bg-main)";
+    cancelOrderButton.style.color = "var(--text-main)";
+    cancelOrderButton.style.borderColor = "var(--border-color)";
+  }
+  
+  if (saveOrderButton) {
+    saveOrderButton.hidden = !galleryOrderMode;
+    saveOrderButton.style.display = galleryOrderMode ? "" : "none";
+    saveOrderButton.disabled = Boolean(galleryEventsLoadError);
+    // Sesuaikan warna Simpan (Gelap/Aksen)
+    saveOrderButton.style.background = "var(--accent-gold)";
+    saveOrderButton.style.color = "#ffffff";
+    saveOrderButton.style.borderColor = "var(--accent-gold)";
+  }
+
+  if (status) {
+    status.textContent = galleryEventsLoadError
+      ? "Tabel galeri belum tersedia. Siapkan tabel Supabase menggunakan SQL yang disediakan."
+      : galleryOrderMode
+        ? "Mode Atur Slot Aktif. Klik, tahan, dan geser (drag & drop) untuk mengatur urutan."
+        : `${galleryEvents.length} dari 3 event digunakan.`;
+  }
+
+  if (galleryEvents.length === 0) {
+    galleryOrderMode = false;
+    list.innerHTML = `<div class="gallery-admin-empty">Belum ada event dokumentasi.</div>`;
+    return;
+  }
+
+  const items = galleryOrderMode ? galleryOrderDraft : galleryEvents;
+  list.innerHTML = items.map((event, index) => `
+    <article class="gallery-admin-item${galleryOrderMode ? " is-ordering" : ""}" data-event-id="${escapeHtml(String(event.id))}" ${galleryOrderMode ? 'draggable="true"' : ''}>
+      <div class="gallery-admin-item-info">
+        <span class="gallery-event-slot">SLOT ${String(index + 1).padStart(2, "0")}</span>
+        <h3>${escapeHtml(event.title)}</h3>
+        <p>${escapeHtml(event.subtitle)}</p>
+        <a href="${escapeHtml(event.slides_url)}" target="_blank" rel="noopener noreferrer">Buka sumber Slides <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+      </div>
+      <div class="gallery-admin-item-actions${galleryOrderMode ? " gallery-order-controls" : ""}">
+        ${galleryOrderMode ? `
+          <div class="gallery-drag-handle" data-event-id="${escapeHtml(String(event.id))}" aria-label="Seret ${escapeHtml(event.title)} untuk mengubah urutan" title="Seret untuk mengubah urutan" style="cursor: grab; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; font-size: 1.2rem; color: var(--text-muted);">
+            <i class="fa-solid fa-grip-lines" aria-hidden="true"></i>
+          </div>
+        ` : `
+          <button class="btn-table-edit" type="button" onclick="openGalleryEventForm('${escapeHtml(String(event.id))}')">Edit</button>
+          <button class="btn-table-delete" type="button" onclick="deleteGalleryEvent('${escapeHtml(String(event.id))}')">Hapus</button>
+        `}
+      </div>
+    </article>
+  `).join("");
+  initGalleryOrderDragDrop(list);
+}
+
+function initGalleryOrderDragDrop(list) {
+  if (list.dataset.dragDropReady) return;
+  list.dataset.dragDropReady = "true";
+
+  let draggedEventId = null;
+  list.addEventListener("dragstart", event => {
+    const item = event.target.closest(".gallery-admin-item.is-ordering");
+    if (!galleryOrderMode || !item) {
+      event.preventDefault();
+      return;
+    }
+
+    draggedEventId = item.dataset.eventId;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", draggedEventId);
+    item.classList.add("is-dragging");
+  });
+
+  list.addEventListener("dragover", event => {
+    const target = event.target.closest(".gallery-admin-item.is-ordering");
+    if (!galleryOrderMode || !draggedEventId || !target) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    list.querySelectorAll(".is-drop-target").forEach(item => item.classList.remove("is-drop-target"));
+    target.classList.add("is-drop-target");
+  });
+
+  list.addEventListener("drop", event => {
+    const target = event.target.closest(".gallery-admin-item.is-ordering");
+    const sourceId = event.dataTransfer.getData("text/plain") || draggedEventId;
+    if (!galleryOrderMode || !sourceId || !target) return;
+    event.preventDefault();
+
+    const targetId = target.dataset.eventId;
+    const sourceIndex = galleryOrderDraft.findIndex(item => String(item.id) === String(sourceId));
+    const targetIndex = galleryOrderDraft.findIndex(item => String(item.id) === String(targetId));
+    if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+
+    const rect = target.getBoundingClientRect();
+    const insertAfter = event.clientY > rect.top + rect.height / 2;
+    const [dragged] = galleryOrderDraft.splice(sourceIndex, 1);
+    let insertAt = targetIndex + (insertAfter ? 1 : 0);
+    if (sourceIndex < insertAt) insertAt -= 1;
+    galleryOrderDraft.splice(insertAt, 0, dragged);
+    draggedEventId = null;
+    renderGalleryAdminPanel();
+  });
+
+  list.addEventListener("dragend", () => {
+    draggedEventId = null;
+    list.querySelectorAll(".is-dragging, .is-drop-target").forEach(item => {
+      item.classList.remove("is-dragging", "is-drop-target");
+    });
+  });
+}
+
+function getGoogleSlidesPresentationInfo(slidesUrl) {
+  try {
+    const url = new URL(slidesUrl);
+    if (url.protocol !== "https:" || url.hostname !== "docs.google.com" || url.username || url.password || (url.port && url.port !== "443")) return "";
+    const match = url.pathname.match(/^\/presentation\/d\/(e\/)?([^/]+)/);
+    if (!match) return "";
+
+    return { id: encodeURIComponent(match[2]), published: Boolean(match[1]) };
+  } catch {
+    return null;
+  }
+}
+
+function getGoogleSlidesEmbedUrl(slidesUrl) {
+  const presentation = getGoogleSlidesPresentationInfo(slidesUrl);
+  if (!presentation) return "";
+  const publishedPath = presentation.published ? "e/" : "";
+  return `https://docs.google.com/presentation/d/${publishedPath}${presentation.id}/embed?start=false&loop=false&delayms=3000`;
+}
+
+function getGoogleSlidesThumbnailUrl(slidesUrl) {
+  const presentation = getGoogleSlidesPresentationInfo(slidesUrl);
+  if (!presentation) return "";
+  if (presentation.published) {
+    return `https://docs.google.com/presentation/d/e/${presentation.id}/export/png`;
+  }
+  return `https://drive.google.com/thumbnail?id=${presentation.id}&sz=w1200`;
+}
+
+function getGoogleSlidesThumbnailFallbackUrl(slidesUrl) {
+  const presentation = getGoogleSlidesPresentationInfo(slidesUrl);
+  if (!presentation || presentation.published) return "";
+  return `https://docs.google.com/presentation/d/${presentation.id}/export/png`;
+}
+
+function renderGalleryViewer(eventId) {
+  const event = galleryEvents.find(item => String(item.id) === String(eventId));
+  const title = document.getElementById("gallery-viewer-title");
+  const subtitle = document.getElementById("gallery-viewer-subtitle");
+  const iframe = document.getElementById("gallery-slides-frame");
+  const frame = document.getElementById("gallery-slide-frame");
+  const status = document.getElementById("gallery-viewer-status");
+  if (!title || !subtitle || !iframe || !frame || !status) return;
+
+  if (!event) {
+    title.textContent = "Dokumentasi tidak ditemukan";
+    subtitle.textContent = "Event ini mungkin sudah dihapus.";
+    iframe.src = "about:blank";
+    frame.hidden = true;
+    status.hidden = true;
+    return;
+  }
+
+  title.textContent = event.title;
+  subtitle.textContent = event.subtitle;
+  const embedUrl = getGoogleSlidesEmbedUrl(event.slides_url);
+  iframe.src = embedUrl || "about:blank";
+  frame.hidden = !embedUrl;
+  status.textContent = embedUrl ? "" : "Tautan Google Slides tidak valid. Hubungi admin jemaat.";
+  status.hidden = Boolean(embedUrl);
+}
+
+function openGalleryEvent(eventId) {
+  if (!galleryEvents.some(event => String(event.id) === String(eventId))) return;
+  currentGalleryEventId = String(eventId);
+  renderGalleryViewer(currentGalleryEventId);
+  switchTab("tab-gallery-viewer");
+}
+
+function closeGalleryEvent() {
+  currentGalleryEventId = null;
+  window.history.replaceState({ tabId: "tab-home" }, "", "#beranda");
+  switchTab("tab-home", false);
+}
+
+function openGalleryEventForm(eventId = "") {
+  if (!isAdminLoggedIn) return;
+  const form = document.getElementById("gallery-event-form");
+  const event = galleryEvents.find(item => String(item.id) === String(eventId));
+  if (!form) return;
+
+  form.reset();
+  document.getElementById("gallery-event-id").value = event ? event.id : "";
+  document.getElementById("gallery-event-title").value = event ? event.title : "";
+  document.getElementById("gallery-event-subtitle").value = event ? event.subtitle : "";
+  document.getElementById("gallery-event-slides-url").value = event ? event.slides_url : "";
+  document.getElementById("gallery-event-modal-title").textContent = event ? "Edit Event" : "Tambah Event";
+  const error = document.getElementById("gallery-event-form-error");
+  error.hidden = true;
+  error.textContent = "";
+  openModal("modal-gallery-event");
+}
+
+function toggleGalleryOrderMode() {
+  if (!isAdminLoggedIn || galleryEvents.length === 0) return;
+  if (galleryOrderMode) {
+    cancelGalleryOrder();
+    return;
+  }
+  galleryOrderMode = true;
+  galleryOrderDraft = [...galleryEvents].sort((first, second) => Number(first.slot) - Number(second.slot));
+  renderGalleryAdminPanel();
+}
+
+function moveGalleryEventOrder(eventId, direction) {
+  const index = galleryOrderDraft.findIndex(event => String(event.id) === String(eventId));
+  const targetIndex = index + direction;
+  if (index < 0 || targetIndex < 0 || targetIndex >= galleryOrderDraft.length) return;
+
+  [galleryOrderDraft[index], galleryOrderDraft[targetIndex]] = [galleryOrderDraft[targetIndex], galleryOrderDraft[index]];
+  renderGalleryAdminPanel();
+}
+
+function cancelGalleryOrder() {
+  galleryOrderMode = false;
+  galleryOrderDraft = [];
+  renderGalleryAdminPanel();
+}
+
+async function saveGalleryEventOrder() {
+  const saveButton = document.getElementById("btn-save-gallery-order");
+  const status = document.getElementById("gallery-admin-status");
+
+  if (!galleryOrderMode || galleryOrderDraft.length === 0) return;
+
+  if (!isAdminLoggedIn || !supabaseClient) {
+    if (status) status.textContent = "Login admin Supabase diperlukan untuk mengatur slot.";
+    return;
+  }
+
+  if (saveButton) saveButton.disabled = true;
+  try {
+    // Trik Pemungkas: Kita TIDAK mengubah 'slot' atau 'id' sama sekali!
+    // Kita menukar 'title', 'subtitle', dan 'slides_url' dari row yang lama 
+    // agar sesuai dengan urutan yang baru. Ini menghindari bentrok Unique maupun Check Constraint!
+    
+    for (let i = 0; i < galleryOrderDraft.length; i++) {
+      const targetRow = galleryEvents[i]; // Row fisik asli di urutan i
+      const newEventData = galleryOrderDraft[i]; // Data yang diinginkan di urutan i
+      
+      // Jika di urutan ini datanya sudah benar, lewati update
+      if (targetRow.id === newEventData.id) continue;
+      
+      const { error } = await supabaseClient
+        .from("Kegiatan Jemaat")
+        .update({
+          title: newEventData.title,
+          subtitle: newEventData.subtitle,
+          slides_url: newEventData.slides_url,
+          created_at: newEventData.created_at // Tukar juga tanggalnya biar identik
+        })
+        .eq("id", targetRow.id);
+        
+      if (error) throw error;
+    }
+
+    galleryOrderMode = false;
+    galleryOrderDraft = [];
+    await fetchGalleryEvents();
+    showToast("Urutan slot kegiatan diperbarui.");
+  } catch (error) {
+    if (status) {
+      status.textContent = error.message || "Urutan slot gagal disimpan.";
+    }
+  } finally {
+    if (saveButton) saveButton.disabled = false;
+  }
+}
+
+async function saveGalleryEvent(event) {
+  event.preventDefault();
+  if (!isAdminLoggedIn || !supabaseClient) {
+    showToast("Login admin Supabase diperlukan untuk menyimpan event.", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  const id = document.getElementById("gallery-event-id").value;
+  const title = document.getElementById("gallery-event-title").value.trim();
+  const subtitle = document.getElementById("gallery-event-subtitle").value.trim();
+  const slidesUrl = document.getElementById("gallery-event-slides-url").value.trim();
+  const errorElement = document.getElementById("gallery-event-form-error");
+  if (!getGoogleSlidesEmbedUrl(slidesUrl)) {
+    errorElement.textContent = "Masukkan link presentasi Google Slides yang valid.";
+    errorElement.hidden = false;
+    return;
+  }
+
+  const existingEvent = galleryEvents.find(item => String(item.id) === String(id));
+  const usedSlots = new Set(galleryEvents.map(item => Number(item.slot)));
+  const slot = existingEvent
+    ? Number(existingEvent.slot)
+    : [1, 2, 3].find(candidate => !usedSlots.has(candidate));
+  if (!slot) {
+    closeModal("modal-gallery-event");
+    showToast("Galeri sudah mencapai batas maksimal tiga event.", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  const payload = { slot, title, subtitle, slides_url: slidesUrl };
+  const submitButton = document.querySelector("#gallery-event-form button[type='submit']");
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    const query = existingEvent
+      ? supabaseClient.from("Kegiatan Jemaat").update(payload).eq("id", id)
+      : supabaseClient.from("Kegiatan Jemaat").insert(payload);
+    const { error } = await query;
+    if (error) throw error;
+
+    closeModal("modal-gallery-event");
+    await fetchGalleryEvents();
+    showToast(existingEvent ? "Event dokumentasi diperbarui." : "Event dokumentasi ditambahkan.");
+  } catch (error) {
+    errorElement.textContent = error.message || "Event gagal disimpan. Pastikan hak akses Supabase sudah diatur.";
+    errorElement.hidden = false;
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+}
+
+async function deleteGalleryEvent(eventId) {
+  if (!isAdminLoggedIn || !supabaseClient) return;
+  const item = galleryEvents.find(event => String(event.id) === String(eventId));
+  if (!item || !window.confirm(`Hapus event "${item.title}" dari galeri?`)) return;
+
+  const { error } = await supabaseClient.from("Kegiatan Jemaat").delete().eq("id", eventId);
+  if (error) {
+    showToast(`Event gagal dihapus: ${error.message}`, "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  await fetchGalleryEvents();
+  showToast("Event dokumentasi dihapus.", "fa-solid fa-trash-can");
+}
+
 let isAdminLoggedIn = localStorage.getItem("is_admin_logged_in") === "true";
 
 function initAdminState() {
@@ -1185,6 +1671,7 @@ function initAdminState() {
   fetchPosFromSupabase();
   fetchSabbathProgramData();
   fetchPengumuman();
+  fetchGalleryEvents();
 }
 
 function updateAdminUIState() {
@@ -1200,14 +1687,12 @@ function updateAdminUIState() {
   if (!isAdminLoggedIn) {
     subtabEditState = {
       "sabat-raya": false,
-      "pa": false,
       "rabu-malam": false
     };
   }
 
   // Refresh worship subtabs so edit buttons toggle dynamically
   renderSubTab("sabat-raya");
-  renderSubTab("pa");
   renderSubTab("rabu-malam");
 
   if (!btnAdmin) return;
@@ -1247,6 +1732,7 @@ function openAdminDatabaseView() {
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
   fetchSabbathProgramData();
+  fetchGalleryEvents();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1449,6 +1935,8 @@ function switchAdminDbTab(tabKey) {
     renderPosTable();
   } else if (tabKey === "directory") {
     renderDirectoryTable();
+  } else if (tabKey === "gallery-events") {
+    fetchGalleryEvents();
   }
 }
 
@@ -1514,12 +2002,12 @@ const ssTableColumns = [
   ["pemimpin_acara", "Pemimpin Acara"],
   ["lagu_buka", "Lagu Buka"],
   ["ayat_inti_doa_buka", "Ayat Inti - Doa Buka"],
-  ["mission", "Mission"],
+  ["mission", "Berita Mission"],
   ["diskusi_gabungan", "Diskusi Orang Muda / Orang Tua"],
   ["lagu_pujian", "Lagu Pujian"],
   ["lagu_tutup", "Lagu Tutup"],
   ["pp", "PP"],
-  ["diakon_es", "Diakon/es"],
+  ["diakon_es", "Diakon & Diakones"],
   ["cerita_anak", "Cerita Anak"]
 ];
 
@@ -1584,7 +2072,7 @@ function renderSabbathDatabaseTable(tableKey, rows, columns, emptyMessage = "Bel
   body.innerHTML = filteredRows.map(row => `
     <tr>
       ${columns.map(([key]) => key === 'date'
-    ? `<td><span class="td-date-badge">${escapeHtml(getSabbathTableValue(row, key))}</span></td>`
+    ? `<td><span class="td-date-badge">${escapeHtml(formatDateIndo(getSabbathTableValue(row, key)))}</span></td>`
     : `<td class="td-officer${key === 'diskusi_gabungan' ? ' sabbath-discussion-cell' : ''}">${escapeHtml(getSabbathTableValue(row, key))}</td>`
   ).join('')}
       <td class="th-actions"><div class="td-actions-wrap">
@@ -1680,13 +2168,39 @@ function openSabbathTableAddModal(tableKey) {
   if (!title || !fieldsContainer || !form) return;
 
   const config = getSabbathTableConfig(tableKey);
+  const fieldIcons = {
+    date: "fa-calendar-day",
+    pemimpin_acara: "fa-user",
+    lagu_buka: "fa-music",
+    ayat_inti_doa_buka: "fa-book-bible",
+    mission: "fa-earth-asia",
+    diskusi_orang_muda: "fa-people-group",
+    diskusi_orang_tua: "fa-people-group",
+    diskusi_gabungan: "fa-people-group",
+    lagu_pujian: "fa-music",
+    lagu_tutup: "fa-music",
+    pp: "fa-hand-holding-heart",
+    diakon_es: "fa-handshake-angle",
+    cerita_anak: "fa-child-reaching",
+    mc_ayat_bersahutan: "fa-microphone",
+    doa_syafaat: "fa-hands-praying",
+    bacaan_persembahan: "fa-book-open",
+    doa_persembahan: "fa-hands-praying",
+    ayat_inti_visi_misi: "fa-book-bible",
+    pengkhotbah: "fa-person-chalkboard",
+    judul: "fa-heading",
+    doa_tutup: "fa-hands-praying"
+  };
   title.textContent = `Tambah Data ${tableKey === 'ss' ? 'Sekolah Sabat' : 'Khotbah'}`;
   form.dataset.tableKey = tableKey;
   delete form.dataset.editId;
   fieldsContainer.innerHTML = getSabbathFormFields(tableKey).map(([key, label]) => `
     <div class="form-group">
       <label class="form-label" for="sabbath-field-${key}">${escapeHtml(label)}</label>
-      <input id="sabbath-field-${key}" name="${key}" type="${key === 'date' ? 'date' : 'text'}" class="form-input-styled" ${key === 'date' ? 'required' : ''}>
+      <div class="input-with-icon">
+        <i class="input-icon fa-solid ${fieldIcons[key] || 'fa-pen-to-square'}" aria-hidden="true"></i>
+        <input id="sabbath-field-${key}" name="${key}" type="${key === 'date' ? 'date' : 'text'}" class="form-input-styled" ${key === 'date' ? 'required' : ''}>
+      </div>
     </div>
   `).join('');
   openModal('modal-sabbath-table-add');
@@ -1954,11 +2468,8 @@ function renderPosTable() {
 
 function formatDateIndo(dateStr) {
   if (!dateStr) return "-";
-  const parts = dateStr.split("-");
-  if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  }
-  return dateStr;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr));
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : String(dateStr);
 }
 
 function sortPosTable(field) {
@@ -2234,14 +2745,6 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
-function handleSubTabEditSubmit(e) {
-  e.preventDefault();
-  const progName = document.getElementById("edit-program-name").value;
-  closeModal("modal-edit-subtab");
-  showToast(`Perubahan susunan ${progName} berhasil disimpan! Siap sync ke Supabase.`, "fa-solid fa-floppy-disk text-gold");
-}
-
 
 function filterDirectory() {
   const input = document.getElementById("directory-search-input");

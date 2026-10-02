@@ -143,7 +143,7 @@
                     <i class="fa-solid fa-hand-holding-dollar"></i>
                   </div>
                   <span class="quick-label">Persembahan</span>
-                  <span class="quick-sub">Transfer & QRIS</span>
+                  <span class="quick-sub">Transfer Bank</span>
                 </button>
 
                 <button class="quick-card" onclick="openModal('modal-prayer')">
@@ -170,9 +170,17 @@
                 </div>
                 <p class="info-body" id="teks-pengumuman" style="white-space: pre-line;">Memuat pengumuman...</p>
                 <div class="info-footer">
-                  <span class="badge-pill"><i class="fa-regular fa-calendar"></i> Sabat, 08:30 WIB</span>
+                  <span class="badge-pill"><i class="fa-regular fa-calendar"></i> Sabat, 09:00 WIB</span>
                   <span class="badge-pill"><i class="fa-solid fa-location-dot"></i> Gedung Gereja Utama</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Kegiatan Jemaat -->
+            <div class="section-container">
+              <h3 class="section-title mt-4"><i class="fa-solid fa-images text-gold"></i> Kegiatan Jemaat</h3>
+              <div class="gallery-event-grid" id="gallery-event-grid">
+                <p class="gallery-events-status" id="gallery-events-status">Memuat dokumentasi...</p>
               </div>
             </div>
 
@@ -230,132 +238,225 @@
                 </div>
               </div>
             </div>
+
+            <footer class="home-credit">
+              <p>© 2026 - v1.0.0. GMAHK Taman Gethsemane. All rights reserved.</p>
+              <p>Developed by <strong>Meakhel Gunawan</strong></p>
+            </footer>
+          </section>
+
+          <section id="tab-gallery-viewer" class="tab-content">
+            <div class="gallery-viewer-page">
+              <button class="gallery-back-button" type="button" onclick="closeGalleryEvent()">
+                <i class="fa-solid fa-arrow-left"></i> Galeri Dokumentasi
+              </button>
+              <header class="gallery-viewer-heading">
+                <span class="gallery-viewer-kicker"><i class="fa-solid fa-photo-film"></i> Dokumentasi Jemaat</span>
+                <h2 id="gallery-viewer-title"></h2>
+                <p id="gallery-viewer-subtitle"></p>
+              </header>
+              <div class="gallery-slide-frame" id="gallery-slide-frame">
+                <iframe id="gallery-slides-frame" src="about:blank" title="Presentasi dokumentasi jemaat"
+                  allow="fullscreen" allowfullscreen loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              </div>
+              <p class="gallery-viewer-status" id="gallery-viewer-status" role="status" hidden></p>
+            </div>
           </section>
 
           <!-- ==================== TAB 2: SEJARAH ==================== -->
           <section id="tab-history" class="tab-content">
-            <div class="section-container">
-              <div class="history-hero">
-                <span class="badge-accent"><i class="fa-solid fa-hourglass-half"></i> Perjalanan Iman</span>
-                <h2 class="section-header-title">Sejarah & Perjalanan GMAHK Taman Gethsemane</h2>
-                <p class="section-header-desc">
-                  Mengenang penyertaan Tuhan dalam membimbing perkembangannya jemaat dari masa ke masa demi kemuliaan
-                  Nama-Nya.
-                </p>
-              </div>
-
-              <!-- Responsive Video Sejarah -->
-              <div class="video-container-card">
-                <div class="video-header">
-                  <i class="fa-solid fa-circle-play text-navy"></i>
-                  <span>Dokumenter Sejarah Singkat Gereja</span>
+            <div class="history-page">
+              <header class="history-intro">
+                <div class="history-intro-copy">
+                  <span class="history-kicker"><i class="fa-solid fa-book-open"></i> Catatan Perjalanan Iman</span>
+                  <h2 class="history-title">Dari Perkumpulan Doa Menjadi Jemaat</h2>
+                  <p class="history-description">
+                    Kisah kebersamaan anggota GMAHK Sepanjang yang bertumbuh menjadi Jemaat Taman Gethsemane, dalam
+                    penyertaan Tuhan.
+                  </p>
                 </div>
-                <div class="video-wrapper">
-                  <iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?controls=1"
-                    title="Dokumenter Sejarah GMAHK Taman Gethsemane"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                  </iframe>
-                </div>
-                <div class="video-caption">
-                  <i class="fa-solid fa-info-circle"></i> Video kilas balik perintisan Jemaat GMAHK Taman Gethsemane dan
-                  pertambahan jiwa-jiwa.
-                </div>
-              </div>
-
-              <!-- Milestone Timeline -->
-              <h3 class="section-title mt-4"><i class="fa-solid fa-timeline text-gold"></i> Timeline Sejarah</h3>
-              <div class="timeline">
-
-                <div class="timeline-item">
-                  <div class="timeline-dot"><i class="fa-solid fa-seedling"></i></div>
-                  <div class="timeline-content">
-                    <span class="timeline-year">Tahun 1985</span>
-                    <h4 class="timeline-title">Awal Perintisan Pendalaman Alkitab</h4>
-                    <p>Berawal dari persekutuan doa kelompok kecil beranggotakan 7 keluarga yang rindu belajar kebenaran
-                      Firman Tuhan di kawasan Taman Gethsemane.</p>
+                <div class="history-highlights" aria-label="Ringkasan sejarah jemaat">
+                  <div class="history-highlight">
+                    <span class="history-highlight-icon"><i class="fa-solid fa-people-group"></i></span>
+                    <strong>23</strong>
+                    <span>anggota memulai perkumpulan doa</span>
+                  </div>
+                  <div class="history-highlight">
+                    <span class="history-highlight-icon"><i class="fa-solid fa-calendar-check"></i></span>
+                    <strong>27 Jan 2018</strong>
+                    <span>kebaktian pertama</span>
+                  </div>
+                  <div class="history-highlight">
+                    <span class="history-highlight-icon"><i class="fa-solid fa-church"></i></span>
+                    <strong>Jemaat ke-73</strong>
+                    <span>di KJKT sejak 24 Maret 2019</span>
                   </div>
                 </div>
+              </header>
 
-                <div class="timeline-item">
-                  <div class="timeline-dot"><i class="fa-solid fa-house-chimney"></i></div>
-                  <div class="timeline-content">
-                    <span class="timeline-year">Tahun 1992</span>
-                    <h4 class="timeline-title">Pembangunan Rumah Ibadah Pertama</h4>
-                    <p>Dengan semangat gotong-royong dan swadaya jemaat, peletakan batu pertama gedung gereja berukuran
-                      8x15 meter resmi dilaksanakan.</p>
+              <section class="history-section" aria-labelledby="history-timeline-title">
+                <div class="history-section-heading">
+                  <div>
+                    <span class="history-section-kicker">2017 — 2019</span>
+                    <h3 id="history-timeline-title">Perjalanan Jemaat</h3>
                   </div>
+                  <p>Dari pertemuan pertama hingga diorganisasi sebagai jemaat.</p>
                 </div>
 
-                <div class="timeline-item">
-                  <div class="timeline-dot"><i class="fa-solid fa-award"></i></div>
-                  <div class="timeline-content">
-                    <span class="timeline-year">Tahun 2005</span>
-                    <h4 class="timeline-title">Perubahan Status Menjadi Jemaat Mandiri</h4>
-                    <p>Resmi diorganisasi menjadi Jemaat Mandiri di bawah naungan Konferens dengan jumlah anggota
-                      terdaftar lebih dari 120 jiwa.</p>
+                <div class="history-timeline">
+                  <article class="history-event">
+                    <div class="history-event-date"><span>Sep — Des</span><strong>2017</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-people-group"></i></div>
+                    <div class="history-event-body">
+                      <h4>Memilih untuk bertumbuh bersama</h4>
+                      <p>Sejumlah anggota GMAHK Sepanjang berkumpul untuk membicarakan pembentukan jemaat baru atau
+                        pindah ke jemaat lain. Mereka memilih tetap bersama dan mempertimbangkan perkumpulan doa atau
+                        Sekolah Sabat Cabang. Pertemuan pertama berlangsung di Canela Resort.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>27 Januari</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-house"></i></div>
+                    <div class="history-event-body">
+                      <h4>Kebaktian pertama di kediaman Ibu Dewi Sianturi</h4>
+                      <p>Dengan 23 anggota, Perkumpulan Doa Taman Gethsemane dibentuk dan mengadakan kebaktian
+                        pertamanya.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>18 Maret</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-file-signature"></i></div>
+                    <div class="history-event-body">
+                      <h4>Disahkan di bawah KJKT</h4>
+                      <p>Perkumpulan Doa Taman Gethsemane resmi disahkan di bawah Konferens Jawa Kawasan Timur
+                        berdasarkan keputusan Executive Committee.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>24 — 31 Maret</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-hands-praying"></i></div>
+                    <div class="history-event-body">
+                      <h4>Perjamuan Suci dan pelayanan pertama</h4>
+                      <p>Perjamuan Suci pertama dilaksanakan bersama anggota Sekolah Sabat Cabang Peduli Kasih pada
+                        24 Maret. Seminggu kemudian, jemaat melayani di GMAHK Tunjungrejo, Lumajang.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>Juli</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-heart"></i></div>
+                    <div class="history-event-body">
+                      <h4>Bersyukur dan melayani lebih luas</h4>
+                      <p>Pada 1 Juli diadakan kebaktian ucapan syukur atas terbentuknya PDTG. Jemaat juga beribadah
+                        beberapa kali di Rusunawa Sumurwelut dan mengadakan pelayanan kedua ke GMAHK Sumberwekas.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event history-event-foundation">
+                    <div class="history-event-date"><span>24 Maret</span><strong>2019</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-church"></i></div>
+                    <div class="history-event-body">
+                      <h4>Diorganisasi menjadi Jemaat Taman Gethsemane</h4>
+                      <p>Atas berkat dan kasih karunia Tuhan, Taman Gethsemane diresmikan sebagai jemaat ke-73 di
+                        Konferens Jawa Kawasan Timur.</p>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section class="history-section ministry-section" aria-labelledby="ministry-title">
+                <div class="history-section-heading">
+                  <div>
+                    <span class="history-section-kicker">Pelayanan pastoral</span>
+                    <h3 id="ministry-title">Pendeta yang Pernah Melayani</h3>
                   </div>
+                  <p>Nama, masa pelayanan, dan catatan keluarga dari daftar jemaat.</p>
                 </div>
 
-                <div class="timeline-item">
-                  <div class="timeline-dot"><i class="fa-solid fa-building-columns"></i></div>
-                  <div class="timeline-content">
-                    <span class="timeline-year">Masa Kini</span>
-                    <h4 class="timeline-title">Renovasi Modern & Pelayanan Digital</h4>
-                    <p>Pengembangan fasilitas gereja modern, ruang Sekolah Sabat Anak yang representatif, serta
-                      integrasi warta ibadah digital.</p>
-                  </div>
+                <div class="minister-grid">
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">01</span><span class="minister-period">Jan — Mar 2018</span></div>
+                    <h4>Pdt. Eben Sembiring</h4>
+                    <p class="minister-note">Membantu proses perpindahan anggota dari GMAHK Sepanjang ke anggota GMAHK KJKT.</p>
+                    <details class="minister-family">
+                      <summary><i class="fa-solid fa-people-roof"></i> Keluarga</summary>
+                      <dl><dt>Istri</dt><dd>Silvia Grace Ita Br. Tarigan</dd><dt>Anak</dt><dd>Steve Bravin Mahanaim Sembiring; Stevany Delicia Karyna Sembiring; Sherina Bevie Vanya Sembiring</dd></dl>
+                    </details>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">02</span><span class="minister-period">Jul 2018 — Jun 2019</span></div>
+                    <h4>Pdt. Kristiyono Sarjono</h4>
+                    <p class="minister-note">Mengkoordinir Perkumpulan Doa Taman Gethsemane hingga terbentuknya jemaat.</p>
+                    <details class="minister-family">
+                      <summary><i class="fa-solid fa-people-roof"></i> Keluarga</summary>
+                      <dl><dt>Istri</dt><dd>Shirley Yulia Pradana</dd><dt>Anak</dt><dd>Moses Kristleyson Sarjono; Bezalel Tioleyson Sarjono</dd></dl>
+                    </details>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">03</span><span class="minister-period">Mei — Jul 2018</span></div>
+                    <h4>PHD Hendika Simbolon</h4>
+                    <p class="minister-note">Pendeta Hari Depan / calon pendeta muda dari UNAI (trainee).</p>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">04</span><span class="minister-period">Jun 2019 — Jan 2022</span></div>
+                    <h4>Pdtm. Herwan Oroh</h4>
+                    <p class="minister-note">Pendeta pertama yang melayani Jemaat Taman Gethsemane.</p>
+                    <details class="minister-family">
+                      <summary><i class="fa-solid fa-people-roof"></i> Keluarga</summary>
+                      <dl><dt>Istri</dt><dd>Lunar Lesterina Siahaan</dd><dt>Anak</dt><dd>Heine Ruth Cynthia Oroh; Misael Theodorus Oroh</dd></dl>
+                    </details>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">05</span><span class="minister-period">Jan 2022 — Jun 2023</span></div>
+                    <h4>Pdt. Pancarury Permadi Karsum</h4>
+                    <p class="minister-note">Pendeta kedua yang melayani Jemaat Taman Gethsemane.</p>
+                    <details class="minister-family">
+                      <summary><i class="fa-solid fa-people-roof"></i> Keluarga</summary>
+                      <dl><dt>Istri</dt><dd>Dewi Ernawati Apriliana</dd><dt>Anak</dt><dd>Abhinaya Sabbathian Irawan Karsum; Larasati Putri Karsum</dd></dl>
+                    </details>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">06</span><span class="minister-period">Jul 2023 — Jul 2024</span></div>
+                    <h4>Pdtm. Sarpan Sanggalangi</h4>
+                    <p class="minister-note">Pendeta ketiga yang melayani Jemaat Taman Gethsemane.</p>
+                    <details class="minister-family">
+                      <summary><i class="fa-solid fa-people-roof"></i> Keluarga</summary>
+                      <dl><dt>Istri</dt><dd>Fatimah</dd><dt>Anak</dt><dd>Gabriel Christian Sanggalangi; Given Agapereal Sanggalangi; Gracella Hanatasya Sanggalangi</dd></dl>
+                    </details>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">07</span><span class="minister-period">Jul 2024 — Des 2025</span></div>
+                    <h4>Pdt. Abri Santoso</h4>
+                    <p class="minister-note">Pendeta keempat yang melayani Jemaat Taman Gethsemane.</p>
+                    <details class="minister-family">
+                      <summary><i class="fa-solid fa-people-roof"></i> Keluarga</summary>
+                      <dl><dt>Istri</dt><dd>Lenny Purnama Siburian</dd><dt>Anak</dt><dd>Theofany Listya Abri Santoso; Ivana Ivory Abri Santoso; Dorothea Darlen Abri Santoso</dd></dl>
+                    </details>
+                  </article>
+
+                  <article class="minister-card">
+                    <div class="minister-card-top"><span class="minister-number">08</span><span class="minister-period">Mei — Jul 2025</span></div>
+                    <h4>PHD Firgo Situmorang</h4>
+                    <p class="minister-note">Pendeta Hari Depan / calon pendeta muda dari Universitas Surya Nusantara Pematang Siantar.</p>
+                  </article>
+
+                  <article class="minister-card minister-card-current">
+                    <div class="minister-card-top"><span class="minister-number">09</span><span class="minister-period">Jan 2026 — sekarang</span></div>
+                    <h4>Pdtm. Rynaldo E. Katuuk</h4>
+                    <p class="minister-note">Pendeta kelima yang melayani Jemaat Taman Gethsemane.</p>
+                  </article>
                 </div>
-
-              </div>
-
-              <!-- Galeri Foto Sejarah Interaktif -->
-              <h3 class="section-title mt-4"><i class="fa-solid fa-images text-gold"></i> Galeri Foto Dokumentasi</h3>
-              <p class="section-subtitle">Klik pada foto untuk memperbesar & membaca keterangan lengkap.</p>
-
-              <div class="gallery-grid">
-
-                <div class="gallery-item" onclick="openLightbox(0)">
-                  <img src="https://images.unsplash.com/photo-1548625361-18569c76251b?auto=format&fit=crop&w=800&q=80"
-                    alt="Gedung Gereja Perdana" loading="lazy">
-                  <div class="gallery-overlay">
-                    <span class="gallery-title">Gedung Perdana (1992)</span>
-                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
-                  </div>
-                </div>
-
-                <div class="gallery-item" onclick="openLightbox(1)">
-                  <img
-                    src="https://images.unsplash.com/photo-1510563800743-aed236490d08?auto=format&fit=crop&w=800&q=80"
-                    alt="Ibadah Sabat Pertama" loading="lazy">
-                  <div class="gallery-overlay">
-                    <span class="gallery-title">Kebaktian Sabat Pertama</span>
-                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
-                  </div>
-                </div>
-
-                <div class="gallery-item" onclick="openLightbox(2)">
-                  <img
-                    src="https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80"
-                    alt="Tim Paduan Suara Jemaat" loading="lazy">
-                  <div class="gallery-overlay">
-                    <span class="gallery-title">Paduan Suara (2010)</span>
-                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
-                  </div>
-                </div>
-
-                <div class="gallery-item" onclick="openLightbox(3)">
-                  <img
-                    src="https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&w=800&q=80"
-                    alt="Kegiatan Bakti Sosial" loading="lazy">
-                  <div class="gallery-overlay">
-                    <span class="gallery-title">Bakti Sosial Masyarakat</span>
-                    <span class="gallery-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
-                  </div>
-                </div>
-
-              </div>
-
+              </section>
             </div>
           </section>
 
@@ -391,7 +492,7 @@
                   </div>
                 </div>
                 <div class="countdown-sub">
-                  <i class="fa-regular fa-calendar-check"></i> Ibadah Sabat: Sabtu Pukul 08:30 WIB
+                  <i class="fa-regular fa-calendar-check"></i> Ibadah Sabat: Sabtu Pukul 09:00 WIB
                 </div>
               </div>
 
@@ -488,40 +589,26 @@
               </div>
             </div>
 
-            <!-- Content Grid for Bank Cards & QRIS -->
+            <!-- Rekening Persembahan -->
             <div class="section-container mt-3">
-              <div class="donate-page-grid">
-                <div class="donate-banks-row">
-                  <!-- Bank Card: MANDIRI -->
-                  <div class="donate-page-card">
-                    <div class="bank-header">
-                      <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK MANDIRI</span>
-                      <span class="bank-chip chip-gold">Persepuluhan & Persembahan</span>
-                    </div>
-                    <div class="bank-number-box">
-                      <span class="bank-num-text">142-00-9988776-5</span>
-                      <button class="btn-copy" onclick="copyToClipboard('142-00-9988776-5', 'No. Rekening Mandiri')">
-                        <i class="fa-solid fa-copy"></i> Salin Rekening
-                      </button>
-                    </div>
-                    <p class="bank-holder">a.n. Panitia Pembangunan GMAHK Taman Gethsemane</p>
-                  </div>
+              <div class="donate-page-card">
+                <div class="bank-header">
+                  <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK MANDIRI</span>
+                  <span class="bank-chip chip-gold">Persepuluhan & Persembahan</span>
                 </div>
-
-                <!-- QRIS Section Card -->
-                <div class="qris-page-card">
-                  <div class="qris-page-header">
-                    <i class="fa-solid fa-qrcode text-emerald"></i>
-                    <h4>Scan QRIS Persembahan Digital</h4>
+                <div class="bank-account-main">
+                  <div class="bank-account-number">
+                    <span class="bank-field-label">Nomor Rekening</span>
+                    <span class="bank-num-text">141-00-24761322</span>
                   </div>
-                  <div class="qris-page-img-box">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=GMAHK+TAMAN+GETHSEMANE+PERSEMBAHAN" alt="QRIS GMAHK Taman Gethsemane" class="qris-page-img">
-                  </div>
-                  <p class="qris-page-sub">
-                    <i class="fa-solid fa-circle-check text-emerald"></i> Mendukung GoPay, OVO, Dana, ShopeePay, & Semua Mobile Banking.
-                  </p>
+                  <button class="btn-copy" onclick="copyToClipboard('141-00-24761322', 'No. Rekening Mandiri')">
+                    <i class="fa-solid fa-copy"></i> Salin Rekening
+                  </button>
                 </div>
-
+                <div class="bank-account-holder">
+                  <span class="bank-field-label">Nama Rekening</span>
+                  <p class="bank-holder">Gereja Masehi Advent Hari Ketujuh. Jmt Gethsemane</p>
+                </div>
               </div>
             </div>
           </div>
@@ -611,6 +698,10 @@
             <button class="sidebar-tab-btn" data-dbtab="pemuda-advent" onclick="switchAdminDbTab('pemuda-advent')">
               <div class="tab-icon-wrap"><i class="fa-solid fa-people-group"></i></div>
               <span class="tab-label">Pemuda Advent</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="gallery-events" onclick="switchAdminDbTab('gallery-events')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-photo-film"></i></div>
+              <span class="tab-label">Kegiatan Jemaat</span>
             </button>
           </nav>
         </aside>
@@ -869,6 +960,31 @@
               <p>Struktur kolom dan integrasi database Pemuda Advent akan dikonfigurasi secepatnya.</p>
             </div>
           </section>
+
+          <section id="panel-gallery-events" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Kegiatan Jemaat</h2>
+                <p class="panel-subtitle">Kelola hingga tiga event presentasi Google Slides.</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" id="btn-gallery-order" type="button" onclick="toggleGalleryOrderMode()">
+                  <i class="fa-solid fa-arrow-down-1-9"></i> <span>Atur Slot</span>
+                </button>
+                <button class="btn-shift-week" id="btn-cancel-gallery-order" type="button" onclick="cancelGalleryOrder()" hidden>
+                  <i class="fa-solid fa-xmark"></i> <span>Batal</span>
+                </button>
+                <button class="btn-add-data" id="btn-save-gallery-order" type="button" onclick="saveGalleryEventOrder()" hidden>
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Urutan</span>
+                </button>
+                <button class="btn-add-data" id="btn-add-gallery-event" onclick="openGalleryEventForm()">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Event</span>
+                </button>
+              </div>
+            </div>
+            <p class="gallery-admin-status" id="gallery-admin-status" role="status"></p>
+            <div class="gallery-admin-list" id="gallery-admin-list"></div>
+          </section>
         </main>
       </div>
     </div>
@@ -890,7 +1006,7 @@
             <div class="sched-icon"><i class="fa-solid fa-sun"></i></div>
             <div class="sched-info">
               <h5>Sekolah Sabat</h5>
-              <p>Sabtu Pagi, 08:30 - 10:00 WIB</p>
+              <p>Sabtu Pagi, 09:00 - 10:00 WIB</p>
             </div>
           </div>
 
@@ -943,45 +1059,6 @@
         <button class="btn-primary" onclick="simpanPengumuman()" style="width: 100%;" id="btn-simpan-pengumuman">
           <i class="fa-solid fa-save"></i> Simpan ke Supabase
         </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Donasi & Persembahan -->
-  <div id="modal-donate" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h4><i class="fa-solid fa-hand-holding-dollar text-emerald"></i> Persembahan & Donasi</h4>
-        <button class="modal-close" onclick="closeModal('modal-donate')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p class="donate-desc">
-          "Hendaklah masing-masing memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau karena paksaan,
-          sebab Allah mengasihi orang yang memberi dengan sukacita." — 2 Korintus 9:7
-        </p>
-
-        <div class="bank-card">
-          <div class="bank-header">
-            <span class="bank-name">BANK MANDIRI</span>
-            <span class="bank-chip">Persepuluhan & Persembahan</span>
-          </div>
-          <div class="bank-number">
-            <span id="account-mandiri">142-00-9988776-5</span>
-            <button class="btn-copy" onclick="copyToClipboard('142-00-9988776-5', 'No. Rekening Mandiri')">
-              <i class="fa-solid fa-copy"></i> Salin
-            </button>
-          </div>
-          <p class="bank-holder">a.n. Panitia Pembangunan GMAHK Taman Gethsemane</p>
-        </div>
-
-        <!-- QRIS Section -->
-        <div class="qris-box">
-          <h5>Scan QRIS Persembahan Digital</h5>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GMAHK+TAMAN+GETHSEMANE+PERSEMBAHAN"
-            alt="QRIS GMAHK Taman Gethsemane" class="qris-img">
-          <p>Mendukung GoPay, OVO, Dana, ShopeePay, & Semua Mobile Banking</p>
-        </div>
-
       </div>
     </div>
   </div>
@@ -1138,6 +1215,51 @@
     </div>
   </div>
 
+  <div id="modal-gallery-event" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge"><i class="fa-solid fa-photo-film"></i></div>
+          <div>
+            <h4 id="gallery-event-modal-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Event</h4>
+            <span class="auth-subtitle">Galeri Dokumentasi</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" onclick="closeModal('modal-gallery-event')" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="gallery-event-form" onsubmit="saveGalleryEvent(event)">
+          <input type="hidden" id="gallery-event-id">
+          <div class="form-group">
+            <label class="form-label" for="gallery-event-title">Judul Event</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-heading" aria-hidden="true"></i>
+              <input class="form-input-styled" id="gallery-event-title" type="text" maxlength="120" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label" for="gallery-event-subtitle">Subtitle pendek</label>
+            <div class="input-with-icon input-with-icon-multiline">
+              <i class="input-icon fa-solid fa-align-left" aria-hidden="true"></i>
+              <textarea class="form-input-styled gallery-event-subtitle-input" id="gallery-event-subtitle" maxlength="180" rows="3" required></textarea>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label" for="gallery-event-slides-url">Link Google Slides</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-link" aria-hidden="true"></i>
+              <input class="form-input-styled" id="gallery-event-slides-url" type="url" inputmode="url" placeholder="https://docs.google.com/presentation/d/..." required>
+            </div>
+          </div>
+          <p class="gallery-form-error" id="gallery-event-form-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="width: 100%;">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Event</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Konfirmasi Logout Admin -->
   <div id="modal-logout-confirm" class="modal-overlay">
     <div class="modal-card modal-card-auth">
@@ -1173,37 +1295,6 @@
     </div>
   </div>
 
-  <!-- Modal: Edit Sub-Tab Program -->
-  <div id="modal-edit-subtab" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h4 id="edit-modal-title"><i class="fa-solid fa-pen-to-square text-gold"></i> Edit Susunan Acara</h4>
-        <button class="modal-close" onclick="closeModal('modal-edit-subtab')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div style="background: rgba(217, 119, 6, 0.1); border: 1px solid var(--accent-gold); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px;">
-          <p style="font-size: 0.85rem; color: var(--text-main); margin: 0;">
-            <i class="fa-solid fa-circle-info text-gold"></i> <strong>Modul Editor Sub-Tab:</strong> Fitur ini siap dihubungkan dengan database Supabase Anda untuk update data secara real-time.
-          </p>
-        </div>
-        <form id="subtab-edit-form" class="rating-form" onsubmit="handleSubTabEditSubmit(event)">
-          <input type="hidden" id="edit-target-tab" value="">
-          <div class="form-group">
-            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Nama Program / Sub-Tab</label>
-            <input type="text" id="edit-program-name" class="form-input" readonly>
-          </div>
-          <div class="form-group" style="margin-top: 12px;">
-            <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block;">Catatan / Warta Tambahan</label>
-            <textarea id="edit-program-notes" placeholder="Tuliskan catatan khusus atau perubahan petugas..." rows="4" class="form-input"></textarea>
-          </div>
-          <button type="submit" class="btn-primary mt-3" style="width: 100%;">
-            <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal: Tambah Data Jadwal POS -->
   <div id="modal-pos-add" class="modal-overlay">
     <div class="modal-card modal-card-auth">
@@ -1223,11 +1314,17 @@
         <form id="pos-add-form" onsubmit="handleSaveNewPos(event)">
           <div class="form-group">
             <label class="form-label">Tanggal Ibadah Sabat</label>
-            <input type="date" id="pos-add-date" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-calendar-day" aria-hidden="true"></i>
+              <input type="date" id="pos-add-date" class="form-input-styled" required>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Pianist</label>
-            <input type="text" id="pos-add-pianist" placeholder="Contoh: Sdra. Meakhel" class="form-input-styled" required list="pos-officer-suggestions">
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-music" aria-hidden="true"></i>
+              <input type="text" id="pos-add-pianist" placeholder="Contoh: Sdra. Meakhel" class="form-input-styled" required list="pos-officer-suggestions">
+            </div>
           </div>
           <datalist id="pos-officer-suggestions">
             <option value="Sdra. Meakhel"></option>
@@ -1262,11 +1359,17 @@
           <input type="hidden" id="pos-edit-id">
           <div class="form-group">
             <label class="form-label">Tanggal Ibadah Sabat</label>
-            <input type="date" id="pos-edit-date" class="form-input-styled" required>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-calendar-day" aria-hidden="true"></i>
+              <input type="date" id="pos-edit-date" class="form-input-styled" required>
+            </div>
           </div>
           <div class="form-group mt-3">
             <label class="form-label">Pianist</label>
-            <input type="text" id="pos-edit-pianist" class="form-input-styled" required list="pos-officer-suggestions">
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-music" aria-hidden="true"></i>
+              <input type="text" id="pos-edit-pianist" class="form-input-styled" required list="pos-officer-suggestions">
+            </div>
           </div>
           <button type="submit" class="btn-primary btn-auth-submit mt-4" style="background: var(--primary-navy); border-color: var(--primary-navy);">
             <i class="fa-solid fa-check"></i> <span>Perbarui Jadwal</span>
@@ -1459,23 +1562,6 @@
             <i class="fa-solid fa-trash-can"></i> Ya, Hapus
           </button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Lightbox Modal for Photo Gallery -->
-  <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
-    <div class="lightbox-container" onclick="event.stopPropagation()">
-      <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-      <button class="lightbox-prev" onclick="navigateLightbox(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-      <button class="lightbox-next" onclick="navigateLightbox(1)"><i class="fa-solid fa-chevron-right"></i></button>
-
-      <div class="lightbox-media">
-        <img id="lightbox-img" src="" alt="Sejarah GMAHK Taman Gethsemane">
-      </div>
-      <div class="lightbox-caption">
-        <h4 id="lightbox-title"></h4>
-        <p id="lightbox-desc"></p>
       </div>
     </div>
   </div>
