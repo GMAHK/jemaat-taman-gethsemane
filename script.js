@@ -570,6 +570,7 @@ async function fetchHymnalData() {
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
+    if (modalId === "modal-prayer") renderPrayerModal();
     modal.classList.add("active");
   }
 }
@@ -1275,7 +1276,7 @@ function renderGalleryEvents() {
       <span class="gallery-event-copy">
         <span class="gallery-event-title">${escapeHtml(event.title)}</span>
         <span class="gallery-event-subtitle">${escapeHtml(event.subtitle)}</span>
-        <span class="gallery-event-action">Lihat presentasi <i class="fa-solid fa-arrow-right"></i></span>
+        <span class="gallery-event-action">Lihat dokumentasi <i class="fa-solid fa-arrow-right"></i></span>
       </span>
     </button>
   `).join("");
@@ -2800,6 +2801,7 @@ function loadDirectoryData() {
 function saveDirectoryData() {
   localStorage.setItem("gmahk_directory_data", JSON.stringify(directoryList));
   renderPublicDirectory();
+  renderPrayerModal();
 }
 
 function getDirectoryAvatarIcon(category, role) {
@@ -2835,6 +2837,18 @@ function getDirectoryAvatarIcon(category, role) {
   return categoryIcons[normalizedCategory] || "fa-user-shield";
 }
 
+function isPastorContact(item) {
+  return item.category === "gembala";
+}
+
+function countSelectedPrayerContacts(excludeId = null) {
+  return directoryList.filter(item =>
+    !isPastorContact(item) &&
+    item.show_in_prayer === true &&
+    (excludeId === null || String(item.id) !== String(excludeId))
+  ).length;
+}
+
 async function fetchDirectoryFromSupabase() {
   if (!supabaseClient) initSupabaseClient();
   if (!supabaseClient) return;
@@ -2858,12 +2872,14 @@ async function fetchDirectoryFromSupabase() {
           category,
           name: row.name,
           role: row.role,
-          phone: row.phone,
+          phone: row.phone || "",
+          show_in_prayer: category === "gembala" || row.show_in_prayer === true,
           avatarIcon: getDirectoryAvatarIcon(category, row.role)
         };
       });
       saveDirectoryData();
       renderDirectoryTable();
+      renderPrayerModal();
     } else {
       renderDirectoryStatus("Belum ada data direktori yang tersedia.");
     }
@@ -2942,7 +2958,7 @@ function renderDirectoryTable() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+        <td colspan="6" style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
           <i class="fa-solid fa-address-book" style="font-size: 1.8rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
           Tidak ada data kontak direktori yang sesuai.
         </td>
@@ -2951,24 +2967,33 @@ function renderDirectoryTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(item => `
+  tbody.innerHTML = filtered.map(item => {
+    const isPastor = isPastorContact(item);
+    const isChecked = isPastor || item.show_in_prayer === true;
+    const isDisabled = isPastor || (!isChecked && countSelectedPrayerContacts() >= 2);
+    return `
     <tr>
       <td>${getCategoryBadge(item.category)}</td>
       <td style="font-weight: 700; color: var(--text-main);">${escapeHtml(item.name)}</td>
       <td class="td-officer">${escapeHtml(item.role)}</td>
       <td>
-        <a href="https://wa.me/${cleanPhoneForWa(item.phone)}" target="_blank" rel="noopener" style="color: #059669; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-family: monospace; font-size: 0.88rem;">
-          <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(item.phone)}
-        </a>
+        ${item.phone
+          ? `<a href="https://wa.me/${cleanPhoneForWa(item.phone)}" target="_blank" rel="noopener" style="color: #059669; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-family: monospace; font-size: 0.88rem;"><i class="fa-brands fa-whatsapp"></i> ${escapeHtml(item.phone)}</a>`
+          : '<span style="color:var(--text-muted);">-</span>'}
       </td>
-      <td class="th-actions">
-        <div class="td-actions-wrap">
-          <button class="btn-table-edit" onclick="openEditDirectoryModal('${item.id}')" title="Edit Kontak">Edit</button>
-          <button class="btn-table-delete" onclick="openDeleteDirectoryModal('${item.id}')" title="Hapus Kontak">Hapus</button>
-        </div>
+      <td style="text-align:center;">
+        <label class="toggle-switch toggle-switch-sm" title="${isPastor ? 'Pendeta selalu tampil di layanan doa' : isDisabled ? 'Maks. 2 kontak doa sudah tercapai' : 'Tampilkan di layanan doa beranda'}">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}
+            onchange="togglePrayerContact('${item.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
       </td>
-    </tr>
-  `).join("");
+      <td class="th-actions"><div class="td-actions-wrap">
+        <button class="btn-table-edit" onclick="openEditDirectoryModal('${item.id}')" title="Edit Kontak">Edit</button>
+        <button class="btn-table-delete" onclick="openDeleteDirectoryModal('${item.id}')" title="Hapus Kontak">Hapus</button>
+      </div></td>
+    </tr>`;
+  }).join("");
 }
 
 function sortDirectoryTable(field) {
@@ -3013,6 +3038,24 @@ function clearDirectorySearch() {
 function openAddDirectoryModal() {
   const form = document.getElementById("directory-add-form");
   if (form) form.reset();
+  const addCategory = document.getElementById("dir-add-category");
+  handleDirectoryCategoryChange("add", addCategory);
+  const addToggle = document.getElementById("dir-add-show-in-prayer");
+  const addMsg = document.getElementById("dir-add-prayer-limit-msg");
+  const isPastor = document.getElementById("dir-add-category")?.value === "gembala";
+  if (addToggle) {
+    addToggle.checked = isPastor;
+    addToggle.disabled = isPastor || countSelectedPrayerContacts() >= 2;
+    addToggle.dataset.autoCheckedForPastor = String(isPastor);
+  }
+  if (addMsg) {
+    if (!isPastor && countSelectedPrayerContacts() >= 2) {
+      addMsg.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+      addMsg.style.display = "block";
+    } else {
+      addMsg.style.display = "none";
+    }
+  }
   openModal("modal-directory-add");
 }
 
@@ -3028,6 +3071,31 @@ function updateDirectoryCategoryIcon(select) {
   icon.className = `input-icon category-field-icon fa-solid ${iconByCategory[select.value] || "fa-address-card"}`;
 }
 
+function handleDirectoryCategoryChange(mode, select) {
+  updateDirectoryCategoryIcon(select);
+  const checkbox = document.getElementById(`dir-${mode}-show-in-prayer`);
+  const message = document.getElementById(`dir-${mode}-prayer-limit-msg`);
+  if (!checkbox) return;
+
+  const isPastor = select.value === "gembala";
+  const editId = mode === "edit" ? document.getElementById("dir-edit-id")?.value : null;
+  if (isPastor) {
+    checkbox.checked = true;
+    checkbox.disabled = true;
+    checkbox.dataset.autoCheckedForPastor = "true";
+    if (message) message.style.display = "none";
+    return;
+  }
+
+  if (checkbox.dataset.autoCheckedForPastor === "true") checkbox.checked = false;
+  checkbox.dataset.autoCheckedForPastor = "false";
+  checkbox.disabled = !checkbox.checked && countSelectedPrayerContacts(editId) >= 2;
+  if (message) {
+    message.style.display = checkbox.disabled ? "block" : "none";
+    if (checkbox.disabled) message.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+  }
+}
+
 async function handleSaveNewDirectory(e) {
   e.preventDefault();
   const cat = document.getElementById("dir-add-category").value;
@@ -3038,10 +3106,20 @@ async function handleSaveNewDirectory(e) {
   const avatarIcon = getDirectoryAvatarIcon(cat, role);
 
   const tempId = "dir-" + Date.now();
-  const newItem = { id: tempId, category: cat, name, role, phone, avatarIcon };
+  const showInPrayer = cat === "gembala" || document.getElementById("dir-add-show-in-prayer")?.checked === true;
+  const newItem = { id: tempId, category: cat, name, role, phone, show_in_prayer: showInPrayer, avatarIcon };
+
+  // Enforce max 2 prayer contacts
+  if (showInPrayer && cat !== "gembala") {
+    if (countSelectedPrayerContacts() >= 2) {
+      showToast("Maks. 2 kontak doa. Nonaktifkan salah satu dulu.", "fa-solid fa-triangle-exclamation");
+      return;
+    }
+  }
 
   directoryList.push(newItem);
   saveDirectoryData();
+  renderPrayerModal();
   closeModal("modal-directory-add");
   renderDirectoryTable();
   showToast(`Menyimpan kontak ${name}...`, "fa-solid fa-spinner fa-spin text-gold");
@@ -3050,7 +3128,7 @@ async function handleSaveNewDirectory(e) {
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient.from("Tabel Direktori").insert([{
-        category: cat, name, role, phone, avatar_icon: avatarIcon
+        category: cat, name, role, phone: phone || null, avatar_icon: avatarIcon, show_in_prayer: newItem.show_in_prayer
       }]).select();
 
       if (error) {
@@ -3059,6 +3137,7 @@ async function handleSaveNewDirectory(e) {
         newItem.id = data[0].id;
         saveDirectoryData();
         renderDirectoryTable();
+        renderPrayerModal();
         showToast(`Kontak ${name} (${role}) tersimpan di Supabase!`, "fa-solid fa-circle-check text-emerald");
       }
     } catch (err) {
@@ -3073,10 +3152,28 @@ function openEditDirectoryModal(id) {
 
   document.getElementById("dir-edit-id").value = item.id;
   document.getElementById("dir-edit-category").value = (item.category === "majelis_anggota" ? "majelis_dept" : item.category);
-  updateDirectoryCategoryIcon(document.getElementById("dir-edit-category"));
+  handleDirectoryCategoryChange("edit", document.getElementById("dir-edit-category"));
   document.getElementById("dir-edit-name").value = item.name;
   document.getElementById("dir-edit-role").value = item.role;
-  document.getElementById("dir-edit-phone").value = item.phone;
+  document.getElementById("dir-edit-phone").value = item.phone || "";
+  // Set prayer toggle
+  const editToggle = document.getElementById("dir-edit-show-in-prayer");
+  const editMsg = document.getElementById("dir-edit-prayer-limit-msg");
+  const isPastor = isPastorContact(item);
+  const prayerCount = countSelectedPrayerContacts(id);
+  if (editToggle) {
+    editToggle.checked = isPastor || item.show_in_prayer === true;
+    editToggle.disabled = isPastor || (!editToggle.checked && prayerCount >= 2);
+    editToggle.dataset.autoCheckedForPastor = String(isPastor);
+  }
+  if (editMsg) {
+    if (!isPastor && !item.show_in_prayer && prayerCount >= 2) {
+      editMsg.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+      editMsg.style.display = "block";
+    } else {
+      editMsg.style.display = "none";
+    }
+  }
   openModal("modal-directory-edit");
 }
 
@@ -3092,15 +3189,26 @@ async function handleUpdateDirectory(e) {
   if (index !== -1) {
     const oldItem = { ...directoryList[index] };
     const avatarIcon = getDirectoryAvatarIcon(cat, role);
-    directoryList[index] = { ...directoryList[index], category: cat, name, role, phone, avatarIcon };
+    const showInPrayer = cat === "gembala" || document.getElementById("dir-edit-show-in-prayer")?.checked === true;
+
+    // Enforce max 2 prayer contacts (excluding this item)
+    if (showInPrayer && cat !== "gembala" && (oldItem.category === "gembala" || !oldItem.show_in_prayer)) {
+      if (countSelectedPrayerContacts(id) >= 2) {
+        showToast("Maks. 2 kontak doa. Nonaktifkan salah satu dulu.", "fa-solid fa-triangle-exclamation");
+        return;
+      }
+    }
+
+    directoryList[index] = { ...directoryList[index], category: cat, name, role, phone, show_in_prayer: showInPrayer, avatarIcon };
     saveDirectoryData();
     closeModal("modal-directory-edit");
     renderDirectoryTable();
+    renderPrayerModal();
 
     if (!supabaseClient) initSupabaseClient();
     if (supabaseClient) {
       try {
-        let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone, avatar_icon: avatarIcon });
+        let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone: phone || null, avatar_icon: avatarIcon, show_in_prayer: showInPrayer });
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
 
@@ -3185,10 +3293,8 @@ function renderPublicDirectory() {
             <div class="directory-details">
               <h5 class="dir-name">${escapeHtml(item.name)}</h5>
               <p class="dir-role">${escapeHtml(item.role)}</p>
-              <span class="directory-phone">${escapeHtml(item.phone)}</span>
             </div>
           </div>
-          <a href="https://wa.me/${cleanPhoneForWa(item.phone)}" target="_blank" rel="noopener" class="btn-wa-contact"><i class="fa-brands fa-whatsapp"></i> Hubungi WA</a>
         </div>`).join("")}
       </div>`;
   }).join("");
@@ -3213,6 +3319,145 @@ function filterDirectory() {
     }
   });
 }
+
+// ==========================================
+// PRAYER MODAL & CONTACT TOGGLE HELPERS
+// ==========================================
+
+/**
+ * Build a WA button HTML string for a directory contact.
+ */
+function buildPrayerWaButton(item, label) {
+  const phoneClean = cleanPhoneForWa(item.phone);
+  const waMsg = encodeURIComponent("Syalom, saya ingin mengajukan permohonan doa kepada jemaat GMAHK Taman Gethsemane.");
+  const phoneDisplay = item.phone ? item.phone : "-";
+  const href = phoneClean
+    ? `https://wa.me/${phoneClean}?text=${waMsg}`
+    : "#";
+  return `
+    <a href="${escapeHtml(href)}" ${phoneClean ? 'target="_blank" rel="noopener"' : ''} class="btn-contact-channel wa" ${!phoneClean ? 'style="opacity:0.6; pointer-events:none; cursor:default;"' : ''}>
+      <i class="fa-brands fa-whatsapp"></i>
+      <div>
+        <strong>${escapeHtml(label || item.role)}</strong>
+        <span>${escapeHtml(item.name)} ${phoneDisplay !== '-' ? '· ' + phoneDisplay : '(No HP tidak tersedia)'}</span>
+      </div>
+    </a>`;
+}
+
+/**
+ * Re-render the prayer modal content dynamically from directoryList.
+ * - Pastor (category=gembala) always shown first
+ * - Up to 2 contacts with show_in_prayer = true shown below
+ */
+function renderPrayerModal() {
+  const pastorEl = document.getElementById("prayer-pastor-contact");
+  const extraEl = document.getElementById("prayer-extra-contacts");
+  const noContactEl = document.getElementById("prayer-no-contact");
+  if (!pastorEl || !extraEl || !noContactEl) return;
+
+  // Get pastor(s)
+  const pastor = directoryList.find(isPastorContact);
+  // The two optional contacts are separate from the always-visible pastor.
+  const prayerContacts = directoryList.filter(d => !isPastorContact(d) && d.show_in_prayer === true).slice(0, 2);
+
+  let hasAny = false;
+
+  if (pastor) {
+    pastorEl.innerHTML = buildPrayerWaButton(pastor, `WhatsApp Pendeta — ${pastor.role}`);
+    pastorEl.style.display = "";
+    hasAny = true;
+  } else {
+    pastorEl.innerHTML = "";
+    pastorEl.style.display = "none";
+  }
+
+  if (prayerContacts.length > 0) {
+    extraEl.innerHTML = prayerContacts.map(c => buildPrayerWaButton(c, `WhatsApp Kontak Doa — ${c.role}`)).join("");
+    extraEl.style.display = "";
+    hasAny = true;
+  } else {
+    extraEl.innerHTML = "";
+    extraEl.style.display = "none";
+  }
+
+  noContactEl.style.display = hasAny ? "none" : "";
+}
+
+/**
+ * Toggle show_in_prayer for a directory item directly from the admin table toggle.
+ */
+async function togglePrayerContact(id, checked) {
+  const index = directoryList.findIndex(d => String(d.id) === String(id));
+  if (index === -1) return;
+  if (isPastorContact(directoryList[index])) {
+    directoryList[index].show_in_prayer = true;
+    saveDirectoryData();
+    renderDirectoryTable();
+    renderPrayerModal();
+    return;
+  }
+
+  if (checked && countSelectedPrayerContacts(id) >= 2) {
+    showToast("Maks. 2 kontak doa sudah tercapai. Nonaktifkan salah satu dulu.", "fa-solid fa-triangle-exclamation");
+    renderDirectoryTable(); // re-render to reset checkbox
+    return;
+  }
+
+  directoryList[index].show_in_prayer = checked;
+  saveDirectoryData();
+  renderDirectoryTable();
+  renderPrayerModal();
+
+  if (!supabaseClient) initSupabaseClient();
+  if (supabaseClient) {
+    try {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      const query = supabaseClient.from("Tabel Direktori").update({ show_in_prayer: checked });
+      const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", directoryList[index].name));
+      if (error) {
+        showToast(`Gagal sync ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
+      } else {
+        showToast(checked
+          ? `${directoryList[index].name} ditambahkan ke kontak doa.`
+          : `${directoryList[index].name} dinonaktifkan dari kontak doa.`,
+          "fa-solid fa-circle-check text-emerald"
+        );
+      }
+    } catch (err) {
+      console.error("Supabase toggle prayer contact exception:", err);
+    }
+  }
+}
+
+/**
+ * Handle the prayer toggle in the add/edit modal to show limit warning.
+ */
+function handlePrayerToggleChange(mode, checkbox) {
+  const msgEl = document.getElementById(`dir-${mode}-prayer-limit-msg`);
+  const editId = mode === "edit" ? document.getElementById("dir-edit-id")?.value : null;
+  const categoryId = mode === "edit" ? "dir-edit-category" : "dir-add-category";
+  if (document.getElementById(categoryId)?.value === "gembala") {
+    checkbox.checked = true;
+    checkbox.disabled = true;
+    return;
+  }
+  if (!checkbox.checked) {
+    checkbox.disabled = countSelectedPrayerContacts(editId) >= 2;
+    if (msgEl) msgEl.style.display = "none";
+    return;
+  }
+  const prayerCount = countSelectedPrayerContacts(editId);
+  if (prayerCount >= 2) {
+    checkbox.checked = false;
+    if (msgEl) {
+      msgEl.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+      msgEl.style.display = "block";
+    }
+  } else {
+    if (msgEl) msgEl.style.display = "none";
+  }
+}
+
 
 // ==========================================
 // 15. PENGUMUMAN (SUPABASE)

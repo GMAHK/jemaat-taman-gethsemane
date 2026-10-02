@@ -1186,6 +1186,35 @@ button {
   animation: none;
 }
 
+.minister-family dl {
+  margin: 14px 0 0;
+}
+
+.minister-family dt {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.minister-family dt:first-child {
+  margin-top: 0;
+}
+
+.minister-family dd {
+  margin: 4px 0 0;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.minister-family dd ol {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.minister-family dd ol li {
+  padding-left: 2px;
+  line-height: 1.5;
+}
+
 @keyframes family-reveal {
   from {
     opacity: 0;
@@ -2821,6 +2850,16 @@ button {
   margin-top: 14px;
 }
 
+#prayer-extra-contacts {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+#prayer-extra-contacts .btn-contact-channel {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
 .btn-contact-channel {
   display: flex;
   align-items: center;
@@ -3142,6 +3181,7 @@ button {
   border-radius: var(--radius-md);
   padding: 18px;
   display: flex;
+  align-items: stretch;
   flex-direction: column;
   justify-content: space-between;
   gap: 14px;
@@ -3178,18 +3218,21 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  text-align: left;
 }
 
 .dir-name {
   font-size: 0.95rem;
   font-weight: 800;
   color: var(--text-main);
+  text-align: left;
 }
 
 .dir-role {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--accent-gold);
+  text-align: left;
 }
 
 .directory-phone {
@@ -3999,6 +4042,24 @@ button {
   min-width: 120px;
 }
 
+/* Custom Column Widths - Tabel Direktori */
+#panel-directory .pos-data-table th {
+  white-space: normal;
+  vertical-align: top;
+}
+
+#panel-directory .pos-data-table th .th-content {
+  display: inline-flex;
+}
+
+#panel-directory .pos-data-table {
+  min-width: 1100px;
+}
+
+#panel-directory .pos-data-table th:nth-child(4),
+#panel-directory .pos-data-table td:nth-child(4) {
+  min-width: 200px;
+}
 
 /* Directory Category Badges */
 .badge-cat {
@@ -4527,4 +4588,137 @@ button {
     border: 1px solid #000000 !important;
     box-shadow: none !important;
   }
+}
+
+/* ==========================================================================
+   TOGGLE SWITCH COMPONENT
+   ========================================================================== */
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 99px;
+  background: var(--border-color);
+  transition: background 0.25s, box-shadow 0.25s;
+  border: 1.5px solid rgba(0,0,0,0.07);
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  transition: left 0.22s cubic-bezier(.4,0,.2,1);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(217,119,6,0.15);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  left: calc(100% - 20px);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Smaller version for table cells */
+.toggle-switch-sm {
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch-sm .toggle-slider::before {
+  width: 14px;
+  height: 14px;
+}
+
+.toggle-switch-sm input:checked + .toggle-slider::before {
+  left: calc(100% - 16px);
+}
+
+/* Prayer toggle row inside modal forms */
+.prayer-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(217,119,6,0.06), rgba(15,43,92,0.04));
+  border: 1.5px solid rgba(217,119,6,0.18);
+}
+
+.prayer-toggle-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.prayer-toggle-info > i {
+  font-size: 1.15rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.prayer-toggle-info div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prayer-toggle-info strong {
+  font-size: 0.88rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.prayer-toggle-info span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.prayer-toggle-limit-msg {
+  font-size: 0.78rem;
+  color: #dc2626;
+  margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.prayer-toggle-limit-msg::before {
+  content: '\f071';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 0.72rem;
 }
