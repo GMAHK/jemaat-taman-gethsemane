@@ -827,6 +827,19 @@ button {
   font-weight: 600;
 }
 
+.home-credit a,
+.home-credit a:hover,
+.home-credit a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-credit a:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .reviews-preview {
   margin-top: 20px;
   padding-top: 16px;
@@ -4034,7 +4047,7 @@ button {
 
 #panel-sekolah-sabat .pos-data-table th:nth-child(6),
 #panel-sekolah-sabat .pos-data-table td:nth-child(6) {
-  min-width: 170px;
+  min-width: 220px;
 }
 
 #panel-sekolah-sabat .pos-data-table th:nth-child(11),
@@ -4721,4 +4734,114 @@ button {
   font-family: 'Font Awesome 6 Free';
   font-weight: 900;
   font-size: 0.72rem;
+}
+
+
+
+/* ==========================================================================
+   RESPONSIVE PROPORTIONAL SCALING — MOBILE & SMALL SCREEN
+   Device-width breakpoints keep root zoom from shifting the scale ranges.
+   CSS zoom scales the complete interface, not only its text.
+   ========================================================================== */
+
+/* --- Tablet kecil / iPhone landscape (481px – 768px) --- */
+@media screen and (max-device-width: 768px) and (min-device-width: 481px) {
+  html {
+    zoom: 0.92;
+  }
+}
+
+/* --- Smartphone standar (361px – 480px) --- */
+@media screen and (max-device-width: 480px) and (min-device-width: 361px) {
+  html {
+    zoom: 0.85;
+  }
+
+  html, body {
+    width: 100%;
+    min-height: 100dvh;
+  }
+}
+
+/* --- Smartphone kecil (≤ 360px: iPhone SE, Galaxy A dst) --- */
+@media screen and (max-device-width: 360px) {
+  html {
+    zoom: 0.78;
+  }
+
+  html, body {
+    width: 100%;
+    min-height: 100dvh;
+  }
+}
+
+/* Keep the content area scrollable while the five-item navigation stays
+   at the bottom of the screen. */
+@media screen and (max-device-width: 768px) {
+  .app-wrapper {
+    height: 108.696dvh;
+    min-height: 108.696dvh;
+  }
+
+  .app-shell {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bottom-nav {
+    flex: 0 0 calc(64px + env(safe-area-inset-bottom, 0px));
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .nav-container {
+    height: 64px;
+  }
+
+  .bank-account-main {
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .bank-account-number {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .donate-page-card .btn-copy {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .donate-page-card .btn-copy-label {
+    display: none;
+  }
+}
+
+@media screen and (max-device-width: 480px) and (min-device-width: 361px) {
+  .app-wrapper {
+    height: 117.647dvh;
+    min-height: 117.647dvh;
+  }
+}
+
+@media screen and (max-device-width: 360px) {
+  .app-wrapper {
+    height: 128.205dvh;
+    min-height: 128.205dvh;
+  }
 }
