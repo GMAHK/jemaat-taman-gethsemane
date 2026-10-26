@@ -912,12 +912,15 @@
               </div>
               <div class="panel-header-actions">
                 <button class="btn-shift-week" onclick="shiftPosWeek(1)"
-                  title="Majukan Tanggal Semua Baris 1 Minggu ke Depan (+7 Hari)">
+                  title="Majukan semua tanggal 7 hari ke belakang (-7 hari)">
                   <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
                 </button>
                 <button class="btn-shift-week" onclick="shiftPosWeek(-1)"
-                  title="Mundurkan Tanggal Semua Baris 1 Minggu ke Belakang (-7 Hari)">
+                  title="Mundurkan semua tanggal 7 hari ke depan (+7 hari)">
                   <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-import-data" type="button" onclick="openCsvImportModal('pos')">
+                  <i class="fa-solid fa-file-arrow-up"></i> <span>Import CSV</span>
                 </button>
                 <button class="btn-add-data" onclick="openAddPosModal()">
                   <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
@@ -1084,6 +1087,9 @@
                 <button class="btn-shift-week" onclick="shiftSabbathTableWeek('ss', -1)">
                   <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
                 </button>
+                <button class="btn-import-data" type="button" onclick="openCsvImportModal('ss')">
+                  <i class="fa-solid fa-file-arrow-up"></i> <span>Import CSV</span>
+                </button>
                 <button class="btn-add-data" onclick="openSabbathTableAddModal('ss')">
                   <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
                 </button>
@@ -1131,6 +1137,9 @@
                 </button>
                 <button class="btn-shift-week" onclick="shiftSabbathTableWeek('khotbah', -1)">
                   <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-import-data" type="button" onclick="openCsvImportModal('khotbah')">
+                  <i class="fa-solid fa-file-arrow-up"></i> <span>Import CSV</span>
                 </button>
                 <button class="btn-add-data" onclick="openSabbathTableAddModal('khotbah')">
                   <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
@@ -1236,7 +1245,7 @@
             <div class="sched-icon"><i class="fa-solid fa-cross"></i></div>
             <div class="sched-info">
               <h5>Ibadah Khotbah Utama</h5>
-              <p>Sabtu Pagi, 10:15 - 12:00 WIB</p>
+              <p>Sabtu Pagi, 10:10 - 12:00 WIB</p>
             </div>
           </div>
 
@@ -1252,7 +1261,7 @@
             <div class="sched-icon"><i class="fa-solid fa-hands-praying"></i></div>
             <div class="sched-info">
               <h5>Persekutuan Doa Rabu Malam</h5>
-              <p>Rabu Malam, 19:00 WIB (Online & Hybrid)</p>
+              <p>Rabu Malam, 19:00 WIB</p>
             </div>
           </div>
 
@@ -1424,6 +1433,63 @@
     </div>
   </div>
 
+  <div id="modal-worship-reset-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-rotate-left"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Reset Override Susunan?</h4>
+            <span class="auth-subtitle">Tindakan ini menghapus override dari Supabase</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" onclick="cancelResetSubTab()" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="padding: 24px;">
+        <p id="worship-reset-description" style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+          Override susunan untuk tanggal ini akan dihapus.
+        </p>
+        <p id="worship-reset-detail" style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Override khusus pada tanggal ini akan dihapus.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-subtab-pill" type="button" style="flex: 1; padding: 11px; font-weight: 700;" onclick="cancelResetSubTab()">Batal</button>
+          <button class="btn-primary" type="button" style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700;" onclick="confirmResetSubTab()">
+            <i class="fa-solid fa-rotate-left"></i> Ya, Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-week-shift-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge"><i class="fa-solid fa-calendar-week"></i></div>
+          <div>
+            <h4 id="week-shift-confirm-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Geser Jadwal</h4>
+            <span class="auth-subtitle">Perubahan akan diterapkan ke semua tanggal dalam tabel</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" onclick="cancelWeekShift()" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body delete-modal-body">
+        <p id="week-shift-confirm-description" class="delete-modal-message week-shift-confirm-message">
+          Yakin ingin menggeser tanggal satu minggu?
+        </p>
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel" type="button" onclick="cancelWeekShift()">Batal</button>
+          <button class="delete-modal-confirm week-shift-confirm-button" type="button" onclick="confirmWeekShift()">
+            <i class="fa-solid fa-check"></i> Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-gallery-event" class="modal-overlay">
     <div class="modal-card modal-card-auth">
       <div class="modal-header auth-header">
@@ -1507,6 +1573,70 @@
             onclick="confirmLogoutAdmin()">
             <i class="fa-solid fa-right-from-bracket"></i> Ya, Keluar
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Import CSV -->
+  <div id="modal-csv-import" class="modal-overlay">
+    <div class="modal-card modal-card-auth csv-import-modal">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge csv-import-icon">
+            <i class="fa-solid fa-file-csv"></i>
+          </div>
+          <div>
+            <h4 id="csv-import-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Import CSV</h4>
+            <span id="csv-import-subtitle" class="auth-subtitle">Impor data ke tabel</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" aria-label="Tutup" onclick="closeCsvImportModal()">&times;</button>
+      </div>
+      <div class="modal-body csv-import-body">
+        <div id="csv-import-upload-stage">
+          <p class="csv-import-guidance">Unduh template terlebih dahulu dan jangan ubah nama kolom. Gunakan format tanggal YYYY-MM-DD. Data dengan tanggal yang sama akan diperbarui; tanggal lain tetap dipertahankan.</p>
+          <button class="csv-template-button" type="button" onclick="downloadCsvImportTemplate()">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Template CSV
+          </button>
+          <input id="csv-import-file" class="csv-import-file-input" type="file" accept=".csv,text/csv"
+            onchange="handleCsvImportFile(this.files[0])">
+          <div id="csv-import-dropzone" class="csv-import-dropzone" role="button" tabindex="0"
+            onclick="document.getElementById('csv-import-file').click()"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('csv-import-file').click();}">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <strong>Seret dan lepas file CSV di sini</strong>
+            <span>atau klik untuk memilih file</span>
+            <span id="csv-import-file-name" class="csv-import-file-name">Belum ada file dipilih</span>
+          </div>
+          <p id="csv-import-error" class="csv-import-error" role="alert" hidden></p>
+          <div class="csv-import-actions">
+            <button class="delete-modal-cancel" type="button" onclick="closeCsvImportModal()">Batal</button>
+            <button id="csv-import-preview-button" class="delete-modal-confirm csv-import-next-button" type="button"
+              onclick="prepareCsvImportPreview()" disabled>
+              Lanjutkan <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+        <div id="csv-import-preview-stage" hidden>
+          <div id="csv-import-summary" class="csv-import-summary"></div>
+          <p class="csv-import-guidance">Titik merah menunjukkan ada nilai berbeda pada tanggal yang sama. Baris yang tidak berubah tidak akan ditulis ulang.</p>
+          <div class="csv-import-preview-wrap">
+            <table class="csv-import-preview-table">
+              <thead>
+                <tr><th>Tanggal</th><th>Status</th><th>Data CSV</th><th>Perbedaan</th></tr>
+              </thead>
+              <tbody id="csv-import-preview-body"></tbody>
+            </table>
+          </div>
+          <p id="csv-import-error-preview" class="csv-import-error" role="alert" hidden></p>
+          <div class="csv-import-actions">
+            <button class="delete-modal-cancel" type="button" onclick="backToCsvImportUpload()">Kembali</button>
+            <button id="csv-import-save-button" class="delete-modal-confirm csv-import-save-button" type="button"
+              onclick="saveCsvImport()">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1615,24 +1745,22 @@
         </div>
         <button class="modal-close" onclick="closeModal('modal-pos-delete')">&times;</button>
       </div>
-      <div class="modal-body text-center" style="padding: 24px;">
+      <div class="modal-body delete-modal-body">
         <input type="hidden" id="pos-delete-id">
-        <p style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+        <p class="delete-modal-message">
           Hapus jadwal ibadah tanggal <span id="pos-delete-date-text"
             style="color: #ef4444; font-family: monospace;">-</span>?
         </p>
-        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+        <p class="delete-modal-description">
           Data jadwal petugas ini akan dihapus dari database server Supabase.
         </p>
 
-        <div style="display: flex; gap: 12px; justify-content: center;">
-          <button class="btn-subtab-pill"
-            style="flex: 1; padding: 11px; font-weight: 700; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main);"
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel"
             onclick="closeModal('modal-pos-delete')">
             Batal
           </button>
-          <button class="btn-primary"
-            style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;"
+          <button class="delete-modal-confirm"
             onclick="confirmDeletePos()">
             <i class="fa-solid fa-trash-can"></i> Ya, Hapus
           </button>
@@ -1811,24 +1939,50 @@
         </div>
         <button class="modal-close" onclick="closeModal('modal-directory-delete')">&times;</button>
       </div>
-      <div class="modal-body text-center" style="padding: 24px;">
+      <div class="modal-body delete-modal-body">
         <input type="hidden" id="dir-delete-id">
-        <p style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+        <p class="delete-modal-message">
           Hapus kontak <span id="dir-delete-name-text" style="color: #ef4444;">-</span>?
         </p>
-        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+        <p class="delete-modal-description">
           Kontak ini akan dihapus dari direktori jemaat dan database server Supabase.
         </p>
 
-        <div style="display: flex; gap: 12px; justify-content: center;">
-          <button class="btn-subtab-pill"
-            style="flex: 1; padding: 11px; font-weight: 700; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main);"
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel"
             onclick="closeModal('modal-directory-delete')">
             Batal
           </button>
-          <button class="btn-primary"
-            style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;"
+          <button class="delete-modal-confirm"
             onclick="confirmDeleteDirectory()">
+            <i class="fa-solid fa-trash-can"></i> Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Hapus Data -->
+  <div id="modal-delete-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge delete-modal-icon">
+            <i class="fa-solid fa-trash-can"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
+            <span id="delete-confirm-subtitle" class="auth-subtitle delete-modal-subtitle"></span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" aria-label="Tutup" onclick="cancelDeleteConfirmation()">&times;</button>
+      </div>
+      <div class="modal-body delete-modal-body">
+        <p id="delete-confirm-message" class="delete-modal-message"></p>
+        <p id="delete-confirm-description" class="delete-modal-description"></p>
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel" type="button" onclick="cancelDeleteConfirmation()">Batal</button>
+          <button class="delete-modal-confirm" type="button" onclick="confirmDeleteAction()">
             <i class="fa-solid fa-trash-can"></i> Ya, Hapus
           </button>
         </div>
@@ -1841,9 +1995,6 @@
     <i id="toast-icon" class="fa-solid fa-check-circle"></i>
     <span id="toast-message">Pesan notifikasi</span>
   </div>
-
-  <!-- Supabase JS Client CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- JavaScript File -->
   <script src="script.js"></script>

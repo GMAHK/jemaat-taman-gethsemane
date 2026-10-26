@@ -1,11 +1,35 @@
 /**
- * GMAHK TAMAN GETHSEMANE - Interactive Application Logic
- * Format: Full-Screen Web App
+ * GMAHK TAMAN GETHSEMANE — Logika Aplikasi (Single Page App)
+ *
+ * Satu berkas JavaScript murni (tanpa build step) agar mudah di-host di GitHub Pages.
+ * Dimuat setelah Supabase JS SDK (CDN) dan setelah markup di index.html.
+ *
+ * Isi berkas dibagi menjadi bagian bernomor (cari "// N." untuk melompat):
+ *   0. Konfigurasi & konstanta   (Supabase)
+ *   1. State global
+ *   2. Inisialisasi saat DOM siap
+ *   3+. Fitur: tema, router/tab, countdown, rating, himne, modal & utilitas,
+ *       susunan ibadah, galeri kegiatan, autentikasi admin, tabel admin,
+ *       direktori jemaat, permohonan doa, pengumuman.
  */
 
 // ==========================================
-// 1. DATA STRUCTURES & STATE
+// 0. KONFIGURASI & KONSTANTA
 // ==========================================
+
+/**
+ * Kredensial Supabase. Kunci di bawah adalah kunci *publishable* (aman dipublikasikan);
+ * akses tulis tetap dibatasi oleh Row Level Security di database.
+ */
+const SUPABASE_URL = "https://jgrarsmzaqcviurladpm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Vp2_Hx0mpyreTrfFQW-14g_NTxNBABy";
+
+// ==========================================
+// 1. STATE GLOBAL
+// ==========================================
+
+/** Klien Supabase; dibuat oleh initSupabaseClient() (null bila SDK gagal dimuat). */
+let supabaseClient = null;
 
 // Gallery Data for Lightbox Modal
 let galleryEvents = [];
@@ -19,8 +43,8 @@ let lselSongs = [];
 let aysSongs = [];
 let hymnalSongs = [];
 
-let currentLightboxIndex = 0;
 let userRatingScore = 0;
+let communityRatings = [];
 
 // ==========================================
 // 2. INITIALIZATION ON DOM LOAD
@@ -117,8 +141,7 @@ function initMinisterFamilyTransitions() {
 // 4. THEME & VIEWPORT TOGGLE
 // ==========================================
 function initTheme() {
-  const savedTheme = localStorage.getItem("gmahk_theme") || "light";
-  setTheme(savedTheme);
+  setTheme("light");
 
   const themeBtn = document.getElementById("btn-theme-toggle");
   if (themeBtn) {
@@ -136,7 +159,6 @@ function toggleTheme() {
 
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem("gmahk_theme", theme);
   const icon = theme === "dark"
     ? '<i class="fa-solid fa-sun text-gold"></i>'
     : '<i class="fa-solid fa-moon"></i>';
@@ -207,9 +229,6 @@ function switchTab(tabId, updateHistory = true) {
     targetNavBtn.classList.add("active");
   }
 
-  // Save active tab ID to localStorage
-  localStorage.setItem("gmahk_active_tab", navTabId);
-
   // Update URL Hash and Browser History
   const hash = tabId === "tab-gallery-viewer" && currentGalleryEventId
     ? `galeri-${currentGalleryEventId}`
@@ -252,16 +271,13 @@ function initRouter() {
   window.addEventListener("popstate", applyHashRoute);
   window.addEventListener("hashchange", applyHashRoute);
 
-  // Restore initial tab on page load or refresh
+  // Start at the route in the URL, or at the home tab.
   const initialHash = window.location.hash.replace("#", "").toLowerCase();
   const tabFromHash = hashToTabMap[initialHash] || (initialHash.startsWith("galeri-") ? "tab-gallery-viewer" : null);
-  const savedTab = localStorage.getItem("gmahk_active_tab");
 
   if (tabFromHash) {
     if (tabFromHash === "tab-gallery-viewer") renderGalleryViewerFromHash(initialHash);
     switchTab(tabFromHash, false);
-  } else if (savedTab && savedTab !== "tab-gallery-viewer" && document.getElementById(savedTab)) {
-    switchTab(savedTab, true);
   } else {
     switchTab("tab-home", true);
   }
@@ -318,7 +334,7 @@ function initCountdown() {
 }
 
 // ==========================================
-// 7. INTERACTIVE STAR RATING & LOCALSTORAGE
+// 7. INTERACTIVE STAR RATING
 // ==========================================
 function initRatingSystem() {
   const starContainer = document.getElementById("star-rating-container");
@@ -365,9 +381,11 @@ function initRatingSystem() {
         date: new Date().toLocaleDateString("id-ID")
       };
 
-      saveUserRating(ratingObj);
-      renderUserRatingView(ratingObj);
-      showToast("Penilaian Anda berhasil disimpan! Terima kasih.");
+      saveUserRating(ratingObj).then(savedRating => {
+        if (!savedRating) return;
+        renderUserRatingView(savedRating);
+        showToast("Penilaian Anda berhasil disimpan! Terima kasih.");
+      });
     });
   }
 
@@ -394,30 +412,41 @@ function highlightStars(count, className) {
   });
 }
 
-function saveUserRating(ratingObj) {
-  localStorage.setItem("gmahk_my_rating", JSON.stringify(ratingObj));
-
-  let allRatings = JSON.parse(localStorage.getItem("gmahk_all_ratings") || "[]");
-  allRatings.unshift(ratingObj);
-  allRatings = allRatings.slice(0, 5);
-  localStorage.setItem("gmahk_all_ratings", JSON.stringify(allRatings));
-
+async function saveUserRating(ratingObj) {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showToast("Supabase belum terhubung. Ulasan tidak disimpan.", "fa-solid fa-triangle-exclamation");
+    return null;
+  }
+  const { data, error } = await supabaseClient.from("Ulasan Jemaat").insert(ratingObj).select().single();
+  if (error) {
+    showToast(`Ulasan gagal disimpan: ${error.message}`, "fa-solid fa-triangle-exclamation");
+    return null;
+  }
+  communityRatings = [data, ...communityRatings].slice(0, 5);
   renderCommunityReviews();
+  return data;
 }
 
 function loadSavedRatings() {
-  const myRatingStr = localStorage.getItem("gmahk_my_rating");
-  if (myRatingStr) {
-    try {
-      const ratingObj = JSON.parse(myRatingStr);
-      userRatingScore = ratingObj.score;
-      highlightStars(userRatingScore, "active");
-      renderUserRatingView(ratingObj);
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  fetchCommunityRatings();
+}
 
+async function fetchCommunityRatings() {
+  if (!supabaseClient) initSupabaseClient();
+  const container = document.getElementById("reviews-list");
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient
+    .from("Ulasan Jemaat")
+    .select("id, name, score, comment, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
+  if (error) {
+    console.warn("Supabase fetch reviews error:", error.message);
+    if (container) container.innerHTML = '<p class="reviews-empty">Ulasan belum dapat dimuat.</p>';
+    return;
+  }
+  communityRatings = data || [];
   renderCommunityReviews();
 }
 
@@ -437,17 +466,7 @@ function renderCommunityReviews() {
   const container = document.getElementById("reviews-list");
   if (!container) return;
 
-  const defaultReviews = [
-    { name: "Ibu Maria", score: 5, comment: "Susunan ibadah sangat rapi dan khotbah memberkati keluarga kami." },
-    { name: "Bpk. David", score: 5, comment: "Fitur aplikasi sangat memudahkan melihat warta Sabat dari smartphone." }
-  ];
-
-  let allRatings = JSON.parse(localStorage.getItem("gmahk_all_ratings") || "[]");
-  if (allRatings.length === 0) {
-    allRatings = defaultReviews;
-  }
-
-  container.innerHTML = allRatings.map(r => `
+  container.innerHTML = communityRatings.length ? communityRatings.map(r => `
     <div class="review-item">
       <div class="review-user">
         <span>${r.name}</span>
@@ -455,7 +474,7 @@ function renderCommunityReviews() {
       </div>
       <div class="review-text">"${r.comment}"</div>
     </div>
-  `).join('');
+  `).join('') : '<p class="reviews-empty">Belum ada ulasan.</p>';
 }
 
 // ==========================================
@@ -582,9 +601,43 @@ function closeModal(modalId) {
   }
 }
 
+let pendingDeleteAction = null;
+
+function openDeleteConfirmation({ subtitle, message, description, onConfirm }) {
+  document.getElementById("delete-confirm-subtitle").textContent = subtitle;
+  document.getElementById("delete-confirm-message").textContent = message;
+  document.getElementById("delete-confirm-description").textContent = description;
+  pendingDeleteAction = onConfirm;
+  openModal("modal-delete-confirm");
+}
+
+function cancelDeleteConfirmation() {
+  pendingDeleteAction = null;
+  closeModal("modal-delete-confirm");
+}
+
+async function confirmDeleteAction() {
+  const onConfirm = pendingDeleteAction;
+  pendingDeleteAction = null;
+  closeModal("modal-delete-confirm");
+  if (onConfirm) await onConfirm();
+}
+
+function showDeleteResult(success, description) {
+  showToast(
+    success ? `Data Berhasil Dihapus. ${description}` : `Permintaan Gagal: ${description}`,
+    success ? "fa-solid fa-circle-check text-emerald" : "fa-solid fa-triangle-exclamation text-amber"
+  );
+}
+
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("modal-overlay")) {
+    if (e.target.id === "modal-csv-import") {
+      if (csvImportState?.saving) return;
+      csvImportState = null;
+    }
     e.target.classList.remove("active");
+    if (e.target.id === "modal-delete-confirm") pendingDeleteAction = null;
   }
 });
 
@@ -592,20 +645,37 @@ function initGlobalKeyboard() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const activeModals = document.querySelectorAll(".modal-overlay.active");
-      activeModals.forEach(m => m.classList.remove("active"));
+      if (document.getElementById("modal-delete-confirm")?.classList.contains("active")) {
+        pendingDeleteAction = null;
+      }
+      activeModals.forEach(modal => {
+        if (modal.id === "modal-csv-import") {
+          if (csvImportState?.saving) return;
+          csvImportState = null;
+        }
+        modal.classList.remove("active");
+      });
     }
   });
 }
 
 // ==========================================
-// 11. PRAYER FORM & UTILITIES
+// 11. UTILITAS UMUM
 // ==========================================
-function handlePrayerSubmit(e) {
-  e.preventDefault();
-  const name = document.getElementById("prayer-name").value;
-  closeModal("modal-prayer");
-  showToast(`Terima kasih Sdr/i ${name}, permohonan doa Anda telah dikirimkan ke Tim Majelis Doa.`);
-  document.getElementById("prayer-form").reset();
+
+/**
+ * Mengubah karakter khusus HTML menjadi entitas agar aman disisipkan lewat innerHTML.
+ * @param {*} str Nilai apa pun; null/undefined/"" menghasilkan string kosong.
+ * @returns {string} Teks yang sudah di-escape.
+ */
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function copyToClipboard(text, label) {
@@ -636,8 +706,6 @@ function showToast(message, iconClass = "fa-solid fa-circle-check") {
 // ==========================================
 // 12. WORSHIP DATA ENGINE & INLINE EDITOR
 // ==========================================
-const WORSHIP_DATA_VERSION = "2.8";
-
 const defaultWorshipData = {
   "sabat-raya": {
     title: "Susunan Ibadah Kebaktian Sabat Ke-12",
@@ -666,8 +734,8 @@ const defaultWorshipData = {
             ]
           },
           { time: "6", name: "Lagu Pujian", officer: "Orang Muda", type: "text" },
-          { time: "7", name: "Lagu Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "8", name: "Promosi Pelayanan Perorangan", officer: "Ibu Tabita", type: "text" },
+          { time: "7", name: "Promosi Pelayanan Perorangan", officer: "Ibu Tabita", type: "text" },
+          { time: "8", name: "Lagu Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
           { time: "9", name: "Diakon & Diakones", officer: "Sdr. Adit & Sdr. Diaz", type: "text" },
           { time: "10", name: "Cerita Anak", officer: "Ibu Teresia", type: "text" }
         ]
@@ -728,26 +796,26 @@ const defaultWorshipData = {
   },
   */
   "rabu-malam": {
-    title: "Ibadah Permintaan Doa",
+    title: "Susunan Ibadah Permintaan Doa Rabu Malam",
     subtitle: "Rabu, 23 September 2026 | 19.00 WIB",
     dateNum: "23",
     dateMonth: "SEP",
     generalInfo: [
-      { key: "Pianis", value: "Sdri. Rachel" }
+      { key: "Pianis", value: "-" }
     ],
     sections: [
       {
         title: "Susunan Acara Ibadah Permintaan Doa",
         items: [
-          { time: "1", name: "Protokol & Doa Buka", officer: "Sdr. Alden", type: "text" },
+          { time: "1", name: "Protokol & Doa Buka", officer: "-", type: "text" },
           { time: "2", name: "Lagu Buka", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "3", name: "Kesaksian-Kesaksian", officer: "Jemaat", type: "text" },
-          { time: "4", name: "Yang Didoakan", officer: "Keluarga Ibu Fenny", type: "text" },
-          { time: "5", name: "Renungan", officer: "Bpk. Warno (Minggu Sembahyang Pathfinder)", type: "text", highlight: true },
-          { time: "6", name: "Doa Syafaat", officer: "Ibu Yayuk", type: "text" },
+          { time: "3", name: "Kesaksian-Kesaksian", officer: "-", type: "text" },
+          { time: "4", name: "Yang Didoakan", officer: "-", type: "text" },
+          { time: "5", name: "Renungan", officer: "-", type: "text", highlight: true },
+          { time: "6", name: "Doa Syafaat", officer: "-", type: "text" },
           { time: "7", name: "Lagu Tutup", officer: "", type: "song", songBook: "LSEL No.", songNo: "", songTitle: "" },
-          { time: "8", name: "Doa Tutup", officer: "Bpk. Warno", type: "text" },
-          { time: "9", name: "Pengumuman", officer: "Ketua Jemaat / Officers Jemaat", type: "text" }
+          { time: "8", name: "Doa Tutup", officer: "-", type: "text" },
+          { time: "9", name: "Pengumuman", officer: "-", type: "text" }
         ]
       }
     ],
@@ -758,73 +826,14 @@ const defaultWorshipData = {
   }
 };
 
-function loadWorshipData() {
-  const savedVersion = localStorage.getItem("gmahk_worship_version");
-  if (savedVersion !== WORSHIP_DATA_VERSION) {
-    const saved = localStorage.getItem("gmahk_worship_data");
-    if (saved) {
-      try {
-        const migratedData = JSON.parse(saved);
-        migratedData["sabat-raya"] = JSON.parse(JSON.stringify(defaultWorshipData["sabat-raya"]));
-        migratedData["rabu-malam"] = JSON.parse(JSON.stringify(defaultWorshipData["rabu-malam"]));
-        const syncedData = syncWorshipEventNames(migratedData);
-        localStorage.setItem("gmahk_worship_version", WORSHIP_DATA_VERSION);
-        localStorage.setItem("gmahk_worship_data", JSON.stringify(syncedData));
-        return syncedData;
-      } catch (e) {
-        console.warn("Migrate worship data error:", e);
-      }
-    }
-    localStorage.setItem("gmahk_worship_version", WORSHIP_DATA_VERSION);
-    localStorage.setItem("gmahk_worship_data", JSON.stringify(defaultWorshipData));
-    return JSON.parse(JSON.stringify(defaultWorshipData));
-  }
-  const saved = localStorage.getItem("gmahk_worship_data");
-  if (saved) {
-    try {
-      const syncedData = syncWorshipEventNames(JSON.parse(saved));
-      localStorage.setItem("gmahk_worship_data", JSON.stringify(syncedData));
-      return syncedData;
-    } catch (e) {
-      console.warn("Parse worship data error:", e);
-    }
-  }
-  return JSON.parse(JSON.stringify(defaultWorshipData));
-}
-
-function syncWorshipEventNames(savedData) {
-  const syncedData = JSON.parse(JSON.stringify(savedData));
-
-  Object.keys(defaultWorshipData).forEach(key => {
-    const defaultProgram = defaultWorshipData[key];
-    const savedProgram = syncedData[key];
-    if (!savedProgram || !savedProgram.sections) return;
-
-    defaultProgram.sections.forEach((defaultSection, secIdx) => {
-      const savedSection = savedProgram.sections[secIdx];
-      if (!savedSection || !savedSection.items) return;
-
-      savedSection.title = defaultSection.title;
-      defaultSection.items.forEach((defaultItem, itemIdx) => {
-        if (savedSection.items[itemIdx]) {
-          savedSection.items[itemIdx].name = defaultItem.name;
-        }
-      });
-    });
-  });
-
-  return syncedData;
-}
-
-let worshipData = loadWorshipData();
+let worshipData = JSON.parse(JSON.stringify(defaultWorshipData));
+let worshipAvailability = { "sabat-raya": "loading", "rabu-malam": "loading" };
+let worshipOverrideRows = [];
+let pendingWorshipResetKey = null;
 let subtabEditState = {
   "sabat-raya": false,
   "rabu-malam": false
 };
-
-function saveWorshipDataToStorage() {
-  localStorage.setItem("gmahk_worship_data", JSON.stringify(worshipData));
-}
 
 function initWorshipSubTabs() {
   renderSubTab("sabat-raya");
@@ -878,6 +887,160 @@ function getDynamicWorshipSubtitle(key) {
   return dateText;
 }
 
+function getOverrideProgramType(key) {
+  return key === "sabat-raya" ? "sabat" : key === "rabu-malam" ? "rabu" : "pa";
+}
+
+function parseOverrideTimeline(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function convertOverrideRow(row) {
+  const timeline = parseOverrideTimeline(row.timeline_json);
+  if (!timeline) return null;
+
+  const sections = [];
+  const generalInfo = [];
+  let inGeneralInfo = false;
+  timeline.forEach(entry => {
+    if (entry?.isHeader) {
+      inGeneralInfo = /^i\.\s*informasi umum$/i.test(entry.title || "");
+      if (!inGeneralInfo) sections.push({ title: entry.title || "", items: [] });
+    } else if (entry?.title) {
+      if (inGeneralInfo) {
+        generalInfo.push({ key: entry.title, value: entry.desc || "" });
+        return;
+      }
+      if (sections.length === 0) sections.push({ title: "Susunan Ibadah", items: [] });
+      const item = {
+        time: entry.time || "",
+        name: entry.title,
+        officer: entry.desc || "",
+        note: entry.note || "",
+        highlight: entry.highlight === true,
+        type: entry.type === "song" ? "song" : Array.isArray(entry.subItems) ? "group" : "text"
+      };
+      if (item.type === "song") {
+        item.songBook = entry.songBook || "LSEL No.";
+        item.songNo = entry.songNo || "";
+        item.songTitle = entry.songTitle || "";
+      }
+      if (entry.sermonTitle !== undefined) item.sermonTitle = entry.sermonTitle || "";
+      if (Array.isArray(entry.subItems)) {
+        item.subItems = entry.subItems.map(subItem => ({
+          label: subItem.label || "",
+          officer: subItem.officer || ""
+        }));
+      }
+      sections[sections.length - 1].items.push(item);
+    }
+  });
+
+  return {
+    title: row.program_type === "rabu" ? defaultWorshipData["rabu-malam"].title : "Susunan Ibadah",
+    sections,
+    generalInfo,
+    notes: []
+  };
+}
+
+async function persistWorshipOverride(key) {
+  const programType = getOverrideProgramType(key);
+  const dateDisplay = getDynamicWorshipSubtitle(key);
+  const timelineJson = [
+    { title: "I. Informasi Umum", isHeader: true },
+    ...(worshipData[key].generalInfo || []).map(info => ({
+      title: info.key,
+      desc: info.value || "",
+      time: "",
+      highlight: true
+    })),
+    ...worshipData[key].sections.flatMap(section => [
+      { title: section.title, isHeader: true },
+      ...section.items.map(item => ({
+        title: item.name,
+        desc: item.officer || "",
+        time: item.time || "",
+        highlight: item.highlight === true,
+        ...(item.type === "song" ? {
+          type: "song",
+          songBook: item.songBook || "LSEL No.",
+          songNo: item.songNo || "",
+          songTitle: item.songTitle || ""
+        } : {}),
+        ...(item.sermonTitle !== undefined ? { sermonTitle: item.sermonTitle || "" } : {}),
+        ...(Array.isArray(item.subItems) ? {
+          subItems: item.subItems.map(subItem => ({
+            label: subItem.label || "",
+            officer: subItem.officer || ""
+          }))
+        } : {}),
+        ...(item.note ? { note: item.note } : {})
+      }))
+    ])
+  ];
+  const payload = { program_type: programType, date_display: dateDisplay, timeline_json: timelineJson };
+  const existing = worshipOverrideRows.find(row => row.program_type === programType && row.date_display === dateDisplay);
+
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showToast("Supabase belum terhubung. Perubahan belum tersimpan.", "fa-solid fa-triangle-exclamation");
+    return false;
+  }
+
+  const table = supabaseClient.from("Tabel Override Susunan");
+  const { data: existingRows, error: lookupError } = await table
+    .select("id, updated_at")
+    .eq("program_type", programType)
+    .eq("date_display", dateDisplay)
+    .order("updated_at", { ascending: false });
+  if (lookupError) {
+    showToast(`Override gagal diperiksa: ${lookupError.message}`, "fa-solid fa-triangle-exclamation");
+    return false;
+  }
+
+  const oldRows = existingRows || [];
+  let savedRow = null;
+  const inserted = await table.insert(payload).select().single();
+  if (!inserted.error) {
+    savedRow = inserted.data;
+  } else if (oldRows.length) {
+    const updated = await table.update(payload).eq("id", oldRows[0].id).select().single();
+    if (updated.error) {
+      showToast(`Susunan gagal disimpan: ${updated.error.message}`, "fa-solid fa-triangle-exclamation");
+      return false;
+    }
+    savedRow = updated.data;
+  } else {
+    showToast(`Susunan gagal disimpan: ${inserted.error.message}`, "fa-solid fa-triangle-exclamation");
+    return false;
+  }
+
+  const oldIds = oldRows.filter(row => String(row.id) !== String(savedRow.id)).map(row => row.id);
+  if (oldIds.length) {
+    const { error: deleteError } = await table.delete().in("id", oldIds);
+    if (deleteError) {
+      showToast(`Versi terbaru tersimpan, tetapi override lama gagal dibersihkan: ${deleteError.message}`, "fa-solid fa-triangle-exclamation");
+    }
+  }
+
+  worshipOverrideRows = [savedRow, ...worshipOverrideRows.filter(row =>
+    row.program_type !== programType || row.date_display !== dateDisplay
+  )];
+  worshipAvailability[key] = true;
+  showToast("Override terbaru tersimpan di Supabase.", "fa-solid fa-circle-check text-gold");
+  return true;
+}
+
 function renderSubTab(key) {
   const container = document.getElementById(`subtab-container-${key}`);
   if (!container) return;
@@ -888,6 +1051,22 @@ function renderSubTab(key) {
         <i class="fa-solid fa-clock" aria-hidden="true"></i>
         <h3>Pemuda Advent</h3>
         <p>Segera hadir</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (worshipAvailability[key] === "loading") {
+    container.innerHTML = '<div class="coming-soon-card"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i><p>Memuat susunan dari Supabase...</p></div>';
+    return;
+  }
+
+  if (worshipAvailability[key] === false) {
+    container.innerHTML = `
+      <div class="coming-soon-card">
+        <i class="fa-regular fa-calendar-xmark" aria-hidden="true"></i>
+        <h3>Susunan belum tersedia</h3>
+        <p>Belum ada susunan untuk ${escapeHtml(getDynamicWorshipSubtitle(key))}.</p>
       </div>
     `;
     return;
@@ -945,7 +1124,7 @@ function renderSubTab(key) {
                   <input type="text" class="edit-pill-input" value="${escapeHtml(info.value)}" 
                     oninput="updateGenInfo('${key}', ${idx}, this.value)">
                 ` : `
-                  <span class="gen-metric-value">${escapeHtml(info.value)}</span>
+                  <span class="gen-metric-value">${escapeHtml(info.value || '-')}</span>
                 `}
               </div>
             </div>
@@ -1055,11 +1234,6 @@ function renderSubTab(key) {
   container.innerHTML = html;
 }
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
 function formatSongDisplay(item) {
   if (!item.songNo && !item.songTitle) return '-';
   const book = item.songBook || 'LSEL No.';
@@ -1130,46 +1304,95 @@ function selectSongSuggestion(button) {
 
   worshipData[key].sections[sec].items[item].songNo = songNo;
   worshipData[key].sections[sec].items[item].songTitle = songTitle;
-  saveWorshipDataToStorage();
   renderSubTab(key);
 }
 
-function toggleEditSubTab(key) {
-  subtabEditState[key] = !subtabEditState[key];
-  renderSubTab(key);
-  if (subtabEditState[key]) {
+async function toggleEditSubTab(key) {
+  if (!subtabEditState[key]) {
+    subtabEditState[key] = true;
+    renderSubTab(key);
     showToast("Mode Edit Aktif! Ubah nama/lagu langsung di baris susunan.", "fa-solid fa-pen-to-square text-gold");
   } else {
-    saveWorshipDataToStorage();
-    showToast("Perubahan susunan berhasil disimpan!", "fa-solid fa-circle-check text-gold");
+    const saved = await persistWorshipOverride(key);
+    if (saved) subtabEditState[key] = false;
+    renderSubTab(key);
   }
 }
 
 function resetSubTabData(key) {
-  worshipData[key] = JSON.parse(JSON.stringify(defaultWorshipData[key]));
-  saveWorshipDataToStorage();
-  renderSubTab(key);
-  showToast("Data susunan berhasil di-reset ke semula!", "fa-solid fa-rotate-left text-gold");
+  const programType = getOverrideProgramType(key);
+  const dateDisplay = getDynamicWorshipSubtitle(key);
+  const row = worshipOverrideRows.find(item => item.program_type === programType && item.date_display === dateDisplay);
+  if (!row) return;
+  pendingWorshipResetKey = key;
+  const description = document.getElementById("worship-reset-description");
+  const detail = document.getElementById("worship-reset-detail");
+  if (description) {
+    description.textContent = key === "rabu-malam"
+      ? `Susunan Rabu malam untuk ${dateDisplay} akan kembali ke susunan dasar dengan tanda strip.`
+      : `Susunan Sabat Raya untuk ${dateDisplay} akan kembali mengikuti tabel sumber.`;
+  }
+  if (detail) {
+    detail.textContent = key === "rabu-malam"
+      ? "Override khusus pada tanggal ini akan dihapus; tanggal berikutnya kembali menampilkan tanda strip."
+      : "Override khusus pada tanggal ini akan dihapus; data Sekolah Sabat dan Khotbah dari tabel akan ditampilkan.";
+  }
+  openModal("modal-worship-reset-confirm");
+}
+
+function cancelResetSubTab() {
+  pendingWorshipResetKey = null;
+  closeModal("modal-worship-reset-confirm");
+}
+
+async function confirmResetSubTab() {
+  const key = pendingWorshipResetKey;
+  if (!key) return;
+  const programType = getOverrideProgramType(key);
+  const dateDisplay = getDynamicWorshipSubtitle(key);
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showToast("Supabase belum terhubung. Override belum dihapus.", "fa-solid fa-triangle-exclamation");
+    return;
+  }
+  const { error } = await supabaseClient.from("Tabel Override Susunan")
+    .delete()
+    .eq("program_type", programType)
+    .eq("date_display", dateDisplay);
+  if (error) {
+    showToast(`Override gagal dihapus: ${error.message}`, "fa-solid fa-triangle-exclamation");
+    return;
+  }
+  subtabEditState[key] = false;
+  pendingWorshipResetKey = null;
+  closeModal("modal-worship-reset-confirm");
+  worshipOverrideRows = worshipOverrideRows.filter(item =>
+    item.program_type !== programType || item.date_display !== dateDisplay
+  );
+  await fetchSabbathProgramData();
+  showToast(
+    key === "rabu-malam"
+      ? "Override dihapus. Susunan Rabu malam kembali menampilkan tanda strip."
+      : "Override dihapus. Susunan kembali mengikuti tabel sumber.",
+    "fa-solid fa-rotate-left text-gold"
+  );
 }
 
 function updateGenInfo(key, idx, val) {
   if (worshipData[key] && worshipData[key].generalInfo[idx]) {
     worshipData[key].generalInfo[idx].value = val;
-    saveWorshipDataToStorage();
   }
 }
 
 function updateOfficer(key, secIdx, itemIdx, val) {
   if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
     worshipData[key].sections[secIdx].items[itemIdx].officer = val;
-    saveWorshipDataToStorage();
   }
 }
 
 function updateSermonTitle(key, secIdx, itemIdx, val) {
   if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
     worshipData[key].sections[secIdx].items[itemIdx].sermonTitle = val;
-    saveWorshipDataToStorage();
   }
 }
 
@@ -1182,21 +1405,18 @@ function updateSubGroupOfficer(key, secIdx, itemIdx, subIdx, val) {
     worshipData[key].sections[secIdx].items[itemIdx].subItems[subIdx]
   ) {
     worshipData[key].sections[secIdx].items[itemIdx].subItems[subIdx].officer = val;
-    saveWorshipDataToStorage();
   }
 }
 
 function updateSongNo(key, secIdx, itemIdx, val) {
   if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
     worshipData[key].sections[secIdx].items[itemIdx].songNo = val;
-    saveWorshipDataToStorage();
   }
 }
 
 function updateSongTitle(key, secIdx, itemIdx, val) {
   if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
     worshipData[key].sections[secIdx].items[itemIdx].songTitle = val;
-    saveWorshipDataToStorage();
   }
 }
 
@@ -1205,14 +1425,12 @@ function updateSongTitle(key, secIdx, itemIdx, val) {
 // ==========================================
 // 13. SUPABASE INTEGRATION, ADMIN AUTH & DATABASE VIEW ENGINE
 // ==========================================
-const SUPABASE_URL = "https://jgrarsmzaqcviurladpm.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Vp2_Hx0mpyreTrfFQW-14g_NTxNBABy";
-let supabaseClient = null;
-
 function initSupabaseClient() {
   if (window.supabase && SUPABASE_URL) {
     try {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
       return supabaseClient;
     } catch (err) {
       console.warn("Supabase Client Init Error:", err);
@@ -1532,15 +1750,6 @@ function toggleGalleryOrderMode() {
   renderGalleryAdminPanel();
 }
 
-function moveGalleryEventOrder(eventId, direction) {
-  const index = galleryOrderDraft.findIndex(event => String(event.id) === String(eventId));
-  const targetIndex = index + direction;
-  if (index < 0 || targetIndex < 0 || targetIndex >= galleryOrderDraft.length) return;
-
-  [galleryOrderDraft[index], galleryOrderDraft[targetIndex]] = [galleryOrderDraft[targetIndex], galleryOrderDraft[index]];
-  renderGalleryAdminPanel();
-}
-
 function cancelGalleryOrder() {
   galleryOrderMode = false;
   galleryOrderDraft = [];
@@ -1651,28 +1860,53 @@ async function saveGalleryEvent(event) {
 async function deleteGalleryEvent(eventId) {
   if (!isAdminLoggedIn || !supabaseClient) return;
   const item = galleryEvents.find(event => String(event.id) === String(eventId));
-  if (!item || !window.confirm(`Hapus event "${item.title}" dari galeri?`)) return;
+  if (!item) return;
 
-  const { error } = await supabaseClient.from("Kegiatan Jemaat").delete().eq("id", eventId);
-  if (error) {
-    showToast(`Event gagal dihapus: ${error.message}`, "fa-solid fa-triangle-exclamation");
-    return;
-  }
+  openDeleteConfirmation({
+    subtitle: "Kegiatan Jemaat",
+    message: `Hapus event "${item.title}" dari galeri?`,
+    description: "Event ini akan dihapus dari galeri dan database server Supabase.",
+    onConfirm: async () => {
+      try {
+        const { error } = await supabaseClient.from("Kegiatan Jemaat").delete().eq("id", eventId);
+        if (error) throw error;
 
-  await fetchGalleryEvents();
-  showToast("Event dokumentasi dihapus.", "fa-solid fa-trash-can");
+        await fetchGalleryEvents();
+        showDeleteResult(true, "Event dokumentasi berhasil dihapus.");
+      } catch (error) {
+        showDeleteResult(false, `Event gagal dihapus: ${error.message}`);
+      }
+    }
+  });
 }
 
-let isAdminLoggedIn = localStorage.getItem("is_admin_logged_in") === "true";
+let isAdminLoggedIn = false;
 
 function initAdminState() {
   updateAdminUIState();
+  restoreAdminSession();
   syncNearestPosToWorship();
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
   fetchSabbathProgramData();
   fetchPengumuman();
   fetchGalleryEvents();
+}
+
+async function restoreAdminSession() {
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    console.warn("Supabase restore admin session error:", error.message);
+    return;
+  }
+  isAdminLoggedIn = Boolean(data.session?.user);
+  updateAdminUIState();
+  if (isAdminLoggedIn) {
+    await removeExpiredWorshipOverrides();
+    applySabbathDatabaseRows();
+  }
 }
 
 function updateAdminUIState() {
@@ -1768,7 +2002,6 @@ function confirmLogoutAdmin() {
 
 function logoutAdmin() {
   isAdminLoggedIn = false;
-  localStorage.removeItem("is_admin_logged_in");
 
   // Sign out from Supabase Auth session if active
   if (supabaseClient && supabaseClient.auth) {
@@ -1809,11 +2042,6 @@ async function handleAdminLoginSubmit(e) {
 
   const email = emailInput ? emailInput.value.trim() : "";
   const password = passwordInput ? passwordInput.value : "";
-  const customUrl = urlInput ? urlInput.value.trim() : "";
-
-  if (customUrl) {
-    saveSupabaseUrl(customUrl);
-  }
 
   // Reset UI Banners
   if (errorBanner) errorBanner.style.display = "none";
@@ -1852,27 +2080,11 @@ async function handleAdminLoginSubmit(e) {
     }
   }
 
-  // Fallback: Built-in credentials if Supabase URL is not set or client fails to initialize
-  const validAdminAccounts = [
-    { email: "admin@gmahkgethsemane.org", pass: "AdminGethsemane2026!" },
-    { email: "admin@gmail.com", pass: "Admin123!" },
-    { email: "admin@gmahk.org", pass: "Admin123!" }
-  ];
-
-  const matchedAccount = validAdminAccounts.find(
-    acc => acc.email.toLowerCase() === email.toLowerCase() && acc.pass === password
-  );
-
-  if (matchedAccount) {
-    showLoginSuccess(email);
-  } else {
-    showLoginFailure("Email atau password admin tidak ditemukan di Supabase Auth / Kredensial Admin.");
-  }
+  showLoginFailure("Supabase belum terhubung; login admin tidak tersedia.");
 
   function showLoginSuccess(userEmail) {
     if (successBanner) successBanner.style.display = "flex";
     isAdminLoggedIn = true;
-    localStorage.setItem("is_admin_logged_in", "true");
     updateAdminUIState();
 
     setTimeout(() => {
@@ -1944,28 +2156,12 @@ function switchAdminDbTab(tabKey) {
 // ==========================================
 // 14. TABEL PIANIS ENGINE
 // ==========================================
-let posScheduleList = loadPosSchedule();
+let posScheduleList = [];
 let posSortField = "date";
 let posSortAsc = false; // Descending by default
 let posSearchQuery = "";
 
-function loadPosSchedule() {
-  const saved = localStorage.getItem("gmahk_pianist_schedule");
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.filter(item => !/^pos-(?:[1-9]|1[0-3])$/.test(String(item.id)));
-      }
-    } catch (e) {
-      console.warn("Failed to parse local POS schedule:", e);
-    }
-  }
-  return [];
-}
-
 function savePosSchedule() {
-  localStorage.setItem("gmahk_pianist_schedule", JSON.stringify(posScheduleList));
   syncNearestPosToWorship();
 }
 
@@ -2006,8 +2202,8 @@ const ssTableColumns = [
   ["mission", "Berita Mission"],
   ["diskusi_gabungan", "Diskusi Orang Muda / Orang Tua"],
   ["lagu_pujian", "Lagu Pujian"],
-  ["lagu_tutup", "Lagu Tutup"],
   ["pp", "PP"],
+  ["lagu_tutup", "Lagu Tutup"],
   ["diakon_es", "Diakon & Diakones"],
   ["cerita_anak", "Cerita Anak"]
 ];
@@ -2097,6 +2293,414 @@ function getSabbathTableConfig(tableKey) {
     : { table: 'Tabel Khotbah', rows: khotbahScheduleList, columns: khotbahTableColumns };
 }
 
+let csvImportState = null;
+
+function getCsvImportConfig(tableKey) {
+  if (tableKey === "pos") {
+    return {
+      table: "Tabel Pianis",
+      title: "Tabel Pianis",
+      rows: posScheduleList,
+      columns: [
+        ["date", "Tanggal"],
+        ["pianist", "Pianis"]
+      ]
+    };
+  }
+
+  if (tableKey === "ss") {
+    return {
+      table: "Tabel SS",
+      title: "Tabel Sekolah Sabat",
+      rows: ssScheduleList,
+      columns: [
+        ["date", "Tanggal"],
+        ["pemimpin_acara", "Pemimpin Acara"],
+        ["lagu_buka", "Lagu Buka"],
+        ["ayat_inti_doa_buka", "Ayat Inti - Doa Buka"],
+        ["mission", "Berita Mission"],
+        ["diskusi_orang_muda", "Diskusi Orang Muda"],
+        ["diskusi_orang_tua", "Diskusi Orang Tua"],
+        ["lagu_pujian", "Lagu Pujian"],
+        ["pp", "Promosi Pelayanan Perorangan"],
+        ["lagu_tutup", "Lagu Tutup"],
+        ["diakon_es", "Diakon & Diakones"],
+        ["cerita_anak", "Cerita Anak"]
+      ]
+    };
+  }
+
+  if (tableKey === "khotbah") {
+    return {
+      table: "Tabel Khotbah",
+      title: "Tabel Khotbah",
+      rows: khotbahScheduleList,
+      columns: [
+        ["date", "Tanggal"],
+        ["mc_ayat_bersahutan", "MC & Ayat Bersahutan"],
+        ["lagu_buka", "Lagu Buka"],
+        ["doa_syafaat", "Doa Syafaat"],
+        ["bacaan_persembahan", "Bacaan Persembahan"],
+        ["doa_persembahan", "Doa Persembahan"],
+        ["lagu_pujian", "Lagu Pujian"],
+        ["ayat_inti_visi_misi", "Ayat Inti & Visi Misi"],
+        ["pengkhotbah", "Pengkhotbah"],
+        ["judul", "Judul"],
+        ["lagu_tutup", "Lagu Tutup"],
+        ["doa_tutup", "Doa Tutup"]
+      ]
+    };
+  }
+
+  throw new Error("Tabel impor tidak dikenal.");
+}
+
+function openCsvImportModal(tableKey) {
+  const config = getCsvImportConfig(tableKey);
+  csvImportState = { tableKey, file: null, rows: [], preview: [] };
+
+  document.getElementById("csv-import-title").textContent = `Import CSV - ${config.title}`;
+  document.getElementById("csv-import-subtitle").textContent = `Gabungkan data ke ${config.table} berdasarkan tanggal`;
+  document.getElementById("csv-import-file").value = "";
+  document.getElementById("csv-import-file-name").textContent = "Belum ada file dipilih";
+  document.getElementById("csv-import-error").hidden = true;
+  document.getElementById("csv-import-error-preview").hidden = true;
+  document.getElementById("csv-import-preview-button").disabled = true;
+  document.getElementById("csv-import-upload-stage").hidden = false;
+  document.getElementById("csv-import-preview-stage").hidden = true;
+
+  const dropzone = document.getElementById("csv-import-dropzone");
+  if (!dropzone.dataset.eventsReady) {
+    dropzone.dataset.eventsReady = "true";
+    dropzone.addEventListener("dragover", event => {
+      event.preventDefault();
+      dropzone.classList.add("is-dragover");
+    });
+    dropzone.addEventListener("dragleave", event => {
+      if (!dropzone.contains(event.relatedTarget)) dropzone.classList.remove("is-dragover");
+    });
+    dropzone.addEventListener("drop", event => {
+      event.preventDefault();
+      dropzone.classList.remove("is-dragover");
+      handleCsvImportFile(event.dataTransfer.files[0]);
+    });
+  }
+
+  openModal("modal-csv-import");
+}
+
+function closeCsvImportModal() {
+  if (csvImportState?.saving) return;
+  closeModal("modal-csv-import");
+  csvImportState = null;
+}
+
+function handleCsvImportFile(file) {
+  const errorElement = document.getElementById("csv-import-error");
+  const nextButton = document.getElementById("csv-import-preview-button");
+  document.getElementById("csv-import-file").value = "";
+  errorElement.hidden = true;
+  nextButton.disabled = true;
+  if (csvImportState) csvImportState.file = null;
+  document.getElementById("csv-import-file-name").textContent = file?.name || "Belum ada file dipilih";
+  if (!file) return;
+
+  if (!/\.csv$/i.test(file.name)) {
+    errorElement.textContent = "Pilih file dengan format .csv.";
+    errorElement.hidden = false;
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    errorElement.textContent = "Ukuran file CSV maksimal 5 MB.";
+    errorElement.hidden = false;
+    return;
+  }
+
+  csvImportState.file = file;
+  csvImportState.rows = [];
+  csvImportState.preview = [];
+  document.getElementById("csv-import-file-name").textContent = file.name;
+  nextButton.disabled = false;
+}
+
+function downloadCsvImportTemplate() {
+  if (!csvImportState) return;
+  const config = getCsvImportConfig(csvImportState.tableKey);
+  const headers = config.columns.map(([key]) => key);
+  const csv = `\uFEFF${headers.join(",")}\r\n`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${csvImportState.tableKey}-template.csv`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function parseCsvText(text) {
+  let content = text.replace(/^\uFEFF/, "");
+  let delimiter = ",";
+  const separatorDirective = /^sep=(,|;|\t)\r?\n/i.exec(content);
+  if (separatorDirective) {
+    delimiter = separatorDirective[1];
+    content = content.slice(separatorDirective[0].length);
+  } else {
+    const firstLine = content.split(/\r?\n/, 1)[0];
+    const delimiterCounts = [",", ";", "\t"].map(char => {
+      let count = 0;
+      let quoted = false;
+      for (let index = 0; index < firstLine.length; index += 1) {
+        if (firstLine[index] === '"') {
+          if (quoted && firstLine[index + 1] === '"') index += 1;
+          else quoted = !quoted;
+        } else if (!quoted && firstLine[index] === char) {
+          count += 1;
+        }
+      }
+      return { char, count };
+    }).sort((a, b) => b.count - a.count);
+    if (delimiterCounts[0].count > 0) delimiter = delimiterCounts[0].char;
+  }
+
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+    if (quoted) {
+      if (char === '"' && content[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (char === '"') {
+        quoted = false;
+      } else {
+        field += char;
+      }
+    } else if (char === '"' && field.length === 0) {
+      quoted = true;
+    } else if (char === delimiter) {
+      row.push(field);
+      field = "";
+    } else if (char === "\n" || char === "\r") {
+      if (char === "\r" && content[index + 1] === "\n") index += 1;
+      row.push(field);
+      if (row.some(value => value.trim() !== "")) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+
+  if (quoted) throw new Error("Ada tanda kutip CSV yang belum ditutup.");
+  row.push(field);
+  if (row.some(value => value.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+async function prepareCsvImportPreview() {
+  const state = csvImportState;
+  if (!state?.file) return;
+  const errorElement = document.getElementById("csv-import-error");
+  errorElement.hidden = true;
+
+  try {
+    const config = getCsvImportConfig(state.tableKey);
+    const parsedRows = parseCsvText(await state.file.text());
+    if (csvImportState !== state) return;
+    if (parsedRows.length < 2) throw new Error("File CSV belum berisi baris data.");
+
+    const headers = parsedRows[0].map(header => header.trim().toLowerCase());
+    if (new Set(headers).size !== headers.length) throw new Error("Ada nama kolom yang duplikat di header CSV.");
+    const knownColumns = new Set(config.columns.map(([key]) => key));
+    const unknownHeaders = headers.filter(header => !knownColumns.has(header));
+    const missingHeaders = config.columns
+      .map(([key]) => key)
+      .filter(key => !headers.includes(key));
+    if (unknownHeaders.length || missingHeaders.length) {
+      const issues = [];
+      if (missingHeaders.length) issues.push(`Kolom wajib tidak ditemukan: ${missingHeaders.join(", ")}.`);
+      if (unknownHeaders.length) issues.push(`Kolom tidak dikenal: ${unknownHeaders.join(", ")}.`);
+      throw new Error(issues.join(" "));
+    }
+
+    const rows = parsedRows.slice(1).map((values, index) => {
+      if (values.length !== headers.length) {
+        throw new Error(`Jumlah kolom pada baris ${index + 2} tidak sesuai dengan header.`);
+      }
+      return Object.fromEntries(headers.map((header, columnIndex) => [header, values[columnIndex].trim()]));
+    });
+    const seenDates = new Set();
+    rows.forEach((row, index) => {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(row.date);
+      if (!match) throw new Error(`Tanggal pada baris ${index + 2} harus berformat YYYY-MM-DD.`);
+      const date = new Date(`${row.date}T00:00:00`);
+      if (Number.isNaN(date.getTime())
+        || date.getFullYear() !== Number(match[1])
+        || date.getMonth() + 1 !== Number(match[2])
+        || date.getDate() !== Number(match[3])) {
+        throw new Error(`Tanggal pada baris ${index + 2} tidak valid.`);
+      }
+      if (seenDates.has(row.date)) throw new Error(`Tanggal ${row.date} muncul lebih dari sekali di file CSV.`);
+      seenDates.add(row.date);
+    });
+
+    const existingByDate = new Map(config.rows.map(row => [row.date, row]));
+    const preview = rows.map(row => {
+      const existing = existingByDate.get(row.date) || null;
+      const changedColumns = existing
+        ? config.columns.filter(([key]) => String(existing[key] ?? "").trim() !== row[key])
+        : [];
+      return {
+        row,
+        existing,
+        status: !existing ? "new" : changedColumns.length ? "update" : "same",
+        changedColumns,
+        saved: false
+      };
+    });
+
+    state.rows = rows;
+    state.preview = preview;
+    document.getElementById("csv-import-upload-stage").hidden = true;
+    document.getElementById("csv-import-preview-stage").hidden = false;
+    renderCsvImportPreview(config);
+  } catch (error) {
+    if (csvImportState !== state) return;
+    errorElement.textContent = error.message;
+    errorElement.hidden = false;
+  }
+}
+
+function renderCsvImportPreview(config = getCsvImportConfig(csvImportState.tableKey)) {
+  const preview = csvImportState.preview;
+  const added = preview.filter(item => item.status === "new").length;
+  const changed = preview.filter(item => item.status === "update").length;
+  const unchanged = preview.filter(item => item.status === "same").length;
+  document.getElementById("csv-import-summary").innerHTML = `
+    <span>${preview.length} baris CSV</span>
+    <span>${added} data baru</span>
+    <span>${changed} akan diperbarui</span>
+    <span>${unchanged} tidak berubah</span>
+  `;
+  document.getElementById("csv-import-preview-body").innerHTML = preview.map(item => {
+    const date = escapeHtml(formatDateIndo(item.row.date));
+    const statusLabel = item.status === "new" ? "Data baru"
+      : item.status === "update" ? "Berbeda"
+        : "Tidak berubah";
+    const values = config.columns.filter(([key]) => key !== "date").map(([key, label]) => `
+      <div>${item.changedColumns.some(([changedKey]) => changedKey === key) ? '<span class="csv-import-diff-dot" aria-label="Berbeda"></span>' : ""}
+        <strong>${escapeHtml(label)}:</strong> ${escapeHtml(item.row[key] || "-")}
+      </div>
+    `).join("");
+    const differences = item.status === "new"
+      ? "Tanggal belum ada di tabel."
+      : item.changedColumns.length
+        ? item.changedColumns.map(([key, label]) => `
+            <div><span class="csv-import-diff-dot" aria-label="Berbeda"></span>
+              ${escapeHtml(label)}: ${escapeHtml(item.existing[key] || "-")} &rarr; ${escapeHtml(item.row[key] || "-")}
+            </div>
+          `).join("")
+        : '<span class="csv-import-unchanged">Tidak ada perbedaan.</span>';
+    return `<tr>
+      <td>${date}</td>
+      <td class="csv-import-status">${statusLabel}</td>
+      <td class="csv-import-values">${values}</td>
+      <td class="csv-import-diff">${differences}</td>
+    </tr>`;
+  }).join("");
+
+  const saveButton = document.getElementById("csv-import-save-button");
+  saveButton.disabled = preview.every(item => item.status === "same");
+  saveButton.innerHTML = preview.every(item => item.status === "same")
+    ? "Tidak Ada Perubahan"
+    : '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
+}
+
+function backToCsvImportUpload() {
+  document.getElementById("csv-import-preview-stage").hidden = true;
+  document.getElementById("csv-import-upload-stage").hidden = false;
+}
+
+async function saveCsvImport() {
+  if (!csvImportState || csvImportState.saving) return;
+  const config = getCsvImportConfig(csvImportState.tableKey);
+  const errorElement = document.getElementById("csv-import-error-preview");
+  const saveButton = document.getElementById("csv-import-save-button");
+  errorElement.hidden = true;
+  const pendingRows = csvImportState.preview.filter(item => item.status !== "same" && !item.saved);
+  if (pendingRows.length === 0) {
+    closeCsvImportModal();
+    showToast("Tidak ada perubahan untuk disimpan.", "fa-solid fa-circle-check");
+    return;
+  }
+
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    errorElement.textContent = "Supabase belum terhubung. Data belum disimpan.";
+    errorElement.hidden = false;
+    return;
+  }
+
+  csvImportState.saving = true;
+  saveButton.disabled = true;
+  saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+  const failures = [];
+  let savedCount = 0;
+
+  for (const item of pendingRows) {
+    const payload = Object.fromEntries(config.columns.map(([key]) => [key, item.row[key]]));
+    try {
+      const query = item.existing
+        ? supabaseClient.from(config.table).update(payload).eq("id", item.existing.id).select().single()
+        : supabaseClient.from(config.table).insert([payload]).select().single();
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const savedRow = data;
+      if (!savedRow) throw new Error("Supabase tidak mengembalikan data tersimpan; baris ini tidak dianggap berhasil.");
+      const rowList = config.rows;
+      const rowIndex = item.existing
+        ? rowList.findIndex(row => String(row.id) === String(item.existing.id))
+        : -1;
+      if (rowIndex >= 0) rowList[rowIndex] = savedRow;
+      else rowList.unshift(savedRow);
+
+      item.existing = savedRow;
+      item.saved = true;
+      item.status = "same";
+      item.changedColumns = [];
+      savedCount += 1;
+    } catch (error) {
+      failures.push(`${item.row.date}: ${error.message}`);
+    }
+  }
+
+  csvImportState.saving = false;
+  if (csvImportState.tableKey === "pos") {
+    renderPosTable();
+    savePosSchedule();
+  } else {
+    renderSabbathDatabaseTable(csvImportState.tableKey, config.rows, getSabbathTableConfig(csvImportState.tableKey).columns);
+    applySabbathDatabaseRows();
+  }
+
+  if (failures.length) {
+    renderCsvImportPreview(config);
+    errorElement.textContent = `${savedCount} baris berhasil disimpan, ${failures.length} gagal. ${failures[0]}`;
+    errorElement.hidden = false;
+    saveButton.disabled = false;
+    return;
+  }
+
+  const tableKey = csvImportState.tableKey;
+  closeCsvImportModal();
+  if (tableKey === "pos") await fetchPosFromSupabase();
+  else await fetchSabbathProgramData();
+  showToast(`${savedCount} baris berhasil diimpor ke ${config.table}.`, "fa-solid fa-circle-check text-emerald");
+}
+
 function filterSabbathTable(tableKey) {
   const config = getSabbathTableConfig(tableKey);
   renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
@@ -2119,14 +2723,66 @@ function clearSabbathTableSearch(tableKey) {
   filterSabbathTable(tableKey);
 }
 
-async function shiftSabbathTableWeek(tableKey, direction) {
+let pendingWeekShift = null;
+
+function openWeekShiftConfirm(type, tableKey, direction) {
+  const tableName = type === "pos"
+    ? "Tabel Pianis"
+    : getSabbathTableConfig(tableKey).table;
+  const action = direction > 0 ? "Majukan" : "Mundurkan";
+  const title = document.getElementById("week-shift-confirm-title");
+  const description = document.getElementById("week-shift-confirm-description");
+  if (!title || !description) return;
+
+  pendingWeekShift = { type, tableKey, direction };
+  title.textContent = `Konfirmasi ${action} Jadwal`;
+  const offset = direction > 0 ? "-7 hari" : "+7 hari";
+  const dateDirection = direction > 0 ? "ke belakang" : "ke depan";
+  description.textContent = `Yakin ingin ${action.toLowerCase()} semua tanggal di ${tableName} ${dateDirection} (${offset})?`;
+  openModal("modal-week-shift-confirm");
+}
+
+function cancelWeekShift() {
+  pendingWeekShift = null;
+  closeModal("modal-week-shift-confirm");
+}
+
+function confirmWeekShift() {
+  const shift = pendingWeekShift;
+  if (!shift) return;
+
+  pendingWeekShift = null;
+  closeModal("modal-week-shift-confirm");
+  if (shift.type === "pos") {
+    shiftPosWeek(shift.direction, true);
+  } else {
+    shiftSabbathTableWeek(shift.tableKey, shift.direction, true);
+  }
+}
+
+async function shiftSabbathTableWeek(tableKey, direction, confirmed = false) {
+  if (!confirmed) {
+    openWeekShiftConfirm("sabbath", tableKey, direction);
+    return;
+  }
+
   const config = getSabbathTableConfig(tableKey);
+  if (config.rows.length === 0) {
+    showToast(`Tidak ada jadwal di ${config.table} untuk digeser.`, "fa-solid fa-triangle-exclamation text-amber");
+    return;
+  }
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showToast(`Gagal menggeser jadwal ${config.table}: Supabase belum terhubung.`, "fa-solid fa-triangle-exclamation text-amber");
+    return;
+  }
+
   const updatedRows = config.rows.map(row => ({ ...row }));
 
   updatedRows.forEach(row => {
     const date = new Date(`${row.date}T00:00:00`);
     if (!Number.isNaN(date.getTime())) {
-      date.setDate(date.getDate() + direction * 7);
+      date.setDate(date.getDate() - direction * 7);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -2134,18 +2790,24 @@ async function shiftSabbathTableWeek(tableKey, direction) {
     }
   });
 
-  config.rows.splice(0, config.rows.length, ...updatedRows);
-  renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
-
-  if (!supabaseClient) initSupabaseClient();
-  if (!supabaseClient) return;
   try {
-    await Promise.all(updatedRows.map(row => supabaseClient
+    const results = await Promise.all(updatedRows.map(row => supabaseClient
       .from(config.table)
       .update({ date: row.date })
       .eq('id', row.id)));
+    const failedResult = results.find(result => result.error);
+    if (failedResult?.error) throw failedResult.error;
+
+    config.rows.splice(0, config.rows.length, ...updatedRows);
+    renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
+    applySabbathDatabaseRows();
+    const action = direction > 0 ? "dimajukan" : "dimundurkan";
+    const offset = direction > 0 ? "-7" : "+7";
+    showToast(`Semua jadwal ${config.table} berhasil ${action} (${offset} hari).`, "fa-solid fa-calendar-check text-gold");
   } catch (error) {
     console.warn(`Gagal menggeser ${config.table}:`, error);
+    await fetchSabbathProgramData();
+    showToast(`Gagal menggeser jadwal ${config.table}: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
   }
 }
 
@@ -2160,6 +2822,31 @@ function getSabbathFormFields(tableKey) {
     fields.splice(insertAt + 1, 0, ['diskusi_orang_tua', 'Orang Tua']);
   }
   return fields;
+}
+
+function getNextSabbathTableDate(rows) {
+  const dates = new Set(rows.map(row => row.date).filter(Boolean));
+  const latestDate = [...dates].sort().pop();
+  const nextDate = latestDate
+    ? new Date(`${latestDate}T00:00:00`)
+    : new Date(`${getUpcomingSaturdayIso()}T00:00:00`);
+
+  if (Number.isNaN(nextDate.getTime())) return getUpcomingSaturdayIso();
+  if (latestDate) nextDate.setDate(nextDate.getDate() + 7);
+
+  while (dates.has([
+    nextDate.getFullYear(),
+    String(nextDate.getMonth() + 1).padStart(2, "0"),
+    String(nextDate.getDate()).padStart(2, "0")
+  ].join("-"))) {
+    nextDate.setDate(nextDate.getDate() + 7);
+  }
+
+  return [
+    nextDate.getFullYear(),
+    String(nextDate.getMonth() + 1).padStart(2, "0"),
+    String(nextDate.getDate()).padStart(2, "0")
+  ].join("-");
 }
 
 function openSabbathTableAddModal(tableKey) {
@@ -2204,6 +2891,8 @@ function openSabbathTableAddModal(tableKey) {
       </div>
     </div>
   `).join('');
+  const dateInput = form.querySelector('[name="date"]');
+  if (dateInput) dateInput.value = getNextSabbathTableDate(config.rows);
   openModal('modal-sabbath-table-add');
 }
 
@@ -2259,11 +2948,28 @@ async function handleSaveSabbathTableEntry(event) {
   }
 }
 
-async function deleteSabbathTableEntry(tableKey, id) {
-  if (!window.confirm('Hapus data ini dari Supabase?')) return;
+function deleteSabbathTableEntry(tableKey, id) {
+  const config = getSabbathTableConfig(tableKey);
+  const row = config.rows.find(item => String(item.id) === String(id));
+  if (!row) return;
+
+  const tableName = tableKey === "ss" ? "Tabel SS" : "Tabel Khotbah";
+  const date = getSabbathTableValue(row, "date");
+  openDeleteConfirmation({
+    subtitle: tableName,
+    message: `Hapus data${date && date !== "-" ? ` tanggal ${formatDateIndo(date)}` : ""} dari ${tableName}?`,
+    description: "Data ini akan dihapus dari database server Supabase.",
+    onConfirm: () => performDeleteSabbathTableEntry(tableKey, id)
+  });
+}
+
+async function performDeleteSabbathTableEntry(tableKey, id) {
   const config = getSabbathTableConfig(tableKey);
   if (!supabaseClient) initSupabaseClient();
-  if (!supabaseClient) return;
+  if (!supabaseClient) {
+    showDeleteResult(false, "Supabase belum terhubung. Data tidak dihapus.");
+    return;
+  }
 
   try {
     const { error } = await supabaseClient.from(config.table).delete().eq('id', id);
@@ -2272,8 +2978,9 @@ async function deleteSabbathTableEntry(tableKey, id) {
     if (rowIndex >= 0) config.rows.splice(rowIndex, 1);
     renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
     applySabbathDatabaseRows();
+    showDeleteResult(true, `Data dari ${config.table} berhasil dihapus.`);
   } catch (error) {
-    showToast(`Gagal menghapus data: ${error.message}`, 'fa-solid fa-triangle-exclamation');
+    showDeleteResult(false, `Data gagal dihapus: ${error.message}`);
   }
 }
 
@@ -2285,12 +2992,51 @@ function getUpcomingSaturdayIso() {
   return `${year}-${month}-${day}`;
 }
 
-function getNearestSabbathRow(rows) {
+function getOverrideDate(dateDisplay) {
+  const match = String(dateDisplay || "").match(/\b(\d{1,2})\s+([a-z]+)\s+(\d{4})\b/i);
+  if (!match) return null;
+
+  const monthIndex = [
+    "januari", "februari", "maret", "april", "mei", "juni",
+    "juli", "agustus", "september", "oktober", "november", "desember"
+  ].indexOf(match[2].toLowerCase());
+  if (monthIndex < 0) return null;
+
+  const date = new Date(Number(match[3]), monthIndex, Number(match[1]));
+  if (date.getFullYear() !== Number(match[3]) || date.getMonth() !== monthIndex || date.getDate() !== Number(match[1])) {
+    return null;
+  }
+  return date;
+}
+
+async function removeExpiredWorshipOverrides() {
+  if (!isAdminLoggedIn || !supabaseClient) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiredRows = worshipOverrideRows.filter(row => {
+    if (!["sabat", "rabu", "pa"].includes(row.program_type)) return false;
+    const overrideDate = getOverrideDate(row.date_display);
+    return overrideDate && overrideDate < today;
+  });
+  if (expiredRows.length === 0) return;
+
+  const { error } = await supabaseClient.from("Tabel Override Susunan")
+    .delete()
+    .in("id", expiredRows.map(row => row.id));
+  if (error) {
+    showToast(`Override lama gagal dibersihkan: ${error.message}`, "fa-solid fa-triangle-exclamation");
+    return;
+  }
+
+  const expiredIds = new Set(expiredRows.map(row => String(row.id)));
+  worshipOverrideRows = worshipOverrideRows.filter(row => !expiredIds.has(String(row.id)));
+}
+
+function getUpcomingSabbathRow(rows) {
   if (!rows || rows.length === 0) return null;
   const targetDate = getUpcomingSaturdayIso();
-  return rows.find(row => row.date === targetDate) || [...rows]
-    .filter(row => row.date >= targetDate)
-    .sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+  return rows.find(row => row.date === targetDate) || null;
 }
 
 function setSabbathSong(item, value) {
@@ -2306,13 +3052,33 @@ function setSabbathSong(item, value) {
 }
 
 function applySabbathDatabaseRows() {
-  const sabat = worshipData["sabat-raya"];
-  if (!sabat) return;
+  const ssRow = getUpcomingSabbathRow(ssScheduleList);
+  const khotbahRow = getUpcomingSabbathRow(khotbahScheduleList);
+  const targetSabbath = getUpcomingSaturdayIso();
+  const currentPianist = posScheduleList.find(row => row.date === targetSabbath);
+  const sabatOverride = worshipOverrideRows.find(row =>
+    row.program_type === "sabat" && row.date_display === formatWorshipDate(new Date(`${targetSabbath}T00:00:00`))
+  );
+  const wednesdayDate = getUpcomingWorshipDate(3);
+  const rabuOverride = worshipOverrideRows.find(row =>
+    row.program_type === "rabu" && row.date_display === `${formatWorshipDate(wednesdayDate)} | 19.00 WIB`
+  );
 
-  const ssRow = getNearestSabbathRow(ssScheduleList);
-  const khotbahRow = getNearestSabbathRow(khotbahScheduleList);
+  worshipData["sabat-raya"] = JSON.parse(JSON.stringify(defaultWorshipData["sabat-raya"]));
+  worshipData["rabu-malam"] = JSON.parse(JSON.stringify(defaultWorshipData["rabu-malam"]));
+  const sabat = worshipData["sabat-raya"];
+  sabat.generalInfo = [{ key: "Pianis", value: currentPianist?.pianist || "-" }];
+  sabat.sections.forEach(section => section.items.forEach(item => {
+    item.officer = "";
+    item.songNo = "";
+    item.songTitle = "";
+    if (item.sermonTitle !== undefined) item.sermonTitle = "";
+    item.subItems?.forEach(subItem => { subItem.officer = ""; });
+  }));
+
   const ssItems = sabat.sections[0]?.items || [];
   const khotbahItems = sabat.sections[1]?.items || [];
+  const hasSabbathSchedule = Boolean(sabatOverride || ssRow || khotbahRow);
 
   if (ssRow) {
     if (ssItems[0]) ssItems[0].officer = ssRow.pemimpin_acara || '';
@@ -2324,15 +3090,17 @@ function applySabbathDatabaseRows() {
       ssItems[4].subItems[1].officer = ssRow.diskusi_orang_tua || '';
     }
     if (ssItems[5]) ssItems[5].officer = ssRow.lagu_pujian || '';
-    if (ssItems[6]) setSabbathSong(ssItems[6], ssRow.lagu_tutup);
-    if (ssItems[7]) ssItems[7].officer = ssRow.pp || '';
+    if (ssItems[6]) ssItems[6].officer = ssRow.pp || '';
+    if (ssItems[7]) setSabbathSong(ssItems[7], ssRow.lagu_tutup);
     if (ssItems[8]) ssItems[8].officer = ssRow.diakon_es || '';
     if (ssItems[9]) ssItems[9].officer = ssRow.cerita_anak || '';
   }
 
   // Hardcode lagu-lagu paten (tidak lagi diambil dari Supabase)
-  if (khotbahItems[0]) setSabbathSong(khotbahItems[0], '515');    // Lagu Pengiring Partisipan Mimbar - paten
-  if (khotbahItems[1]) setSabbathSong(khotbahItems[1], '1');      // Lagu Sambutan - paten
+  if (hasSabbathSchedule) {
+    if (khotbahItems[0]) setSabbathSong(khotbahItems[0], '515');    // Lagu Pengiring Partisipan Mimbar - paten
+    if (khotbahItems[1]) setSabbathSong(khotbahItems[1], '1');      // Lagu Sambutan - paten
+  }
 
   if (khotbahRow) {
     if (khotbahItems[2]) khotbahItems[2].officer = khotbahRow.mc_ayat_bersahutan || '';
@@ -2353,17 +3121,41 @@ function applySabbathDatabaseRows() {
     if (khotbahItems[14]) khotbahItems[14].officer = khotbahRow.doa_tutup || '';
   }
 
-  saveWorshipDataToStorage();
+  if (sabatOverride) {
+    const overrideData = convertOverrideRow(sabatOverride);
+    if (overrideData) {
+      const hasPianist = overrideData.generalInfo.some(info => /pianis|pianist/i.test(info.key));
+      if (!hasPianist && sabat.generalInfo.length) {
+        overrideData.generalInfo.unshift(...sabat.generalInfo);
+      }
+      worshipData["sabat-raya"] = overrideData;
+    }
+  }
+  if (rabuOverride) {
+    const overrideData = convertOverrideRow(rabuOverride);
+    if (overrideData) {
+      overrideData.notes = defaultWorshipData["rabu-malam"].notes;
+      worshipData["rabu-malam"] = overrideData;
+    }
+  }
+  worshipAvailability["sabat-raya"] = true;
+  worshipAvailability["rabu-malam"] = true;
   renderSubTab("sabat-raya");
+  renderSubTab("rabu-malam");
 }
 
 async function fetchSabbathProgramData() {
   if (!supabaseClient) initSupabaseClient();
-  if (!supabaseClient) return;
+  if (!supabaseClient) {
+    worshipAvailability = { "sabat-raya": true, "rabu-malam": true };
+    applySabbathDatabaseRows();
+    return;
+  }
 
-  const [ssResult, khotbahResult] = await Promise.allSettled([
+  const [ssResult, khotbahResult, overrideResult] = await Promise.allSettled([
     supabaseClient.from("Tabel SS").select("*").order("date", { ascending: false }),
-    supabaseClient.from("Tabel Khotbah").select("*").order("date", { ascending: false })
+    supabaseClient.from("Tabel Khotbah").select("*").order("date", { ascending: false }),
+    supabaseClient.from("Tabel Override Susunan").select("*").order("updated_at", { ascending: false })
   ]);
 
   if (ssResult.status === "fulfilled" && !ssResult.value.error) {
@@ -2390,6 +3182,17 @@ async function fetchSabbathProgramData() {
     renderSabbathDatabaseTable('khotbah', [], khotbahTableColumns, "Tabel Khotbah belum dapat dimuat.");
   }
 
+  if (overrideResult.status === "fulfilled" && !overrideResult.value.error) {
+    worshipOverrideRows = overrideResult.value.data || [];
+  } else {
+    const message = overrideResult.status === "fulfilled"
+      ? overrideResult.value.error.message
+      : overrideResult.reason?.message;
+    console.warn("Supabase fetch Tabel Override Susunan error:", message);
+    worshipOverrideRows = [];
+  }
+
+  await removeExpiredWorshipOverrides();
   applySabbathDatabaseRows();
 }
 
@@ -2397,9 +3200,7 @@ function syncNearestPosToWorship() {
   if (!posScheduleList || posScheduleList.length === 0) return;
 
   const targetDate = getUpcomingSaturdayIso();
-  const current = posScheduleList.find(item => item.date === targetDate) || [...posScheduleList]
-    .filter(item => item.date >= targetDate)
-    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const current = posScheduleList.find(item => item.date === targetDate);
   if (current && worshipData && worshipData["sabat-raya"]) {
     worshipData["sabat-raya"].generalInfo = [
       { key: "Pianis", value: current.pianist }
@@ -2517,39 +3318,55 @@ function clearPosSearch() {
   renderPosTable();
 }
 
-async function shiftPosWeek(direction) {
-  const days = direction * 7;
-  posScheduleList.forEach(item => {
-    if (item.date) {
-      const d = new Date(item.date);
-      if (!isNaN(d.getTime())) {
-        d.setDate(d.getDate() + days);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        item.date = `${yyyy}-${mm}-${dd}`;
-      }
+async function shiftPosWeek(direction, confirmed = false) {
+  if (!confirmed) {
+    openWeekShiftConfirm("pos", null, direction);
+    return;
+  }
+
+  if (posScheduleList.length === 0) {
+    showToast("Tidak ada jadwal di Tabel Pianis untuk digeser.", "fa-solid fa-triangle-exclamation text-amber");
+    return;
+  }
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showToast("Gagal menggeser jadwal Tabel Pianis: Supabase belum terhubung.", "fa-solid fa-triangle-exclamation text-amber");
+    return;
+  }
+
+  const updatedRows = posScheduleList.map(item => {
+    const date = new Date(`${item.date}T00:00:00`);
+    if (!Number.isNaN(date.getTime())) {
+      date.setDate(date.getDate() - direction * 7);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return { ...item, date: `${year}-${month}-${day}` };
     }
+    return { ...item };
   });
 
-  savePosSchedule();
-  renderPosTable();
-  const label = direction > 0 ? "+7 Hari (Maju)" : "-7 Hari (Mundur)";
-  showToast(`Semua tanggal jadwal POS digeser ${label}!`, "fa-solid fa-calendar-check text-gold");
-
-  // Sync to Supabase in background
-  if (!supabaseClient) initSupabaseClient();
-  if (supabaseClient) {
-    try {
-      for (const item of posScheduleList) {
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
-        if (isUUID) {
-          await supabaseClient.from("Tabel Pianis").update({ date: item.date }).eq("id", item.id);
-        }
+  try {
+    const results = await Promise.all(updatedRows.map(item => {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+      if (!isUUID) {
+        return Promise.resolve({ error: new Error(`ID jadwal ${item.id} tidak valid.`) });
       }
-    } catch (e) {
-      console.warn("Supabase shift pos error:", e);
-    }
+      return supabaseClient.from("Tabel Pianis").update({ date: item.date }).eq("id", item.id);
+    }));
+    const failedResult = results.find(result => result.error);
+    if (failedResult?.error) throw failedResult.error;
+
+    posScheduleList = updatedRows;
+    savePosSchedule();
+    renderPosTable();
+    const action = direction > 0 ? "dimajukan" : "dimundurkan";
+    const offset = direction > 0 ? "-7" : "+7";
+    showToast(`Semua jadwal Tabel Pianis berhasil ${action} (${offset} hari).`, "fa-solid fa-calendar-check text-gold");
+  } catch (error) {
+    console.warn("Supabase shift pos error:", error);
+    await fetchPosFromSupabase();
+    showToast(`Gagal menggeser jadwal Tabel Pianis: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
   }
 }
 
@@ -2602,7 +3419,7 @@ async function handleSaveNewPos(e) {
 
       if (error) {
         console.error("Supabase insert pos error:", error);
-        showToast(`Tersimpan lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+        showToast(`Gagal menyimpan ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
       } else if (data && data[0]) {
         newItem.id = data[0].id;
         savePosSchedule();
@@ -2673,7 +3490,7 @@ async function handleUpdatePos(e) {
         const { error } = await query;
         if (error) {
           console.error("Supabase update pos error:", error);
-          showToast(`Tersimpan lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+          showToast(`Gagal menyimpan ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
         } else {
           showToast(`Jadwal POS ${posScheduleList[index].date} diperbarui di Supabase & Web!`, "fa-solid fa-circle-check text-emerald");
         }
@@ -2700,106 +3517,51 @@ function openDeletePosModal(id) {
 async function confirmDeletePos() {
   const idInput = document.getElementById("pos-delete-id");
   const targetId = idInput ? idInput.value : "";
-
   const index = posScheduleList.findIndex(p => String(p.id) === String(targetId));
-  if (index !== -1) {
-    const deletedItem = posScheduleList[index];
-    const deletedDate = deletedItem.date;
+  if (index === -1) return;
+
+  const deletedItem = posScheduleList[index];
+  const deletedDate = deletedItem.date;
+  closeModal("modal-pos-delete");
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showDeleteResult(false, "Supabase belum terhubung. Jadwal tidak dihapus.");
+    return;
+  }
+
+  try {
+    let query = supabaseClient.from("Tabel Pianis").delete();
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+    if (isUUID) {
+      query = query.eq("id", targetId);
+    } else {
+      query = query.eq("date", deletedDate);
+    }
+
+    const { error } = await query;
+    if (error) throw error;
+
     posScheduleList.splice(index, 1);
     savePosSchedule();
-    closeModal("modal-pos-delete");
     renderPosTable();
-    showToast(`Menghapus jadwal tanggal ${deletedDate}...`, "fa-solid fa-spinner fa-spin text-gold");
-
-    // Sync to Supabase
-    if (!supabaseClient) initSupabaseClient();
-    if (supabaseClient) {
-      try {
-        let query = supabaseClient.from("Tabel Pianis").delete();
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
-        if (isUUID) {
-          query = query.eq("id", targetId);
-        } else {
-          query = query.eq("date", deletedDate);
-        }
-
-        const { error } = await query;
-        if (error) {
-          console.error("Supabase delete pos error:", error);
-          showToast(`Terhapus lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
-        } else {
-          showToast(`Jadwal POS ${deletedDate} berhasil dihapus dari Supabase & Web!`, "fa-solid fa-trash-can text-gold");
-        }
-      } catch (err) {
-        console.error("Supabase delete pos exception:", err);
-      }
-    }
+    showDeleteResult(true, `Jadwal POS tanggal ${deletedDate} berhasil dihapus.`);
+  } catch (error) {
+    console.error("Supabase delete pos exception:", error);
+    showDeleteResult(false, `Gagal menghapus jadwal dari Supabase: ${error.message}`);
   }
-}
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function filterDirectory() {
-  const input = document.getElementById("directory-search-input");
-  if (!input) return;
-  const filter = input.value.toLowerCase().trim();
-  const items = document.querySelectorAll("#directory-content .dir-item");
-
-  items.forEach(item => {
-    const nameEl = item.querySelector(".dir-name");
-    const roleEl = item.querySelector(".dir-role");
-    const nameText = nameEl ? nameEl.textContent.toLowerCase() : "";
-    const roleText = roleEl ? roleEl.textContent.toLowerCase() : "";
-
-    if (nameText.includes(filter) || roleText.includes(filter)) {
-      item.style.display = "flex";
-    } else {
-      item.style.display = "none";
-    }
-  });
 }
 
 // ==========================================
 // 15. TABEL DIREKTORI JEMAAT & PENGURUS ENGINE (DINAMIS SUPABASE)
 // ==========================================
-// Data kontak sepenuhnya diambil secara aman & dinamis dari server Supabase
-const defaultDirectoryList = [];
-
-let directoryList = loadDirectoryData();
+// Data kontak sepenuhnya diambil secara aman & dinamis dari server Supabase.
+let directoryList = [];
 let dirSortField = "category";
 let dirSortAsc = true;
 let dirSearchQuery = "";
 let dirCategoryFilter = "";
 
-function loadDirectoryData() {
-  const saved = localStorage.getItem("gmahk_directory_data");
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Auto migrate any old majelis_anggota category to majelis_dept
-        parsed.forEach(item => {
-          if (item.category === "majelis_anggota") item.category = "majelis_dept";
-        });
-        return parsed;
-      }
-    } catch (e) {
-      console.warn("Failed to parse local directory data:", e);
-    }
-  }
-  return [];
-}
-
 function saveDirectoryData() {
-  localStorage.setItem("gmahk_directory_data", JSON.stringify(directoryList));
   renderPublicDirectory();
   renderPrayerModal();
 }
@@ -3132,7 +3894,7 @@ async function handleSaveNewDirectory(e) {
       }]).select();
 
       if (error) {
-        showToast(`Tersimpan lokal. (Supabase info: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+        showToast(`Gagal menyimpan ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
       } else if (data && data[0]) {
         newItem.id = data[0].id;
         saveDirectoryData();
@@ -3213,7 +3975,7 @@ async function handleUpdateDirectory(e) {
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
 
         if (error) {
-          showToast(`Tersimpan lokal. (Supabase error: ${error.message})`, "fa-solid fa-triangle-exclamation text-amber");
+          showToast(`Gagal menyimpan ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
         } else {
           showToast(`Kontak ${name} berhasil diperbarui di Supabase!`, "fa-solid fa-circle-check text-emerald");
         }
@@ -3235,29 +3997,29 @@ function openDeleteDirectoryModal(id) {
 async function confirmDeleteDirectory() {
   const id = document.getElementById("dir-delete-id").value;
   const index = directoryList.findIndex(d => String(d.id) === String(id));
-  if (index !== -1) {
-    const deletedItem = directoryList[index];
+  if (index === -1) return;
+
+  const deletedItem = directoryList[index];
+  closeModal("modal-directory-delete");
+  if (!supabaseClient) initSupabaseClient();
+  if (!supabaseClient) {
+    showDeleteResult(false, "Supabase belum terhubung. Kontak tidak dihapus.");
+    return;
+  }
+
+  try {
+    let query = supabaseClient.from("Tabel Direktori").delete();
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", deletedItem.name));
+    if (error) throw error;
+
     directoryList.splice(index, 1);
     saveDirectoryData();
-    closeModal("modal-directory-delete");
     renderDirectoryTable();
-
-    if (!supabaseClient) initSupabaseClient();
-    if (supabaseClient) {
-      try {
-        let query = supabaseClient.from("Tabel Direktori").delete();
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-        const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", deletedItem.name));
-
-        if (error) {
-          showToast(`Gagal hapus di Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
-        } else {
-          showToast(`Kontak ${deletedItem.name} berhasil dihapus!`, "fa-solid fa-trash-can text-gold");
-        }
-      } catch (err) {
-        console.error("Supabase delete directory exception:", err);
-      }
-    }
+    showDeleteResult(true, `Kontak ${deletedItem.name} berhasil dihapus.`);
+  } catch (error) {
+    console.error("Supabase delete directory exception:", error);
+    showDeleteResult(false, `Gagal menghapus kontak dari Supabase: ${error.message}`);
   }
 }
 
