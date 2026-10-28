@@ -1201,16 +1201,72 @@ button {
 
 .minister-card {
   min-width: 0;
-  padding: 18px;
+  padding: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .minister-card-current {
+  position: relative;
   border-color: var(--accent-emerald);
-  box-shadow: inset 0 3px 0 var(--accent-emerald), var(--shadow-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.minister-card-current::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--accent-emerald);
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+}
+
+.minister-card-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+}
+
+.minister-card-has-avatar .minister-card-summary {
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+
+.minister-avatar-wrap {
+  position: relative;
+  flex: 0 0 34%;
+  min-width: 84px;
+  max-width: 120px;
+  overflow: hidden;
+}
+
+.minister-avatar-wrap::after {
+  position: absolute;
+  inset: 0 0 0 68%;
+  background: linear-gradient(to right, transparent, var(--bg-card) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.minister-card-copy {
+  flex: 1;
+  min-width: 0;
+  padding: 18px;
+}
+
+.minister-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .minister-card-top {
@@ -1251,8 +1307,8 @@ button {
 }
 
 .minister-family {
-  margin-top: 14px;
-  padding-top: 11px;
+  margin: 0 18px;
+  padding: 11px 0 18px;
   border-top: 1px solid var(--border-color);
 }
 
