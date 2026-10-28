@@ -3603,6 +3603,72 @@ function isPastorContact(item) {
   return item.category === "gembala";
 }
 
+function getOfficerRoleSimilarity(first, second) {
+  const previousRow = Array.from({ length: second.length + 1 }, (_, index) => index);
+
+  for (let firstIndex = 1; firstIndex <= first.length; firstIndex++) {
+    const currentRow = [firstIndex];
+    for (let secondIndex = 1; secondIndex <= second.length; secondIndex++) {
+      const substitutionCost = first[firstIndex - 1] === second[secondIndex - 1] ? 0 : 1;
+      currentRow[secondIndex] = Math.min(
+        currentRow[secondIndex - 1] + 1,
+        previousRow[secondIndex] + 1,
+        previousRow[secondIndex - 1] + substitutionCost
+      );
+    }
+    previousRow.splice(0, previousRow.length, ...currentRow);
+  }
+
+  const longestLength = Math.max(first.length, second.length);
+  return longestLength === 0 ? 1 : 1 - previousRow[second.length] / longestLength;
+}
+
+function getOfficerRoleOrder(role) {
+  const normalizedRole = String(role || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(?:satu|pertama|i)\b/g, "1")
+    .replace(/\b(?:dua|kedua|ii)\b/g, "2")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  const roleWords = normalizedRole.split(/\s+/).filter(Boolean);
+  const expectedRoles = [
+    "ketua jemaat 1",
+    "ketua jemaat 2",
+    "sekretaris",
+    "bendahara",
+    "asisten bendahara"
+  ];
+
+  const similarities = expectedRoles.map(expectedRole => {
+    const expectedWords = expectedRole.split(" ");
+    const minWindowSize = Math.max(1, expectedWords.length - 1);
+    const maxWindowSize = Math.min(roleWords.length, expectedWords.length + 1);
+    let bestSimilarity = 0;
+
+    for (let windowSize = minWindowSize; windowSize <= maxWindowSize; windowSize++) {
+      for (let start = 0; start <= roleWords.length - windowSize; start++) {
+        const rolePhrase = roleWords.slice(start, start + windowSize).join(" ");
+        bestSimilarity = Math.max(bestSimilarity, getOfficerRoleSimilarity(rolePhrase, expectedRole));
+      }
+    }
+
+    return bestSimilarity;
+  });
+
+  let bestOrder = 0;
+  for (let order = 1; order < similarities.length; order++) {
+    if (similarities[order] > similarities[bestOrder]) bestOrder = order;
+  }
+
+  if (similarities[bestOrder] < 0.72) return Number.POSITIVE_INFINITY;
+  if (bestOrder < 2 && Math.abs(similarities[0] - similarities[1]) < 0.05) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return bestOrder;
+}
+
 function countSelectedPrayerContacts(excludeId = null) {
   return directoryList.filter(item =>
     !isPastorContact(item) &&
@@ -4045,6 +4111,13 @@ function renderPublicDirectory() {
 
   container.innerHTML = categories.map((cat, idx) => {
     const items = directoryList.filter(d => (d.category === "majelis_anggota" ? "majelis_dept" : d.category) === cat.key);
+    if (cat.key === "officers") {
+      items.sort((a, b) => {
+        const orderA = getOfficerRoleOrder(a.role);
+        const orderB = getOfficerRoleOrder(b.role);
+        return orderA === orderB ? 0 : orderA - orderB;
+      });
+    }
     if (items.length === 0) return "";
     return `
       <div class="directory-section-title ${idx > 0 ? 'mt-4' : ''}">${cat.title}</div>
@@ -4120,7 +4193,14 @@ function renderPrayerModal() {
   // Get pastor(s)
   const pastor = directoryList.find(isPastorContact);
   // The two optional contacts are separate from the always-visible pastor.
-  const prayerContacts = directoryList.filter(d => !isPastorContact(d) && d.show_in_prayer === true).slice(0, 2);
+  const prayerContacts = directoryList
+    .filter(d => !isPastorContact(d) && d.show_in_prayer === true)
+    .sort((a, b) => {
+      const orderA = getOfficerRoleOrder(a.role);
+      const orderB = getOfficerRoleOrder(b.role);
+      return orderA === orderB ? 0 : orderA - orderB;
+    })
+    .slice(0, 2);
 
   let hasAny = false;
 
