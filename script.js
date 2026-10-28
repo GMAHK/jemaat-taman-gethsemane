@@ -2,19 +2,31 @@
  * GMAHK TAMAN GETHSEMANE — Logika Aplikasi (Single Page App)
  *
  * Satu berkas JavaScript murni (tanpa build step) agar mudah di-host di GitHub Pages.
- * Dimuat setelah Supabase JS SDK (CDN) dan setelah markup di index.html.
+ * Dimuat setelah Supabase JS SDK (CDN) dan setelah markup di index.html, sehingga
+ * seluruh elemen yang dicari lewat getElementById sudah tersedia.
  *
- * Isi berkas dibagi menjadi bagian bernomor (cari "// N." untuk melompat):
- *   0. Konfigurasi & konstanta   (Supabase)
- *   1. State global
- *   2. Inisialisasi saat DOM siap
- *   3+. Fitur: tema, router/tab, countdown, rating, himne, modal & utilitas,
- *       susunan ibadah, galeri kegiatan, autentikasi admin, tabel admin,
- *       direktori jemaat, permohonan doa, pengumuman.
+ * Konvensi:
+ *  - Handler inline di HTML (onclick/oninput) memanggil fungsi global di berkas ini.
+ *  - Data operasional dibaca/ditulis langsung ke Supabase tanpa cache browser;
+ *    hak tulis dijaga oleh Row Level Security (bukan oleh status login di klien).
+ *  - Nilai dari database selalu di-escape (escapeHtml) sebelum disisipkan lewat innerHTML.
+ *
+ * Peta isi (cari "// N." untuk melompat):
+ *   0. Konfigurasi & konstanta          10. Modal & konfirmasi hapus
+ *   1. State global                     11. Utilitas umum (HTML, tanggal, toast)
+ *   2. Inisialisasi saat DOM siap       12. Susunan ibadah (data, render, editor, override)
+ *   3. Animasi keluarga pendeta         13. Klien Supabase
+ *   4. Tema terang/gelap                14. Galeri kegiatan jemaat
+ *   5. Router tab berbasis hash         15. Autentikasi admin & dashboard
+ *   6. Countdown menuju Sabat           16. Jadwal: Pianis, Sekolah Sabat, Khotbah
+ *   7. Rating & ulasan                  17. Direktori jemaat & pengurus
+ *   8. Pemilih program ibadah           18. Permohonan doa
+ *   9. Referensi lagu (LSEL & AYS)      19. Pengumuman
  */
 
 // ==========================================
 // 0. KONFIGURASI & KONSTANTA
+// Kredensial Supabase dan batas-batas aplikasi.
 // ==========================================
 
 /**
@@ -24,31 +36,51 @@
 const SUPABASE_URL = "https://jgrarsmzaqcviurladpm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Vp2_Hx0mpyreTrfFQW-14g_NTxNBABy";
 
+/** Batas slot galeri "Kegiatan Jemaat" (sinkron dengan constraint slot 1–3 di Supabase). */
+const MAX_GALLERY_EVENTS = 3;
+
+/** Jumlah maksimum kontak (selain Pendeta) yang boleh tampil di modal Permohonan Doa. */
+const MAX_PRAYER_CONTACTS = 2;
+
+/** Pesan yang ditampilkan saat batas kontak doa tercapai. */
+const PRAYER_LIMIT_MESSAGE = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+
 // ==========================================
-// 1. STATE GLOBAL
+// 1. STATE GLOBAL (BAGIAN AWAL)
+// Variabel yang dipakai lintas fitur. State khusus fitur dideklarasikan dekat fiturnya masing-masing.
 // ==========================================
 
 /** Klien Supabase; dibuat oleh initSupabaseClient() (null bila SDK gagal dimuat). */
 let supabaseClient = null;
 
-// Gallery Data for Lightbox Modal
+/** Event galeri hasil fetchGalleryEvents(), terurut berdasarkan slot (maks. MAX_GALLERY_EVENTS). */
 let galleryEvents = [];
+/** Pesan galat terakhir saat memuat galeri; string kosong bila berhasil. */
 let galleryEventsLoadError = "";
+/** Id event yang sedang dibuka di penampil galeri (null bila tidak ada). */
 let currentGalleryEventId = null;
+/** true saat admin berada di mode "Atur Slot" (drag & drop). */
 let galleryOrderMode = false;
+/** Salinan urutan sementara yang diedit di mode Atur Slot; baru disimpan saat admin menekan Simpan. */
 let galleryOrderDraft = [];
 
-// Catalogs are loaded from Supabase; empty tables stay empty in the UI.
+/** Katalog lagu LSEL dari Supabase: [{ id, num, title, book: "LSEL" }]. Kosong bila tabel kosong/gagal dimuat. */
 let lselSongs = [];
+/** Katalog lagu AYS dari Supabase: [{ id, num, title, book: "AYS" }]. */
 let aysSongs = [];
+/** Gabungan lselSongs + aysSongs untuk daftar di modal referensi lagu. */
 let hymnalSongs = [];
 
+/** Skor bintang (0–5) yang dipilih pengguna pada formulir ulasan; 0 = belum memilih. */
 let userRatingScore = 0;
+/** Maks. 5 ulasan terbaru yang ditampilkan di Beranda. */
 let communityRatings = [];
 
 // ==========================================
-// 2. INITIALIZATION ON DOM LOAD
+// 2. INISIALISASI SAAT DOM SIAP
+// Titik masuk aplikasi: memasang semua fitur setelah HTML selesai dimuat.
 // ==========================================
+
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initRouter();
@@ -58,11 +90,20 @@ document.addEventListener("DOMContentLoaded", () => {
   initProgramTabs();
   initWorshipSubTabs();
   initHymnal();
-  initGlobalKeyboard();
+  initModalDismissal();
   initAdminState();
   renderPublicDirectory();
 });
 
+// ==========================================
+// 3. ANIMASI KARTU KELUARGA PENDETA (TAB SEJARAH)
+// ==========================================
+
+/**
+ * Menganimasikan buka/tutup daftar keluarga pendeta (<details class="minister-family">).
+ * Browser menyembunyikan isi <details> seketika, jadi tinggi kartu (.minister-card) dianimasikan manual lewat Web Animations API.
+ * Menghormati prefers-reduced-motion: tanpa animasi bila diminta pengguna.
+ */
 function initMinisterFamilyTransitions() {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -138,8 +179,11 @@ function initMinisterFamilyTransitions() {
 }
 
 // ==========================================
-// 4. THEME & VIEWPORT TOGGLE
+// 4. TEMA TERANG / GELAP
+// Tema hanya berlaku selama halaman terbuka (tidak disimpan); setiap muat ulang kembali ke mode terang.
 // ==========================================
+
+/** Memulai tema terang dan memasang tombol pengalih tema di header. */
 function initTheme() {
   setTheme("light");
 
@@ -151,12 +195,17 @@ function initTheme() {
   }
 }
 
+/** Berganti antara tema terang dan gelap. */
 function toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme");
   const nextTheme = current === "dark" ? "light" : "dark";
   setTheme(nextTheme);
 }
 
+/**
+ * Menerapkan tema lewat atribut data-theme pada <html> dan memperbarui ikon tombol tema.
+ * @param {"light"|"dark"} theme
+ */
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   const icon = theme === "dark"
@@ -172,8 +221,12 @@ function setTheme(theme) {
 
 
 // ==========================================
-// 5. TAB NAVIGATION & HASH ROUTER (SPA HISTORY & BACK BUTTON SUPPORT)
+// 5. NAVIGASI TAB & ROUTER BERBASIS HASH
+// Setiap tab punya alamat sendiri (#beranda, #ibadah, ...) sehingga tombol Back/Forward dan tautan bagikan berfungsi.
+// Halaman penampil galeri memakai pola #galeri-<id-event>.
 // ==========================================
+
+/** Peta id tab -> hash URL (dipakai saat berpindah tab). */
 const tabToHashMap = {
   "tab-home": "beranda",
   "tab-history": "sejarah",
@@ -183,6 +236,7 @@ const tabToHashMap = {
   "tab-gallery-viewer": "galeri"
 };
 
+/** Peta hash URL -> id tab. Alias bahasa Inggris (home, history, ...) dipertahankan agar tautan lama tetap berfungsi. */
 const hashToTabMap = {
   "beranda": "tab-home",
   "home": "tab-home",
@@ -197,29 +251,43 @@ const hashToTabMap = {
   "galeri": "tab-gallery-viewer"
 };
 
-function getTabIdFromHash(hash) {
-  if (hashToTabMap[hash]) return hashToTabMap[hash];
-  return hash.startsWith("galeri-") ? "tab-gallery-viewer" : "tab-home";
+/**
+ * Mencari id tab dari hash URL.
+ * @returns {string|null} Id tab, atau null bila hash tidak dikenal.
+ */
+function resolveTabFromHash(hash) {
+  return hashToTabMap[hash] || (hash.startsWith("galeri-") ? "tab-gallery-viewer" : null);
 }
 
+/** Seperti resolveTabFromHash(), tetapi hash tak dikenal jatuh ke tab Beranda. */
+function getTabIdFromHash(hash) {
+  return resolveTabFromHash(hash) || "tab-home";
+}
+
+/** Bila hash berpola "galeri-<id>", simpan id event aktif dan tampilkan penampil galerinya. */
 function renderGalleryViewerFromHash(hash) {
   if (!hash.startsWith("galeri-")) return;
   currentGalleryEventId = hash.slice("galeri-".length);
   renderGalleryViewer(currentGalleryEventId);
 }
 
+/**
+ * Menampilkan satu tab: mengaktifkan konten & tombol navigasi bawah, memperbarui hash URL/riwayat, lalu menggulir ke atas.
+ * @param {string} tabId Id elemen tab (mis. "tab-worship").
+ * @param {boolean} [updateHistory=true] false saat dipanggil dari router agar riwayat tidak bertambah dua kali.
+ */
 function switchTab(tabId, updateHistory = true) {
-  // Hide all tabs
+  // Sembunyikan semua tab
   const tabs = document.querySelectorAll(".tab-content");
   tabs.forEach(tab => tab.classList.remove("active"));
 
-  // Show target tab
+  // Tampilkan tab tujuan
   const targetTab = document.getElementById(tabId);
   if (targetTab) {
     targetTab.classList.add("active");
   }
 
-  // Update bottom navigation active state
+  // Tandai tombol navigasi bawah yang aktif
   const navItems = document.querySelectorAll(".nav-item");
   navItems.forEach(item => item.classList.remove("active"));
 
@@ -229,7 +297,7 @@ function switchTab(tabId, updateHistory = true) {
     targetNavBtn.classList.add("active");
   }
 
-  // Update URL Hash and Browser History
+  // Perbarui hash URL dan riwayat browser
   const hash = tabId === "tab-gallery-viewer" && currentGalleryEventId
     ? `galeri-${currentGalleryEventId}`
     : tabToHashMap[tabId] || "beranda";
@@ -246,13 +314,17 @@ function switchTab(tabId, updateHistory = true) {
     }
   }
 
-  // Scroll main body to top smoothly
+  // Gulir area utama ke atas dengan halus
   const appBody = document.querySelector(".app-body");
   if (appBody) {
     appBody.scrollTo({ top: 0, behavior: "smooth" });
   }
 }
 
+/**
+ * Memasang router: mendengarkan popstate/hashchange (tombol Back/Forward) dan menampilkan tab sesuai hash awal.
+ * Menekan Back dari penampil galeri mengembalikan pengguna ke Beranda.
+ */
 function initRouter() {
   const applyHashRoute = event => {
     const hash = window.location.hash.replace("#", "").toLowerCase();
@@ -267,13 +339,13 @@ function initRouter() {
     switchTab(tabId, false);
   };
 
-  // Listen for browser Back / Forward buttons and mobile back gestures
+  // Dengarkan tombol Back/Forward browser dan gestur kembali di ponsel
   window.addEventListener("popstate", applyHashRoute);
   window.addEventListener("hashchange", applyHashRoute);
 
-  // Start at the route in the URL, or at the home tab.
+  // Mulai dari rute pada URL, atau dari tab Beranda.
   const initialHash = window.location.hash.replace("#", "").toLowerCase();
-  const tabFromHash = hashToTabMap[initialHash] || (initialHash.startsWith("galeri-") ? "tab-gallery-viewer" : null);
+  const tabFromHash = resolveTabFromHash(initialHash);
 
   if (tabFromHash) {
     if (tabFromHash === "tab-gallery-viewer") renderGalleryViewerFromHash(initialHash);
@@ -284,49 +356,37 @@ function initRouter() {
 }
 
 // ==========================================
-// 6. COUNTDOWN TIMER TO SABBATH
+// 6. COUNTDOWN MENUJU IBADAH SABAT
 // ==========================================
+
+/** Memulai hitung mundur (hari/jam/menit/detik) menuju Sabtu 09.00 terdekat; diperbarui tiap detik. */
 function initCountdown() {
+  const elDays = document.getElementById("cd-days");
+  const elHours = document.getElementById("cd-hours");
+  const elMins = document.getElementById("cd-mins");
+  const elSecs = document.getElementById("cd-secs");
+  const pad = value => String(value).padStart(2, "0");
+
   function updateTimer() {
     const now = new Date();
-    const target = new Date();
-    const dayOfWeek = now.getDay(); // 0 = Sun, 6 = Sat
-    let daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
-
-    if (dayOfWeek === 6) {
-      target.setHours(9, 0, 0, 0);
-      if (now > target) {
-        daysUntilSaturday = 7;
-      }
-    }
-
-    target.setDate(now.getDate() + daysUntilSaturday);
+    const target = new Date(now);
     target.setHours(9, 0, 0, 0);
 
-    const diff = target - now;
+    // Hari menuju Sabtu; bila hari ini Sabtu dan jam 09.00 sudah lewat, hitung ke Sabtu depan.
+    let daysUntilSaturday = (6 - now.getDay() + 7) % 7;
+    if (daysUntilSaturday === 0 && now > target) daysUntilSaturday = 7;
+    target.setDate(target.getDate() + daysUntilSaturday);
 
-    if (diff <= 0) {
-      document.getElementById("cd-days").textContent = "00";
-      document.getElementById("cd-hours").textContent = "00";
-      document.getElementById("cd-mins").textContent = "00";
-      document.getElementById("cd-secs").textContent = "00";
-      return;
-    }
+    const diff = Math.max(0, target - now);
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    const elDays = document.getElementById("cd-days");
-    const elHours = document.getElementById("cd-hours");
-    const elMins = document.getElementById("cd-mins");
-    const elSecs = document.getElementById("cd-secs");
-
-    if (elDays) elDays.textContent = String(days).padStart(2, '0');
-    if (elHours) elHours.textContent = String(hours).padStart(2, '0');
-    if (elMins) elMins.textContent = String(minutes).padStart(2, '0');
-    if (elSecs) elSecs.textContent = String(seconds).padStart(2, '0');
+    if (elDays) elDays.textContent = pad(days);
+    if (elHours) elHours.textContent = pad(hours);
+    if (elMins) elMins.textContent = pad(minutes);
+    if (elSecs) elSecs.textContent = pad(seconds);
   }
 
   updateTimer();
@@ -334,8 +394,11 @@ function initCountdown() {
 }
 
 // ==========================================
-// 7. INTERACTIVE STAR RATING
+// 7. RATING BINTANG & ULASAN JEMAAT
+// Ulasan dibaca dan disimpan di tabel Supabase "Ulasan Jemaat".
 // ==========================================
+
+/** Memasang interaksi rating bintang (hover/klik), pengiriman ulasan, tombol ubah, lalu memuat ulasan komunitas. */
 function initRatingSystem() {
   const starContainer = document.getElementById("star-rating-container");
   if (!starContainer) return;
@@ -396,9 +459,14 @@ function initRatingSystem() {
     });
   }
 
-  loadSavedRatings();
+  fetchCommunityRatings();
 }
 
+/**
+ * Mewarnai bintang 1..count dengan kelas `className` ("hover" atau "active") dan mengosongkan sisanya.
+ * @param {number} count
+ * @param {"hover"|"active"} className
+ */
 function highlightStars(count, className) {
   const stars = document.querySelectorAll("#star-rating-container .star-btn");
   stars.forEach((s, idx) => {
@@ -412,8 +480,12 @@ function highlightStars(count, className) {
   });
 }
 
+/**
+ * Menyimpan ulasan ke tabel Supabase "Ulasan Jemaat" dan menaruhnya di daftar ulasan teratas.
+ * @returns {Promise<object|null>} Baris tersimpan, atau null bila gagal.
+ */
 async function saveUserRating(ratingObj) {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showToast("Supabase belum terhubung. Ulasan tidak disimpan.", "fa-solid fa-triangle-exclamation");
     return null;
@@ -428,12 +500,9 @@ async function saveUserRating(ratingObj) {
   return data;
 }
 
-function loadSavedRatings() {
-  fetchCommunityRatings();
-}
-
+/** Memuat 5 ulasan terbaru dari Supabase lalu menampilkannya. */
 async function fetchCommunityRatings() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   const container = document.getElementById("reviews-list");
   if (!supabaseClient) return;
   const { data, error } = await supabaseClient
@@ -450,6 +519,7 @@ async function fetchCommunityRatings() {
   renderCommunityReviews();
 }
 
+/** Menyembunyikan formulir dan menampilkan ringkasan ulasan yang baru dikirim pengguna. */
 function renderUserRatingView(ratingObj) {
   const form = document.getElementById("rating-form");
   const successBox = document.getElementById("rating-success-message");
@@ -458,10 +528,11 @@ function renderUserRatingView(ratingObj) {
   if (form) form.classList.add("hidden");
   if (successBox) successBox.classList.remove("hidden");
   if (details) {
-    details.innerHTML = `Rating: <strong>${'★'.repeat(ratingObj.score)}</strong> oleh <em>${ratingObj.name}</em><br>"${ratingObj.comment}"`;
+    details.innerHTML = `Rating: <strong>${'★'.repeat(ratingObj.score)}</strong> oleh <em>${escapeHtml(ratingObj.name)}</em><br>"${escapeHtml(ratingObj.comment)}"`;
   }
 }
 
+/** Menampilkan daftar ulasan komunitas (nama dan komentar di-escape untuk mencegah XSS). */
 function renderCommunityReviews() {
   const container = document.getElementById("reviews-list");
   if (!container) return;
@@ -469,17 +540,19 @@ function renderCommunityReviews() {
   container.innerHTML = communityRatings.length ? communityRatings.map(r => `
     <div class="review-item">
       <div class="review-user">
-        <span>${r.name}</span>
+        <span>${escapeHtml(r.name)}</span>
         <span class="review-stars">${'★'.repeat(r.score)}</span>
       </div>
-      <div class="review-text">"${r.comment}"</div>
+      <div class="review-text">"${escapeHtml(r.comment)}"</div>
     </div>
   `).join('') : '<p class="reviews-empty">Belum ada ulasan.</p>';
 }
 
 // ==========================================
-// 8. WORSHIP PROGRAM TAB ACCORDION LOGIC
+// 8. PEMILIH PROGRAM IBADAH
 // ==========================================
+
+/** Memasang tombol pemilih program (Sabat Raya / PA / Rabu Malam): menampilkan panel program dan merender susunannya. */
 function initProgramTabs() {
   const btns = document.querySelectorAll(".program-tab-btn");
   btns.forEach(btn => {
@@ -502,13 +575,20 @@ function initProgramTabs() {
 }
 
 // ==========================================
-// 9. HYMNAL SONG SEARCH LOGIC
+// 9. REFERENSI LAGU (LSEL & AYS)
+// Katalog lagu dimuat dari Supabase; dipakai modal referensi lagu dan saran lagu di editor susunan.
 // ==========================================
+
+/** Merender daftar lagu awal lalu memuat katalog dari Supabase. */
 function initHymnal() {
   renderHymnalList(hymnalSongs);
   fetchHymnalData();
 }
 
+/**
+ * Menampilkan daftar lagu pada modal referensi lagu.
+ * @param {Array} songs Daftar { num, title, book }.
+ */
 function renderHymnalList(songs) {
   const container = document.getElementById("hymnal-list-container");
   if (!container) return;
@@ -524,13 +604,14 @@ function renderHymnalList(songs) {
         <span class="hymnal-num">${s.book || "LSEL"} No. ${escapeHtml(String(s.num))}</span>
         <div class="hymnal-title">${escapeHtml(s.title)}</div>
       </div>
-      <button class="btn-copy" onclick="showToast('Nomor Lagu ${s.num} disalin')">
+      <button class="btn-copy" data-num="${escapeHtml(String(s.num))}" onclick="copyToClipboard(this.dataset.num, 'Nomor Lagu')">
         <i class="fa-solid fa-bookmark"></i>
       </button>
     </div>
   `).join('');
 }
 
+/** Menyaring daftar lagu berdasarkan judul atau nomor sesuai isi kolom cari. */
 function filterHymnal() {
   const query = document.getElementById("hymnal-search-input").value.toLowerCase().trim();
   if (!query) {
@@ -544,8 +625,9 @@ function filterHymnal() {
   renderHymnalList(filtered);
 }
 
+/** Memuat Tabel LSEL dan Tabel AYS secara paralel, menggabungkannya, lalu merender ulang daftar dan susunan (agar judul lagu terisi). */
 async function fetchHymnalData() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) return;
 
   try {
@@ -584,8 +666,10 @@ async function fetchHymnalData() {
 }
 
 // ==========================================
-// 10. MODAL CONTROLS & LIGHTBOX
+// 10. MODAL & KONFIRMASI HAPUS
 // ==========================================
+
+/** Membuka modal berdasarkan id. Modal Permohonan Doa dirender ulang dulu agar kontaknya terbaru. */
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
@@ -594,6 +678,7 @@ function openModal(modalId) {
   }
 }
 
+/** Menutup modal berdasarkan id. */
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
@@ -601,8 +686,17 @@ function closeModal(modalId) {
   }
 }
 
+/** Callback yang dijalankan bila pengguna menyetujui modal konfirmasi hapus generik (modal-delete-confirm). */
 let pendingDeleteAction = null;
 
+/**
+ * Membuka modal konfirmasi hapus generik yang dipakai berbagai fitur.
+ * @param {object} options
+ * @param {string} options.subtitle Label kecil di atas pesan (mis. nama tabel).
+ * @param {string} options.message Pertanyaan konfirmasi.
+ * @param {string} options.description Keterangan tambahan.
+ * @param {Function} options.onConfirm Dijalankan bila pengguna menekan Hapus.
+ */
 function openDeleteConfirmation({ subtitle, message, description, onConfirm }) {
   document.getElementById("delete-confirm-subtitle").textContent = subtitle;
   document.getElementById("delete-confirm-message").textContent = message;
@@ -611,11 +705,13 @@ function openDeleteConfirmation({ subtitle, message, description, onConfirm }) {
   openModal("modal-delete-confirm");
 }
 
+/** Membatalkan konfirmasi hapus dan menutup modalnya. */
 function cancelDeleteConfirmation() {
   pendingDeleteAction = null;
   closeModal("modal-delete-confirm");
 }
 
+/** Menutup modal lalu menjalankan callback onConfirm yang tertunda. */
 async function confirmDeleteAction() {
   const onConfirm = pendingDeleteAction;
   pendingDeleteAction = null;
@@ -623,6 +719,11 @@ async function confirmDeleteAction() {
   if (onConfirm) await onConfirm();
 }
 
+/**
+ * Menampilkan toast hasil penghapusan (berhasil/gagal).
+ * @param {boolean} success
+ * @param {string} description
+ */
 function showDeleteResult(success, description) {
   showToast(
     success ? `Data Berhasil Dihapus. ${description}` : `Permintaan Gagal: ${description}`,
@@ -630,32 +731,30 @@ function showDeleteResult(success, description) {
   );
 }
 
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains("modal-overlay")) {
-    if (e.target.id === "modal-csv-import") {
-      if (csvImportState?.saving) return;
-      csvImportState = null;
-    }
-    e.target.classList.remove("active");
-    if (e.target.id === "modal-delete-confirm") pendingDeleteAction = null;
+/**
+ * Menutup satu modal lewat klik latar/tombol Esc dan membersihkan state tertunda miliknya.
+ * Modal Import CSV tidak boleh ditutup saat proses simpan berjalan.
+ */
+function dismissModalOverlay(modal) {
+  if (modal.id === "modal-csv-import") {
+    if (csvImportState?.saving) return;
+    csvImportState = null;
   }
-});
+  if (modal.id === "modal-delete-confirm") pendingDeleteAction = null;
+  modal.classList.remove("active");
+}
 
-function initGlobalKeyboard() {
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      const activeModals = document.querySelectorAll(".modal-overlay.active");
-      if (document.getElementById("modal-delete-confirm")?.classList.contains("active")) {
-        pendingDeleteAction = null;
-      }
-      activeModals.forEach(modal => {
-        if (modal.id === "modal-csv-import") {
-          if (csvImportState?.saving) return;
-          csvImportState = null;
-        }
-        modal.classList.remove("active");
-      });
-    }
+/** Memasang penutupan modal lewat klik latar gelap dan tombol Esc. */
+function initModalDismissal() {
+  // Klik pada latar gelap (.modal-overlay itu sendiri, bukan kartu di dalamnya).
+  document.addEventListener("click", e => {
+    if (e.target.classList.contains("modal-overlay")) dismissModalOverlay(e.target);
+  });
+
+  // Tombol Esc menutup semua modal yang sedang terbuka.
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    document.querySelectorAll(".modal-overlay.active").forEach(dismissModalOverlay);
   });
 }
 
@@ -678,6 +777,39 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+/**
+ * Mengubah objek Date menjadi string ISO lokal "YYYY-MM-DD" (format kolom `date` di Supabase).
+ * Memakai komponen lokal (bukan toISOString) agar tidak bergeser hari karena zona waktu.
+ */
+function toIsoDate(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("-");
+}
+
+/**
+ * Menggeser tanggal ISO sebanyak `days` hari (boleh negatif).
+ * Jika `isoDate` tidak valid, nilai aslinya dikembalikan apa adanya.
+ */
+function shiftIsoDate(isoDate, days) {
+  const date = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
+}
+
+/** Memeriksa apakah nilai berformat UUID (id baris Supabase; id sementara klien berawalan "pos-"/"dir-"). */
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+/**
+ * Menyalin teks ke clipboard dan menampilkan toast hasilnya.
+ * @param {string} text Teks yang disalin.
+ * @param {string} label Nama yang ditampilkan di toast (mis. "Nomor Rekening").
+ */
 function copyToClipboard(text, label) {
   navigator.clipboard.writeText(text).then(() => {
     showToast(`${label} (${text}) berhasil disalin!`);
@@ -686,6 +818,11 @@ function copyToClipboard(text, label) {
   });
 }
 
+/**
+ * Menampilkan notifikasi toast selama 3,5 detik.
+ * @param {string} message
+ * @param {string} [iconClass] Kelas Font Awesome ikon (boleh ditambah kelas warna seperti text-gold).
+ */
 function showToast(message, iconClass = "fa-solid fa-circle-check") {
   const toast = document.getElementById("toast");
   const toastMsg = document.getElementById("toast-message");
@@ -704,8 +841,16 @@ function showToast(message, iconClass = "fa-solid fa-circle-check") {
 }
 
 // ==========================================
-// 12. WORSHIP DATA ENGINE & INLINE EDITOR
+// 12. SUSUNAN IBADAH: DATA DASAR, RENDER, EDITOR INLINE & OVERRIDE
+// Alur data: defaultWorshipData -> diisi dari Tabel SS/Khotbah/Pianis -> ditimpa override tanggal tersebut (jika ada).
 // ==========================================
+
+/**
+ * Susunan dasar (kerangka) tiap program ibadah: judul, bagian, dan baris acara.
+ * Nama petugas/lagu dikosongkan lalu diisi dari Supabase oleh applySabbathDatabaseRows().
+ * Program Pemuda Advent ("pa") belum aktif; templatenya disimpan sebagai komentar di bawah untuk fitur mendatang.
+ * Format item: { time, name, officer, type: "text"|"song"|"group", highlight?, songBook?/songNo?/songTitle?, sermonTitle?, subItems? }.
+ */
 const defaultWorshipData = {
   "sabat-raya": {
     title: "Susunan Ibadah Kebaktian Sabat Ke-12",
@@ -765,6 +910,8 @@ const defaultWorshipData = {
       "Bagi partisipan yang berhalangan, diharapkan untuk mencari pengganti secara mandiri.",
     ]
   },
+  // TEMPLATE Pemuda Advent (belum aktif): lepaskan komentar bila program PA diaktifkan.
+  // Tab PA saat ini menampilkan kartu "Segera hadir" (lihat renderSubTab).
   /*
   "pa": {
     title: "Pemuda Advent (PA)",
@@ -826,20 +973,31 @@ const defaultWorshipData = {
   }
 };
 
+/** Susunan yang sedang ditampilkan per program; salinan dalam (deep copy) dari defaultWorshipData lalu dimodifikasi. */
 let worshipData = JSON.parse(JSON.stringify(defaultWorshipData));
+/** Status ketersediaan susunan per program: "loading" (menunggu), true (siap), false (belum ada). */
 let worshipAvailability = { "sabat-raya": "loading", "rabu-malam": "loading" };
+/** Baris Tabel Override Susunan yang sudah dimuat dari Supabase. */
 let worshipOverrideRows = [];
+/** Program yang sedang menunggu konfirmasi reset override (modal-worship-reset-confirm). */
 let pendingWorshipResetKey = null;
+/** Apakah mode edit inline sedang aktif untuk tiap program (hanya berlaku bila admin login). */
 let subtabEditState = {
   "sabat-raya": false,
   "rabu-malam": false
 };
 
+/** Merender kedua program aktif (Sabat Raya dan Rabu Malam) saat halaman dimuat. */
 function initWorshipSubTabs() {
   renderSubTab("sabat-raya");
   renderSubTab("rabu-malam");
 }
 
+/**
+ * Tanggal terdekat (hari ini atau setelahnya) untuk hari tertentu dalam seminggu.
+ * @param {number} targetDay 0 = Minggu ... 3 = Rabu ... 6 = Sabtu.
+ * @returns {Date} Tanggal pada pukul 00.00 waktu lokal.
+ */
 function getUpcomingWorshipDate(targetDay) {
   const now = new Date();
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -848,6 +1006,7 @@ function getUpcomingWorshipDate(targetDay) {
   return date;
 }
 
+/** Memformat tanggal ke bahasa Indonesia, mis. "Sabtu, 19 September 2026". Format ini juga menjadi kunci date_display pada override. */
 function formatWorshipDate(date) {
   return new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
@@ -857,6 +1016,7 @@ function formatWorshipDate(date) {
   }).format(date);
 }
 
+/** Menghitung Sabat ke-berapa dalam triwulan untuk tanggal Sabtu tertentu (dipakai di judul "Sabat Ke-N"). */
 function getSabbathNumberInQuarter(date) {
   const quarterStartMonth = Math.floor(date.getMonth() / 3) * 3;
   const quarterStart = new Date(date.getFullYear(), quarterStartMonth, 1);
@@ -870,6 +1030,7 @@ function getSabbathNumberInQuarter(date) {
   return Math.floor(daysSinceFirstSaturday / 7) + 1;
 }
 
+/** Judul susunan; untuk Sabat Raya otomatis memuat nomor Sabat triwulan berjalan. */
 function getDynamicWorshipTitle(key, fallbackTitle) {
   if (key !== "sabat-raya") return fallbackTitle;
 
@@ -878,19 +1039,24 @@ function getDynamicWorshipTitle(key, fallbackTitle) {
   return `Susunan Ibadah Kebaktian Sabat Ke-${sabbathNumber}`;
 }
 
+/** Subjudul tanggal: Rabu = "<tanggal> | 19.00 WIB"; lainnya = tanggal Sabtu terdekat. Juga menjadi kunci pencocokan override. */
 function getDynamicWorshipSubtitle(key) {
   if (key === "rabu-malam") {
     return `${formatWorshipDate(getUpcomingWorshipDate(3))} | 19.00 WIB`;
   }
 
-  const dateText = formatWorshipDate(getUpcomingWorshipDate(6));
-  return dateText;
+  return formatWorshipDate(getUpcomingWorshipDate(6));
 }
 
+/** Memetakan kunci program UI ke nilai kolom program_type di Supabase (sabat / rabu / pa). */
 function getOverrideProgramType(key) {
   return key === "sabat-raya" ? "sabat" : key === "rabu-malam" ? "rabu" : "pa";
 }
 
+/**
+ * Membaca kolom timeline_json (array atau string JSON).
+ * @returns {Array|null} Array timeline, atau null bila tidak valid.
+ */
 function parseOverrideTimeline(value) {
   if (Array.isArray(value)) return value;
   if (typeof value === "string") {
@@ -904,6 +1070,11 @@ function parseOverrideTimeline(value) {
   return null;
 }
 
+/**
+ * Mengubah baris Tabel Override Susunan (timeline_json datar) menjadi struktur susunan { title, generalInfo, sections, notes }.
+ * Header "I. Informasi Umum" menjadi generalInfo; header lain membuka bagian baru; entri biasa menjadi item susunan.
+ * @returns {object|null} null bila timeline tidak valid.
+ */
 function convertOverrideRow(row) {
   const timeline = parseOverrideTimeline(row.timeline_json);
   if (!timeline) return null;
@@ -953,6 +1124,11 @@ function convertOverrideRow(row) {
   };
 }
 
+/**
+ * Menyimpan susunan yang sedang diedit sebagai override untuk tanggal program ini (insert; bila bentrok, update baris terbaru).
+ * Baris override lama untuk program+tanggal yang sama dibersihkan setelahnya.
+ * @returns {Promise<boolean>} true bila tersimpan.
+ */
 async function persistWorshipOverride(key) {
   const programType = getOverrideProgramType(key);
   const dateDisplay = getDynamicWorshipSubtitle(key);
@@ -989,9 +1165,8 @@ async function persistWorshipOverride(key) {
     ])
   ];
   const payload = { program_type: programType, date_display: dateDisplay, timeline_json: timelineJson };
-  const existing = worshipOverrideRows.find(row => row.program_type === programType && row.date_display === dateDisplay);
 
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showToast("Supabase belum terhubung. Perubahan belum tersimpan.", "fa-solid fa-triangle-exclamation");
     return false;
@@ -1041,6 +1216,11 @@ async function persistWorshipOverride(key) {
   return true;
 }
 
+/**
+ * Merender satu program ibadah: header (judul, tanggal, tombol edit admin), Informasi Umum, bagian-bagian susunan, dan catatan.
+ * Menangani status loading / belum tersedia / Pemuda Advent (segera hadir) serta mode edit inline untuk admin.
+ * @param {string} key "sabat-raya", "rabu-malam", atau "pa".
+ */
 function renderSubTab(key) {
   const container = document.getElementById(`subtab-container-${key}`);
   if (!container) return;
@@ -1119,7 +1299,7 @@ function renderSubTab(key) {
             <div class="gen-metric-card">
               <div class="gen-metric-icon"><i class="${icons[idx % icons.length]}"></i></div>
               <div class="gen-metric-details">
-                <span class="gen-metric-title">${info.key}</span>
+                <span class="gen-metric-title">${escapeHtml(info.key)}</span>
                 ${isEditing ? `
                   <input type="text" class="edit-pill-input" value="${escapeHtml(info.value)}" 
                     oninput="updateGenInfo('${key}', ${idx}, this.value)">
@@ -1138,12 +1318,12 @@ function renderSubTab(key) {
     html += `
       <div class="program-card ${secIdx > 0 || (data.generalInfo && data.generalInfo.length > 0) ? 'mt-4' : ''}">
         <div class="program-card-header">
-          <h4>${sec.title}</h4>
+          <h4>${escapeHtml(sec.title)}</h4>
         </div>
         <div class="liturgy-list">
           ${sec.items.map((item, itemIdx) => `
             <div class="liturgy-item ${item.highlight ? 'highlight' : ''} ${item.type === 'group' || item.subItems ? 'liturgy-group-item' : ''}">
-              <span class="lit-time">${item.time}</span>
+              <span class="lit-time">${escapeHtml(item.time)}</span>
               <div class="lit-info">
                 <div class="lit-main">
                   <h5>${escapeHtml(item.name)}</h5>
@@ -1234,10 +1414,14 @@ function renderSubTab(key) {
   container.innerHTML = html;
 }
 
+/**
+ * Teks lagu untuk mode baca, mis. `LSEL No. 12: - "Judul"`. Judul diambil dari katalog bila hanya nomor yang diisi.
+ * @returns {string} HTML yang sudah di-escape ("-" bila kosong).
+ */
 function formatSongDisplay(item) {
   if (!item.songNo && !item.songTitle) return '-';
   const book = item.songBook || 'LSEL No.';
-  const catalog = /AYS/i.test(book) ? aysSongs : lselSongs;
+  const catalog = getSongCatalogForBook(book);
   const songNumber = String(item.songNo || '');
   const catalogNumber = songNumber.match(/\d+/)?.[0];
   const catalogSong = !item.songTitle && catalogNumber
@@ -1251,16 +1435,18 @@ function formatSongDisplay(item) {
   return res;
 }
 
+/** Memilih katalog lagu (AYS atau LSEL) berdasarkan teks buku lagu. */
 function getSongCatalogForBook(songBook) {
   return /AYS/i.test(songBook || '') ? aysSongs : lselSongs;
 }
 
+/** Menampilkan saran lagu (maks. 8) di editor saat admin mengetik nomor (min. 1 digit) atau judul (min. 3 huruf). */
 function showSongSuggestions(input, key, secIdx, itemIdx) {
   const songGroup = input.closest('.edit-song-group');
   const suggestions = songGroup && songGroup.querySelector('.song-suggestions');
   if (!suggestions) return;
 
-  const item = worshipData[key]?.sections[secIdx]?.items[itemIdx];
+  const item = getWorshipItem(key, secIdx, itemIdx);
   const catalog = getSongCatalogForBook(item?.songBook);
   const query = input.value.trim().toLowerCase();
   const isNumberSearch = /^\d+$/.test(query);
@@ -1292,21 +1478,25 @@ function showSongSuggestions(input, key, secIdx, itemIdx) {
   suggestions.classList.toggle('show', filtered.length > 0);
 }
 
+/** Menyembunyikan kotak saran lagu. */
 function hideSongSuggestions(input) {
   const songGroup = input.closest('.edit-song-group');
   const suggestions = songGroup && songGroup.querySelector('.song-suggestions');
   if (suggestions) suggestions.classList.remove('show');
 }
 
+/** Menerapkan saran lagu yang dipilih (nomor + judul) ke item susunan lalu merender ulang. */
 function selectSongSuggestion(button) {
   const { key, sec, item, songNo, songTitle } = button.dataset;
-  if (!worshipData[key]?.sections[sec]?.items[item]) return;
+  const target = getWorshipItem(key, sec, item);
+  if (!target) return;
 
-  worshipData[key].sections[sec].items[item].songNo = songNo;
-  worshipData[key].sections[sec].items[item].songTitle = songTitle;
+  target.songNo = songNo;
+  target.songTitle = songTitle;
   renderSubTab(key);
 }
 
+/** Mengaktifkan mode edit; saat ditekan lagi menyimpan perubahan sebagai override dan keluar dari mode edit bila berhasil. */
 async function toggleEditSubTab(key) {
   if (!subtabEditState[key]) {
     subtabEditState[key] = true;
@@ -1319,6 +1509,7 @@ async function toggleEditSubTab(key) {
   }
 }
 
+/** Membuka konfirmasi reset: menghapus override tanggal ini sehingga susunan kembali ke data tabel/dasar. */
 function resetSubTabData(key) {
   const programType = getOverrideProgramType(key);
   const dateDisplay = getDynamicWorshipSubtitle(key);
@@ -1340,17 +1531,19 @@ function resetSubTabData(key) {
   openModal("modal-worship-reset-confirm");
 }
 
+/** Membatalkan reset override. */
 function cancelResetSubTab() {
   pendingWorshipResetKey = null;
   closeModal("modal-worship-reset-confirm");
 }
 
+/** Menghapus override program+tanggal dari Supabase lalu memuat ulang susunan. */
 async function confirmResetSubTab() {
   const key = pendingWorshipResetKey;
   if (!key) return;
   const programType = getOverrideProgramType(key);
   const dateDisplay = getDynamicWorshipSubtitle(key);
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showToast("Supabase belum terhubung. Override belum dihapus.", "fa-solid fa-triangle-exclamation");
     return;
@@ -1378,54 +1571,58 @@ async function confirmResetSubTab() {
   );
 }
 
+/** Mengambil item susunan (baris liturgi) berdasarkan program, indeks bagian, dan indeks item. */
+function getWorshipItem(key, secIdx, itemIdx) {
+  return worshipData[key]?.sections?.[secIdx]?.items?.[itemIdx];
+}
+
+/** Handler input: menyimpan nilai Informasi Umum yang diedit. */
 function updateGenInfo(key, idx, val) {
-  if (worshipData[key] && worshipData[key].generalInfo[idx]) {
-    worshipData[key].generalInfo[idx].value = val;
-  }
+  const info = worshipData[key]?.generalInfo?.[idx];
+  if (info) info.value = val;
 }
 
+/** Handler input: menyimpan nama petugas pada item susunan. */
 function updateOfficer(key, secIdx, itemIdx, val) {
-  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
-    worshipData[key].sections[secIdx].items[itemIdx].officer = val;
-  }
+  const item = getWorshipItem(key, secIdx, itemIdx);
+  if (item) item.officer = val;
 }
 
+/** Handler input: menyimpan judul khotbah. */
 function updateSermonTitle(key, secIdx, itemIdx, val) {
-  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
-    worshipData[key].sections[secIdx].items[itemIdx].sermonTitle = val;
-  }
+  const item = getWorshipItem(key, secIdx, itemIdx);
+  if (item) item.sermonTitle = val;
 }
 
+/** Handler input: menyimpan petugas sub-item (mis. Diskusi Orang Muda / Orang Tua). */
 function updateSubGroupOfficer(key, secIdx, itemIdx, subIdx, val) {
-  if (
-    worshipData[key] &&
-    worshipData[key].sections[secIdx] &&
-    worshipData[key].sections[secIdx].items[itemIdx] &&
-    worshipData[key].sections[secIdx].items[itemIdx].subItems &&
-    worshipData[key].sections[secIdx].items[itemIdx].subItems[subIdx]
-  ) {
-    worshipData[key].sections[secIdx].items[itemIdx].subItems[subIdx].officer = val;
-  }
+  const subItem = getWorshipItem(key, secIdx, itemIdx)?.subItems?.[subIdx];
+  if (subItem) subItem.officer = val;
 }
 
+/** Handler input: menyimpan nomor lagu. */
 function updateSongNo(key, secIdx, itemIdx, val) {
-  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
-    worshipData[key].sections[secIdx].items[itemIdx].songNo = val;
-  }
+  const item = getWorshipItem(key, secIdx, itemIdx);
+  if (item) item.songNo = val;
 }
 
+/** Handler input: menyimpan judul lagu. */
 function updateSongTitle(key, secIdx, itemIdx, val) {
-  if (worshipData[key] && worshipData[key].sections[secIdx] && worshipData[key].sections[secIdx].items[itemIdx]) {
-    worshipData[key].sections[secIdx].items[itemIdx].songTitle = val;
-  }
+  const item = getWorshipItem(key, secIdx, itemIdx);
+  if (item) item.songTitle = val;
 }
 
-
-
 // ==========================================
-// 13. SUPABASE INTEGRATION, ADMIN AUTH & DATABASE VIEW ENGINE
+// 13. KLIEN SUPABASE
 // ==========================================
+
+/**
+ * Membuat klien Supabase (sekali saja; panggilan berikutnya mengembalikan klien yang sama).
+ * Sesi disimpan persisten di localStorage oleh Supabase Auth.
+ * @returns {object|null} Klien, atau null bila SDK belum dimuat.
+ */
 function initSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
   if (window.supabase && SUPABASE_URL) {
     try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -1439,11 +1636,17 @@ function initSupabaseClient() {
   return null;
 }
 
-// Initial client creation attempt
+// Upaya awal membuat klien saat berkas dimuat
 initSupabaseClient();
 
+// ==========================================
+// 14. GALERI KEGIATAN JEMAAT
+// Event berisi judul, subtitle, dan tautan Google Slides; ditampilkan di Beranda dan dikelola admin (maks. MAX_GALLERY_EVENTS).
+// ==========================================
+
+/** Memuat event galeri (maks. MAX_GALLERY_EVENTS, urut slot) dari tabel "Kegiatan Jemaat" lalu merender grid publik, panel admin, dan penampil bila URL berpola #galeri-<id>. */
 async function fetchGalleryEvents() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     galleryEventsLoadError = "Supabase belum terhubung.";
     renderGalleryEvents();
@@ -1458,7 +1661,7 @@ async function fetchGalleryEvents() {
       .order("slot", { ascending: true });
 
     if (error) throw error;
-    galleryEvents = (data || []).slice(0, 3);
+    galleryEvents = (data || []).slice(0, MAX_GALLERY_EVENTS);
     galleryEventsLoadError = "";
   } catch (error) {
     galleryEvents = [];
@@ -1472,6 +1675,7 @@ async function fetchGalleryEvents() {
   if (currentHash.startsWith("galeri-")) renderGalleryViewerFromHash(currentHash);
 }
 
+/** Merender grid kartu event galeri di Beranda (thumbnail Google Slides dengan cadangan bila gagal dimuat). */
 function renderGalleryEvents() {
   const grid = document.getElementById("gallery-event-grid");
   if (!grid) return;
@@ -1500,6 +1704,7 @@ function renderGalleryEvents() {
   `).join("");
 }
 
+/** Merender panel admin galeri: status slot, tombol Tambah / Atur Slot / Batal / Simpan, dan daftar event (dapat diseret saat mode Atur Slot). */
 function renderGalleryAdminPanel() {
   const list = document.getElementById("gallery-admin-list");
   const status = document.getElementById("gallery-admin-status");
@@ -1509,7 +1714,7 @@ function renderGalleryAdminPanel() {
   const saveOrderButton = document.getElementById("btn-save-gallery-order");
   if (!list) return;
 
-  const isAtCapacity = galleryEvents.length >= 3;
+  const isAtCapacity = galleryEvents.length >= MAX_GALLERY_EVENTS;
   if (addButton) {
     addButton.disabled = isAtCapacity || Boolean(galleryEventsLoadError);
     addButton.hidden = galleryOrderMode;
@@ -1557,7 +1762,7 @@ function renderGalleryAdminPanel() {
       ? "Tabel galeri belum tersedia. Siapkan tabel Supabase menggunakan SQL yang disediakan."
       : galleryOrderMode
         ? "Mode Atur Slot Aktif. Klik, tahan, dan geser (drag & drop) untuk mengatur urutan."
-        : `${galleryEvents.length} dari 3 event digunakan.`;
+        : `${galleryEvents.length} dari ${MAX_GALLERY_EVENTS} event digunakan.`;
   }
 
   if (galleryEvents.length === 0) {
@@ -1590,6 +1795,7 @@ function renderGalleryAdminPanel() {
   initGalleryOrderDragDrop(list);
 }
 
+/** Memasang drag & drop (sekali per daftar) untuk mengubah urutan event pada mode Atur Slot. */
 function initGalleryOrderDragDrop(list) {
   if (list.dataset.dragDropReady) return;
   list.dataset.dragDropReady = "true";
@@ -1646,12 +1852,16 @@ function initGalleryOrderDragDrop(list) {
   });
 }
 
+/**
+ * Memvalidasi tautan Google Slides (hanya https://docs.google.com/presentation/d/...) dan mengambil id-nya.
+ * @returns {{id: string, published: boolean}|null} null bila tautan tidak valid.
+ */
 function getGoogleSlidesPresentationInfo(slidesUrl) {
   try {
     const url = new URL(slidesUrl);
-    if (url.protocol !== "https:" || url.hostname !== "docs.google.com" || url.username || url.password || (url.port && url.port !== "443")) return "";
+    if (url.protocol !== "https:" || url.hostname !== "docs.google.com" || url.username || url.password || (url.port && url.port !== "443")) return null;
     const match = url.pathname.match(/^\/presentation\/d\/(e\/)?([^/]+)/);
-    if (!match) return "";
+    if (!match) return null;
 
     return { id: encodeURIComponent(match[2]), published: Boolean(match[1]) };
   } catch {
@@ -1659,6 +1869,7 @@ function getGoogleSlidesPresentationInfo(slidesUrl) {
   }
 }
 
+/** URL embed untuk iframe penampil; string kosong bila tautan tidak valid. */
 function getGoogleSlidesEmbedUrl(slidesUrl) {
   const presentation = getGoogleSlidesPresentationInfo(slidesUrl);
   if (!presentation) return "";
@@ -1666,6 +1877,7 @@ function getGoogleSlidesEmbedUrl(slidesUrl) {
   return `https://docs.google.com/presentation/d/${publishedPath}${presentation.id}/embed?start=false&loop=false&delayms=3000`;
 }
 
+/** URL thumbnail utama kartu event (presentasi terbit: export/png; lainnya: thumbnail Drive). */
 function getGoogleSlidesThumbnailUrl(slidesUrl) {
   const presentation = getGoogleSlidesPresentationInfo(slidesUrl);
   if (!presentation) return "";
@@ -1675,12 +1887,14 @@ function getGoogleSlidesThumbnailUrl(slidesUrl) {
   return `https://drive.google.com/thumbnail?id=${presentation.id}&sz=w1200`;
 }
 
+/** URL thumbnail cadangan untuk presentasi yang belum diterbitkan. */
 function getGoogleSlidesThumbnailFallbackUrl(slidesUrl) {
   const presentation = getGoogleSlidesPresentationInfo(slidesUrl);
   if (!presentation || presentation.published) return "";
   return `https://docs.google.com/presentation/d/${presentation.id}/export/png`;
 }
 
+/** Mengisi halaman penampil (judul, subtitle, iframe Google Slides) atau menampilkan pesan bila event tidak ditemukan/tautan tidak valid. */
 function renderGalleryViewer(eventId) {
   const event = galleryEvents.find(item => String(item.id) === String(eventId));
   const title = document.getElementById("gallery-viewer-title");
@@ -1708,6 +1922,7 @@ function renderGalleryViewer(eventId) {
   status.hidden = Boolean(embedUrl);
 }
 
+/** Membuka penampil untuk satu event (menambah entri riwayat browser). */
 function openGalleryEvent(eventId) {
   if (!galleryEvents.some(event => String(event.id) === String(eventId))) return;
   currentGalleryEventId = String(eventId);
@@ -1715,12 +1930,14 @@ function openGalleryEvent(eventId) {
   switchTab("tab-gallery-viewer");
 }
 
+/** Menutup penampil dan kembali ke Beranda. */
 function closeGalleryEvent() {
   currentGalleryEventId = null;
   window.history.replaceState({ tabId: "tab-home" }, "", "#beranda");
   switchTab("tab-home", false);
 }
 
+/** Membuka modal tambah/ubah event (admin). Tanpa `eventId` berarti tambah baru. */
 function openGalleryEventForm(eventId = "") {
   if (!isAdminLoggedIn) return;
   const form = document.getElementById("gallery-event-form");
@@ -1739,6 +1956,7 @@ function openGalleryEventForm(eventId = "") {
   openModal("modal-gallery-event");
 }
 
+/** Masuk ke mode Atur Slot, atau membatalkannya bila sudah aktif. */
 function toggleGalleryOrderMode() {
   if (!isAdminLoggedIn || galleryEvents.length === 0) return;
   if (galleryOrderMode) {
@@ -1750,12 +1968,17 @@ function toggleGalleryOrderMode() {
   renderGalleryAdminPanel();
 }
 
+/** Keluar dari mode Atur Slot tanpa menyimpan. */
 function cancelGalleryOrder() {
   galleryOrderMode = false;
   galleryOrderDraft = [];
   renderGalleryAdminPanel();
 }
 
+/**
+ * Menyimpan urutan baru dengan cara menukar isi (title, subtitle, slides_url, created_at) antar baris.
+ * Kolom `slot` dan `id` tidak diubah sehingga aman dari constraint unik/check di database.
+ */
 async function saveGalleryEventOrder() {
   const saveButton = document.getElementById("btn-save-gallery-order");
   const status = document.getElementById("gallery-admin-status");
@@ -1769,10 +1992,6 @@ async function saveGalleryEventOrder() {
 
   if (saveButton) saveButton.disabled = true;
   try {
-    // Trik Pemungkas: Kita TIDAK mengubah 'slot' atau 'id' sama sekali!
-    // Kita menukar 'title', 'subtitle', dan 'slides_url' dari row yang lama 
-    // agar sesuai dengan urutan yang baru. Ini menghindari bentrok Unique maupun Check Constraint!
-    
     for (let i = 0; i < galleryOrderDraft.length; i++) {
       const targetRow = galleryEvents[i]; // Row fisik asli di urutan i
       const newEventData = galleryOrderDraft[i]; // Data yang diinginkan di urutan i
@@ -1806,6 +2025,7 @@ async function saveGalleryEventOrder() {
   }
 }
 
+/** Menyimpan event baru atau hasil edit (validasi tautan Slides, slot kosong pertama dipakai untuk event baru). */
 async function saveGalleryEvent(event) {
   event.preventDefault();
   if (!isAdminLoggedIn || !supabaseClient) {
@@ -1828,7 +2048,7 @@ async function saveGalleryEvent(event) {
   const usedSlots = new Set(galleryEvents.map(item => Number(item.slot)));
   const slot = existingEvent
     ? Number(existingEvent.slot)
-    : [1, 2, 3].find(candidate => !usedSlots.has(candidate));
+    : Array.from({ length: MAX_GALLERY_EVENTS }, (_, index) => index + 1).find(candidate => !usedSlots.has(candidate));
   if (!slot) {
     closeModal("modal-gallery-event");
     showToast("Galeri sudah mencapai batas maksimal tiga event.", "fa-solid fa-triangle-exclamation");
@@ -1857,6 +2077,7 @@ async function saveGalleryEvent(event) {
   }
 }
 
+/** Meminta konfirmasi lalu menghapus event galeri dari Supabase. */
 async function deleteGalleryEvent(eventId) {
   if (!isAdminLoggedIn || !supabaseClient) return;
   const item = galleryEvents.find(event => String(event.id) === String(eventId));
@@ -1880,8 +2101,15 @@ async function deleteGalleryEvent(eventId) {
   });
 }
 
+// ==========================================
+// 15. AUTENTIKASI ADMIN & NAVIGASI DASHBOARD
+// Login memakai Supabase Auth; hak tulis dijaga oleh RLS di database, bukan oleh status ini (hanya mengatur tampilan UI).
+// ==========================================
+
+/** true bila ada sesi Supabase Auth aktif; mengatur tampilan tombol/edit di UI. */
 let isAdminLoggedIn = false;
 
+/** Menyetel tampilan admin awal, memulihkan sesi, dan memuat semua data awal (pianis, direktori, susunan Sabat, pengumuman, galeri). */
 function initAdminState() {
   updateAdminUIState();
   restoreAdminSession();
@@ -1893,8 +2121,9 @@ function initAdminState() {
   fetchGalleryEvents();
 }
 
+/** Memulihkan sesi Supabase Auth yang tersimpan; bila admin, bersihkan override kedaluwarsa dan terapkan data. */
 async function restoreAdminSession() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) return;
   const { data, error } = await supabaseClient.auth.getSession();
   if (error) {
@@ -1909,6 +2138,7 @@ async function restoreAdminSession() {
   }
 }
 
+/** Menyesuaikan UI dengan status login: tombol header, tombol edit pengumuman, dan tombol edit susunan. */
 function updateAdminUIState() {
   const btnAdmin = document.getElementById("btn-admin-login");
   const btnText = document.getElementById("admin-btn-text");
@@ -1926,7 +2156,7 @@ function updateAdminUIState() {
     };
   }
 
-  // Refresh worship subtabs so edit buttons toggle dynamically
+  // Render ulang subtab ibadah agar tombol edit mengikuti status login
   renderSubTab("sabat-raya");
   renderSubTab("rabu-malam");
 
@@ -1953,16 +2183,14 @@ function updateAdminUIState() {
   }
 }
 
-// ------------------------------------------
-// ADMIN VIEW NAVIGATION (TWO-WAY TRANSITIONS)
-// ------------------------------------------
+/** Menampilkan dashboard admin (menyembunyikan app shell) dan memuat ulang data tabelnya. */
 function openAdminDatabaseView() {
   const appShell = document.getElementById("app-shell");
   const dbView = document.getElementById("admin-database-view");
   if (appShell) appShell.style.display = "none";
   if (dbView) dbView.style.display = "flex";
 
-  // Default to the first database tab
+  // Panel pertama yang dibuka adalah Direktori
   switchAdminDbTab("directory");
   fetchDirectoryFromSupabase();
   fetchPosFromSupabase();
@@ -1971,6 +2199,7 @@ function openAdminDatabaseView() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+/** Kembali dari dashboard ke aplikasi publik. */
 function closeAdminDatabaseView() {
   const appShell = document.getElementById("app-shell");
   const dbView = document.getElementById("admin-database-view");
@@ -1981,29 +2210,27 @@ function closeAdminDatabaseView() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+/** Tombol admin di header: bila sudah login buka dashboard, bila belum buka modal login. */
 function handleAdminNavClick() {
   if (isAdminLoggedIn) {
-    // Langsung masuk ke tampilan Database View Dashboard
+    // Sudah login: langsung buka dashboard
     openAdminDatabaseView();
   } else {
-    // Populate Supabase URL input if exists
-    const urlInput = document.getElementById("supabase-url-input");
-    if (urlInput && SUPABASE_URL) {
-      urlInput.value = SUPABASE_URL;
-    }
     openModal("modal-admin-login");
   }
 }
 
+/** Menutup modal konfirmasi dan melakukan logout. */
 function confirmLogoutAdmin() {
   closeModal("modal-logout-confirm");
   logoutAdmin();
 }
 
+/** Keluar dari Supabase Auth, menutup dashboard, dan menyegarkan UI. */
 function logoutAdmin() {
   isAdminLoggedIn = false;
 
-  // Sign out from Supabase Auth session if active
+  // Akhiri sesi Supabase Auth bila aktif
   if (supabaseClient && supabaseClient.auth) {
     supabaseClient.auth.signOut().catch(() => { });
   }
@@ -2013,6 +2240,7 @@ function logoutAdmin() {
   showToast("Anda telah keluar dari Mode Admin.", "fa-solid fa-right-from-bracket text-gold");
 }
 
+/** Menampilkan/menyembunyikan kata sandi pada form login. */
 function togglePasswordVisibility() {
   const pwdInput = document.getElementById("admin-password");
   const icon = document.getElementById("password-toggle-icon");
@@ -2029,11 +2257,14 @@ function togglePasswordVisibility() {
   }
 }
 
+/**
+ * Memproses form login admin lewat Supabase Auth (email + password).
+ * Berhasil: tampilkan banner sukses lalu buka dashboard. Gagal: guncang kartu dan tampilkan pesan galat.
+ */
 async function handleAdminLoginSubmit(e) {
   e.preventDefault();
   const emailInput = document.getElementById("admin-email");
   const passwordInput = document.getElementById("admin-password");
-  const urlInput = document.getElementById("supabase-url-input");
   const errorBanner = document.getElementById("admin-login-error");
   const errorText = document.getElementById("admin-error-text");
   const successBanner = document.getElementById("admin-login-success");
@@ -2043,11 +2274,11 @@ async function handleAdminLoginSubmit(e) {
   const email = emailInput ? emailInput.value.trim() : "";
   const password = passwordInput ? passwordInput.value : "";
 
-  // Reset UI Banners
+  // Reset banner status
   if (errorBanner) errorBanner.style.display = "none";
   if (successBanner) successBanner.style.display = "none";
 
-  // Show loading spinner
+  // Tampilkan indikator memuat
   if (submitBtn) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Menghubungkan Supabase...</span>`;
@@ -2056,7 +2287,7 @@ async function handleAdminLoginSubmit(e) {
   const client = initSupabaseClient();
 
   if (client) {
-    // Direct Supabase Authentication Call
+    // Panggil autentikasi Supabase
     let authResult;
     try {
       authResult = await client.auth.signInWithPassword({
@@ -2099,7 +2330,7 @@ async function handleAdminLoginSubmit(e) {
         submitBtn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span>Masuk via Supabase Auth</span>`;
       }
 
-      // Direct Transition to Database View after login
+      // Setelah login, langsung buka dashboard
       openAdminDatabaseView();
     }, 700);
   }
@@ -2120,11 +2351,12 @@ async function handleAdminLoginSubmit(e) {
   }
 }
 
-// ------------------------------------------
-// DATABASE VIEW SIDEBAR TAB SWITCHER
-// ------------------------------------------
+/**
+ * Berpindah panel di sidebar dashboard (pos, directory, sekolah-sabat, khotbah, gallery-events, ...) dan memuat/merender datanya.
+ * @param {string} tabKey Nilai atribut data-dbtab tombol sidebar.
+ */
 function switchAdminDbTab(tabKey) {
-  // Update sidebar buttons
+  // Tandai tombol sidebar yang aktif
   const tabBtns = document.querySelectorAll(".sidebar-tab-btn");
   tabBtns.forEach(btn => {
     if (btn.getAttribute("data-dbtab") === tabKey) {
@@ -2134,7 +2366,7 @@ function switchAdminDbTab(tabKey) {
     }
   });
 
-  // Update panels
+  // Tampilkan panel yang sesuai
   const panels = document.querySelectorAll(".admin-panel");
   panels.forEach(panel => {
     if (panel.id === `panel-${tabKey}`) {
@@ -2154,19 +2386,26 @@ function switchAdminDbTab(tabKey) {
 }
 
 // ==========================================
-// 14. TABEL PIANIS ENGINE
+// 16. DATA JADWAL: PIANIS (POS), SEKOLAH SABAT & KHOTBAH
+// Tabel admin, import CSV, geser jadwal, dan penerapan data ke Susunan Ibadah.
 // ==========================================
+
+// ------------------------------------------
+// Tabel Pianis (POS): state & pemuatan data
+// ------------------------------------------
+
+/** Jadwal pianis dari Tabel Pianis: [{ id, date: "YYYY-MM-DD", pianist }]. */
 let posScheduleList = [];
+/** Kolom pengurutan tabel POS ("date" atau "pianist"). */
 let posSortField = "date";
+/** Arah pengurutan tabel POS; false = menurun (tanggal terbaru di atas). */
 let posSortAsc = false; // Descending by default
+/** Kata kunci pencarian tabel POS. */
 let posSearchQuery = "";
 
-function savePosSchedule() {
-  syncNearestPosToWorship();
-}
-
+/** Memuat Tabel Pianis (terbaru di atas), merender tabel POS, dan menyinkronkan pianis ke susunan Sabat. */
 async function fetchPosFromSupabase() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) return;
 
   try {
@@ -2186,7 +2425,7 @@ async function fetchPosFromSupabase() {
         date: row.date,
         pianist: row.pianist
       }));
-      savePosSchedule();
+      syncNearestPosToWorship();
       renderPosTable();
     }
   } catch (err) {
@@ -2194,6 +2433,11 @@ async function fetchPosFromSupabase() {
   }
 }
 
+// ------------------------------------------
+// Tabel Sekolah Sabat (SS) & Khotbah: kolom, render, urut, cari
+// ------------------------------------------
+
+/** Kolom tabel admin Sekolah Sabat sebagai pasangan [kunci, label]. Kolom "diskusi_gabungan" hanya tampilan (gabungan Orang Muda + Orang Tua). */
 const ssTableColumns = [
   ["date", "Tanggal"],
   ["pemimpin_acara", "Pemimpin Acara"],
@@ -2208,6 +2452,10 @@ const ssTableColumns = [
   ["cerita_anak", "Cerita Anak"]
 ];
 
+/**
+ * Kolom tabel admin Khotbah sebagai pasangan [kunci, label].
+ * Lagu paten (515, 1, 260, 21) dan lagu tema "Misi Kita" tidak lagi disimpan di tabel; nilainya ditetapkan langsung di applySabbathDatabaseRows().
+ */
 const khotbahTableColumns = [
   ["date", "Tanggal"],
   // Kolom paten dihapus: lagu_pengiring_partisipan_mimbar (515), lagu_sambutan (1),
@@ -2225,13 +2473,23 @@ const khotbahTableColumns = [
   ["doa_tutup", "Doa Tutup"]
 ];
 
+/** Baris Tabel SS (Sekolah Sabat) yang sudah dimuat. */
 let ssScheduleList = [];
+/** Baris Tabel Khotbah yang sudah dimuat. */
 let khotbahScheduleList = [];
+/** Status pengurutan tabel SS dan Khotbah: { field, ascending } per tabel. */
 const sabbathTableSort = {
   ss: { field: 'date', ascending: false },
   khotbah: { field: 'date', ascending: false }
 };
 
+/**
+ * Merender tabel admin SS atau Khotbah: header yang dapat diurutkan, pencarian, penghitung baris, dan tombol Edit/Hapus.
+ * @param {"ss"|"khotbah"} tableKey
+ * @param {Array} rows Baris data.
+ * @param {Array} columns Pasangan [kunci, label].
+ * @param {string} [emptyMessage] Pesan saat tidak ada baris.
+ */
 function renderSabbathDatabaseTable(tableKey, rows, columns, emptyMessage = "Belum ada data pada tabel Supabase.") {
   const head = document.getElementById(`${tableKey}-table-head`);
   const body = document.getElementById(`${tableKey}-table-body`);
@@ -2280,6 +2538,7 @@ function renderSabbathDatabaseTable(tableKey, rows, columns, emptyMessage = "Bel
   `).join('');
 }
 
+/** Nilai sel untuk tabel SS/Khotbah. Kolom "diskusi_gabungan" menggabungkan Orang Muda & Orang Tua; nilai kosong tampil "-". */
 function getSabbathTableValue(row, key) {
   if (key === "diskusi_gabungan") {
     return `Orang Muda: ${row.diskusi_orang_muda || '-'}\nOrang Tua: ${row.diskusi_orang_tua || '-'}`;
@@ -2287,14 +2546,24 @@ function getSabbathTableValue(row, key) {
   return String(row[key] ?? '-');
 }
 
+/** Konfigurasi tabel SS/Khotbah: nama tabel Supabase, daftar baris, dan kolom. */
 function getSabbathTableConfig(tableKey) {
   return tableKey === 'ss'
     ? { table: 'Tabel SS', rows: ssScheduleList, columns: ssTableColumns }
     : { table: 'Tabel Khotbah', rows: khotbahScheduleList, columns: khotbahTableColumns };
 }
 
+// ------------------------------------------
+// Import CSV (Pianis, SS, Khotbah)
+// ------------------------------------------
+
+/** State wizard Import CSV (null saat modal tertutup): { tableKey, file, rows, preview, saving }. */
 let csvImportState = null;
 
+/**
+ * Konfigurasi import CSV per tabel (pos / ss / khotbah): tabel tujuan, judul, baris yang ada, dan kolom wajib.
+ * Kolom SS memisahkan diskusi Orang Muda dan Orang Tua (bukan kolom gabungan).
+ */
 function getCsvImportConfig(tableKey) {
   if (tableKey === "pos") {
     return {
@@ -2355,6 +2624,7 @@ function getCsvImportConfig(tableKey) {
   throw new Error("Tabel impor tidak dikenal.");
 }
 
+/** Membuka modal Import CSV untuk satu tabel dan menyetel ulang wizard (tahap unggah). */
 function openCsvImportModal(tableKey) {
   const config = getCsvImportConfig(tableKey);
   csvImportState = { tableKey, file: null, rows: [], preview: [] };
@@ -2389,12 +2659,14 @@ function openCsvImportModal(tableKey) {
   openModal("modal-csv-import");
 }
 
+/** Menutup modal Import CSV (diabaikan saat sedang menyimpan). */
 function closeCsvImportModal() {
   if (csvImportState?.saving) return;
   closeModal("modal-csv-import");
   csvImportState = null;
 }
 
+/** Memvalidasi file CSV (ekstensi .csv, maks. 5 MB) lalu mengaktifkan tombol pratinjau. */
 function handleCsvImportFile(file) {
   const errorElement = document.getElementById("csv-import-error");
   const nextButton = document.getElementById("csv-import-preview-button");
@@ -2423,6 +2695,7 @@ function handleCsvImportFile(file) {
   nextButton.disabled = false;
 }
 
+/** Mengunduh template CSV (hanya header kolom) untuk tabel yang sedang diimpor. */
 function downloadCsvImportTemplate() {
   if (!csvImportState) return;
   const config = getCsvImportConfig(csvImportState.tableKey);
@@ -2437,6 +2710,10 @@ function downloadCsvImportTemplate() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/**
+ * Parser CSV sederhana: mendukung BOM, direktif `sep=`, deteksi pemisah (, ; tab), tanda kutip ganda, dan baris kosong.
+ * @returns {string[][]} Baris dan kolom. Melempar Error bila tanda kutip tidak tertutup.
+ */
 function parseCsvText(text) {
   let content = text.replace(/^\uFEFF/, "");
   let delimiter = ",";
@@ -2499,6 +2776,7 @@ function parseCsvText(text) {
   return rows;
 }
 
+/** Memvalidasi isi CSV (header, jumlah kolom, format tanggal YYYY-MM-DD, tanggal ganda) lalu membandingkannya dengan data yang ada untuk pratinjau (baru / berbeda / sama). */
 async function prepareCsvImportPreview() {
   const state = csvImportState;
   if (!state?.file) return;
@@ -2573,6 +2851,7 @@ async function prepareCsvImportPreview() {
   }
 }
 
+/** Menampilkan ringkasan dan tabel pratinjau perbedaan hasil prepareCsvImportPreview(). */
 function renderCsvImportPreview(config = getCsvImportConfig(csvImportState.tableKey)) {
   const preview = csvImportState.preview;
   const added = preview.filter(item => item.status === "new").length;
@@ -2618,11 +2897,13 @@ function renderCsvImportPreview(config = getCsvImportConfig(csvImportState.table
     : '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
 }
 
+/** Kembali dari tahap pratinjau ke tahap unggah file. */
 function backToCsvImportUpload() {
   document.getElementById("csv-import-preview-stage").hidden = true;
   document.getElementById("csv-import-upload-stage").hidden = false;
 }
 
+/** Menyimpan baris baru/berubah satu per satu (insert atau update berdasarkan tanggal), melaporkan kegagalan per baris, lalu menyegarkan data. */
 async function saveCsvImport() {
   if (!csvImportState || csvImportState.saving) return;
   const config = getCsvImportConfig(csvImportState.tableKey);
@@ -2636,7 +2917,7 @@ async function saveCsvImport() {
     return;
   }
 
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     errorElement.textContent = "Supabase belum terhubung. Data belum disimpan.";
     errorElement.hidden = false;
@@ -2680,7 +2961,7 @@ async function saveCsvImport() {
   csvImportState.saving = false;
   if (csvImportState.tableKey === "pos") {
     renderPosTable();
-    savePosSchedule();
+    syncNearestPosToWorship();
   } else {
     renderSabbathDatabaseTable(csvImportState.tableKey, config.rows, getSabbathTableConfig(csvImportState.tableKey).columns);
     applySabbathDatabaseRows();
@@ -2701,11 +2982,13 @@ async function saveCsvImport() {
   showToast(`${savedCount} baris berhasil diimpor ke ${config.table}.`, "fa-solid fa-circle-check text-emerald");
 }
 
+/** Merender ulang tabel SS/Khotbah sesuai kata kunci pencarian. */
 function filterSabbathTable(tableKey) {
   const config = getSabbathTableConfig(tableKey);
   renderSabbathDatabaseTable(tableKey, config.rows, config.columns);
 }
 
+/** Mengurutkan tabel SS/Khotbah berdasarkan kolom (klik lagi membalik arah). */
 function sortSabbathTable(tableKey, field) {
   const sortState = sabbathTableSort[tableKey];
   if (sortState.field === field) {
@@ -2717,14 +3000,25 @@ function sortSabbathTable(tableKey, field) {
   filterSabbathTable(tableKey);
 }
 
+/** Mengosongkan kolom pencarian tabel SS/Khotbah. */
 function clearSabbathTableSearch(tableKey) {
   const input = document.getElementById(`${tableKey}-table-search`);
   if (input) input.value = '';
   filterSabbathTable(tableKey);
 }
 
+// ------------------------------------------
+// Geser seluruh jadwal ±7 hari (konfirmasi + eksekusi)
+// ------------------------------------------
+
+/** Permintaan geser jadwal yang menunggu konfirmasi: { type: "pos"|"sabbath", tableKey, direction }. */
 let pendingWeekShift = null;
 
+/**
+ * Membuka modal konfirmasi geser jadwal.
+ * @param {"pos"|"sabbath"} type
+ * @param {number} direction +1 = majukan (−7 hari), −1 = mundurkan (+7 hari).
+ */
 function openWeekShiftConfirm(type, tableKey, direction) {
   const tableName = type === "pos"
     ? "Tabel Pianis"
@@ -2742,11 +3036,13 @@ function openWeekShiftConfirm(type, tableKey, direction) {
   openModal("modal-week-shift-confirm");
 }
 
+/** Membatalkan geser jadwal. */
 function cancelWeekShift() {
   pendingWeekShift = null;
   closeModal("modal-week-shift-confirm");
 }
 
+/** Menjalankan geser jadwal yang sudah disetujui. */
 function confirmWeekShift() {
   const shift = pendingWeekShift;
   if (!shift) return;
@@ -2760,6 +3056,7 @@ function confirmWeekShift() {
   }
 }
 
+/** Menggeser semua tanggal di tabel SS/Khotbah sebanyak 7 hari. `confirmed=false` hanya membuka konfirmasi. */
 async function shiftSabbathTableWeek(tableKey, direction, confirmed = false) {
   if (!confirmed) {
     openWeekShiftConfirm("sabbath", tableKey, direction);
@@ -2771,24 +3068,13 @@ async function shiftSabbathTableWeek(tableKey, direction, confirmed = false) {
     showToast(`Tidak ada jadwal di ${config.table} untuk digeser.`, "fa-solid fa-triangle-exclamation text-amber");
     return;
   }
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showToast(`Gagal menggeser jadwal ${config.table}: Supabase belum terhubung.`, "fa-solid fa-triangle-exclamation text-amber");
     return;
   }
 
-  const updatedRows = config.rows.map(row => ({ ...row }));
-
-  updatedRows.forEach(row => {
-    const date = new Date(`${row.date}T00:00:00`);
-    if (!Number.isNaN(date.getTime())) {
-      date.setDate(date.getDate() - direction * 7);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      row.date = `${year}-${month}-${day}`;
-    }
-  });
+  const updatedRows = config.rows.map(row => ({ ...row, date: shiftIsoDate(row.date, -direction * 7) }));
 
   try {
     const results = await Promise.all(updatedRows.map(row => supabaseClient
@@ -2811,6 +3097,11 @@ async function shiftSabbathTableWeek(tableKey, direction, confirmed = false) {
   }
 }
 
+// ------------------------------------------
+// Form tambah / ubah / hapus data SS & Khotbah
+// ------------------------------------------
+
+/** Daftar kolom untuk form tambah/ubah. Kolom gabungan diskusi dipecah menjadi Orang Muda dan Orang Tua. */
 function getSabbathFormFields(tableKey) {
   const config = getSabbathTableConfig(tableKey);
   const fields = config.columns
@@ -2824,31 +3115,23 @@ function getSabbathFormFields(tableKey) {
   return fields;
 }
 
+/** Tanggal default form tambah: satu minggu setelah tanggal terakhir (atau Sabtu terdekat bila tabel kosong), melewati tanggal yang sudah ada. */
 function getNextSabbathTableDate(rows) {
   const dates = new Set(rows.map(row => row.date).filter(Boolean));
   const latestDate = [...dates].sort().pop();
-  const nextDate = latestDate
-    ? new Date(`${latestDate}T00:00:00`)
-    : new Date(`${getUpcomingSaturdayIso()}T00:00:00`);
+  if (!latestDate) return getUpcomingSaturdayIso();
 
+  const nextDate = new Date(`${latestDate}T00:00:00`);
   if (Number.isNaN(nextDate.getTime())) return getUpcomingSaturdayIso();
-  if (latestDate) nextDate.setDate(nextDate.getDate() + 7);
 
-  while (dates.has([
-    nextDate.getFullYear(),
-    String(nextDate.getMonth() + 1).padStart(2, "0"),
-    String(nextDate.getDate()).padStart(2, "0")
-  ].join("-"))) {
+  // Maju per minggu hingga menemukan tanggal yang belum terpakai.
+  do {
     nextDate.setDate(nextDate.getDate() + 7);
-  }
-
-  return [
-    nextDate.getFullYear(),
-    String(nextDate.getMonth() + 1).padStart(2, "0"),
-    String(nextDate.getDate()).padStart(2, "0")
-  ].join("-");
+  } while (dates.has(toIsoDate(nextDate)));
+  return toIsoDate(nextDate);
 }
 
+/** Membuka form tambah data SS/Khotbah; tanggal diisi otomatis. */
 function openSabbathTableAddModal(tableKey) {
   const title = document.getElementById('sabbath-table-add-title');
   const fieldsContainer = document.getElementById('sabbath-table-add-fields');
@@ -2896,6 +3179,7 @@ function openSabbathTableAddModal(tableKey) {
   openModal('modal-sabbath-table-add');
 }
 
+/** Membuka form yang sama dalam mode edit dengan data baris terisi. */
 function openSabbathTableEditModal(tableKey, id) {
   const config = getSabbathTableConfig(tableKey);
   const row = config.rows.find(item => String(item.id) === String(id));
@@ -2914,6 +3198,7 @@ function openSabbathTableEditModal(tableKey, id) {
   });
 }
 
+/** Menyimpan form SS/Khotbah (insert atau update) lalu merender ulang tabel dan susunan. */
 async function handleSaveSabbathTableEntry(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -2926,7 +3211,7 @@ async function handleSaveSabbathTableEntry(event) {
     payload[key] = input ? input.value.trim() : '';
   });
 
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) return;
   try {
     const editId = form.dataset.editId;
@@ -2948,6 +3233,7 @@ async function handleSaveSabbathTableEntry(event) {
   }
 }
 
+/** Meminta konfirmasi sebelum menghapus satu baris SS/Khotbah. */
 function deleteSabbathTableEntry(tableKey, id) {
   const config = getSabbathTableConfig(tableKey);
   const row = config.rows.find(item => String(item.id) === String(id));
@@ -2963,9 +3249,10 @@ function deleteSabbathTableEntry(tableKey, id) {
   });
 }
 
+/** Menghapus baris SS/Khotbah di Supabase dan memperbarui tampilan. */
 async function performDeleteSabbathTableEntry(tableKey, id) {
   const config = getSabbathTableConfig(tableKey);
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showDeleteResult(false, "Supabase belum terhubung. Data tidak dihapus.");
     return;
@@ -2984,14 +3271,19 @@ async function performDeleteSabbathTableEntry(tableKey, id) {
   }
 }
 
+// ------------------------------------------
+// Menerapkan data tabel & override ke Susunan Ibadah
+// ------------------------------------------
+
+/** Tanggal Sabtu terdekat dalam format ISO (YYYY-MM-DD); dipakai mencocokkan baris tabel. */
 function getUpcomingSaturdayIso() {
-  const date = getUpcomingWorshipDate(6);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return toIsoDate(getUpcomingWorshipDate(6));
 }
 
+/**
+ * Membaca tanggal dari teks date_display (mis. "Sabtu, 10 Oktober 2026").
+ * @returns {Date|null} null bila tidak dapat dibaca.
+ */
 function getOverrideDate(dateDisplay) {
   const match = String(dateDisplay || "").match(/\b(\d{1,2})\s+([a-z]+)\s+(\d{4})\b/i);
   if (!match) return null;
@@ -3009,6 +3301,7 @@ function getOverrideDate(dateDisplay) {
   return date;
 }
 
+/** Menghapus override bertanggal lampau dari Supabase (hanya dijalankan oleh admin yang login). */
 async function removeExpiredWorshipOverrides() {
   if (!isAdminLoggedIn || !supabaseClient) return;
 
@@ -3033,12 +3326,14 @@ async function removeExpiredWorshipOverrides() {
   worshipOverrideRows = worshipOverrideRows.filter(row => !expiredIds.has(String(row.id)));
 }
 
+/** Mencari baris tabel yang tanggalnya sama dengan Sabtu terdekat. */
 function getUpcomingSabbathRow(rows) {
   if (!rows || rows.length === 0) return null;
   const targetDate = getUpcomingSaturdayIso();
   return rows.find(row => row.date === targetDate) || null;
 }
 
+/** Mengisi nomor lagu dari teks tabel (mis. "LSEL No. 12" menjadi "12"); teks kosong atau mengandung "kosong" mengosongkan lagu. */
 function setSabbathSong(item, value) {
   const songValue = String(value || '');
   if (!songValue || /kosong/i.test(songValue)) {
@@ -3051,6 +3346,11 @@ function setSabbathSong(item, value) {
   item.songTitle = '';
 }
 
+/**
+ * Menyusun ulang worshipData dari data terkini lalu merender kedua program.
+ * Urutan prioritas: kerangka dasar -> Tabel Pianis -> Tabel SS -> Tabel Khotbah (+ lagu paten) -> override tanggal tersebut.
+ * Indeks `ssItems[n]` / `khotbahItems[n]` mengikuti urutan baris di defaultWorshipData.
+ */
 function applySabbathDatabaseRows() {
   const ssRow = getUpcomingSabbathRow(ssScheduleList);
   const khotbahRow = getUpcomingSabbathRow(khotbahScheduleList);
@@ -3096,7 +3396,7 @@ function applySabbathDatabaseRows() {
     if (ssItems[9]) ssItems[9].officer = ssRow.cerita_anak || '';
   }
 
-  // Hardcode lagu-lagu paten (tidak lagi diambil dari Supabase)
+  // Lagu paten ditetapkan langsung di kode (tidak lagi diambil dari Supabase)
   if (hasSabbathSchedule) {
     if (khotbahItems[0]) setSabbathSong(khotbahItems[0], '515');    // Lagu Pengiring Partisipan Mimbar - paten
     if (khotbahItems[1]) setSabbathSong(khotbahItems[1], '1');      // Lagu Sambutan - paten
@@ -3144,8 +3444,20 @@ function applySabbathDatabaseRows() {
   renderSubTab("rabu-malam");
 }
 
+/**
+ * Membuka hasil Promise.allSettled dari satu kueri Supabase.
+ * @returns {Array|null} Baris data, atau null bila kueri gagal (galat dicatat ke console).
+ */
+function unwrapSettledResult(result, label) {
+  if (result.status === "fulfilled" && !result.value.error) return result.value.data || [];
+  const message = result.status === "fulfilled" ? result.value.error.message : result.reason?.message;
+  console.warn(`Supabase fetch ${label} error:`, message);
+  return null;
+}
+
+/** Memuat Tabel SS, Tabel Khotbah, dan Tabel Override secara paralel, membersihkan override kedaluwarsa, lalu menerapkannya ke susunan. */
 async function fetchSabbathProgramData() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     worshipAvailability = { "sabat-raya": true, "rabu-malam": true };
     applySabbathDatabaseRows();
@@ -3158,44 +3470,21 @@ async function fetchSabbathProgramData() {
     supabaseClient.from("Tabel Override Susunan").select("*").order("updated_at", { ascending: false })
   ]);
 
-  if (ssResult.status === "fulfilled" && !ssResult.value.error) {
-    ssScheduleList = ssResult.value.data || [];
-    renderSabbathDatabaseTable('ss', ssScheduleList, ssTableColumns);
-  } else {
-    const message = ssResult.status === "fulfilled"
-      ? ssResult.value.error.message
-      : ssResult.reason?.message;
-    console.warn("Supabase fetch Tabel SS error:", message);
-    ssScheduleList = [];
-    renderSabbathDatabaseTable('ss', [], ssTableColumns, "Tabel SS belum dapat dimuat.");
-  }
+  const ssRows = unwrapSettledResult(ssResult, "Tabel SS");
+  ssScheduleList = ssRows || [];
+  renderSabbathDatabaseTable("ss", ssScheduleList, ssTableColumns, ssRows ? undefined : "Tabel SS belum dapat dimuat.");
 
-  if (khotbahResult.status === "fulfilled" && !khotbahResult.value.error) {
-    khotbahScheduleList = khotbahResult.value.data || [];
-    renderSabbathDatabaseTable('khotbah', khotbahScheduleList, khotbahTableColumns);
-  } else {
-    const message = khotbahResult.status === "fulfilled"
-      ? khotbahResult.value.error.message
-      : khotbahResult.reason?.message;
-    console.warn("Supabase fetch Tabel Khotbah error:", message);
-    khotbahScheduleList = [];
-    renderSabbathDatabaseTable('khotbah', [], khotbahTableColumns, "Tabel Khotbah belum dapat dimuat.");
-  }
+  const khotbahRows = unwrapSettledResult(khotbahResult, "Tabel Khotbah");
+  khotbahScheduleList = khotbahRows || [];
+  renderSabbathDatabaseTable("khotbah", khotbahScheduleList, khotbahTableColumns, khotbahRows ? undefined : "Tabel Khotbah belum dapat dimuat.");
 
-  if (overrideResult.status === "fulfilled" && !overrideResult.value.error) {
-    worshipOverrideRows = overrideResult.value.data || [];
-  } else {
-    const message = overrideResult.status === "fulfilled"
-      ? overrideResult.value.error.message
-      : overrideResult.reason?.message;
-    console.warn("Supabase fetch Tabel Override Susunan error:", message);
-    worshipOverrideRows = [];
-  }
+  worshipOverrideRows = unwrapSettledResult(overrideResult, "Tabel Override Susunan") || [];
 
   await removeExpiredWorshipOverrides();
   applySabbathDatabaseRows();
 }
 
+/** Mengisi Informasi Umum "Pianis" susunan Sabat dari jadwal Pianis untuk Sabtu terdekat. */
 function syncNearestPosToWorship() {
   if (!posScheduleList || posScheduleList.length === 0) return;
 
@@ -3209,6 +3498,11 @@ function syncNearestPosToWorship() {
   }
 }
 
+// ------------------------------------------
+// Tabel Pianis (POS): render, urut, cari, geser, tambah/ubah/hapus
+// ------------------------------------------
+
+/** Merender tabel jadwal Pianis (pencarian + pengurutan + penghitung baris). */
 function renderPosTable() {
   const tbody = document.getElementById("pos-table-body");
   const countDisp = document.getElementById("pos-count-displayed");
@@ -3243,7 +3537,7 @@ function renderPosTable() {
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
+        <td colspan="3" style="text-align: center; padding: 40px 16px; color: var(--text-muted);">
           <i class="fa-solid fa-calendar-xmark" style="font-size: 1.8rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
           Tidak ada data jadwal POS yang sesuai dengan pencarian.
         </td>
@@ -3268,12 +3562,14 @@ function renderPosTable() {
   `).join("");
 }
 
+/** Mengubah "YYYY-MM-DD" menjadi "DD-MM-YYYY" untuk tampilan; nilai lain dikembalikan apa adanya. */
 function formatDateIndo(dateStr) {
   if (!dateStr) return "-";
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr));
   return match ? `${match[3]}-${match[2]}-${match[1]}` : String(dateStr);
 }
 
+/** Mengurutkan tabel POS berdasarkan kolom dan memperbarui ikon panah. */
 function sortPosTable(field) {
   if (posSortField === field) {
     posSortAsc = !posSortAsc;
@@ -3288,8 +3584,8 @@ function sortPosTable(field) {
     if (icon) {
       if (f === posSortField) {
         icon.className = posSortAsc
-          ? "fa-solid fa-sort-up th-sort-icon text-burgundy"
-          : "fa-solid fa-sort-down th-sort-icon text-burgundy";
+          ? "fa-solid fa-sort-up th-sort-icon text-navy"
+          : "fa-solid fa-sort-down th-sort-icon text-navy";
       } else {
         icon.className = "fa-solid fa-sort th-sort-icon";
       }
@@ -3299,6 +3595,7 @@ function sortPosTable(field) {
   renderPosTable();
 }
 
+/** Menerapkan pencarian pada tabel POS. */
 function filterPosTable() {
   const input = document.getElementById("pos-table-search");
   const clearBtn = document.getElementById("pos-search-clear");
@@ -3309,6 +3606,7 @@ function filterPosTable() {
   renderPosTable();
 }
 
+/** Mengosongkan pencarian tabel POS. */
 function clearPosSearch() {
   const input = document.getElementById("pos-table-search");
   const clearBtn = document.getElementById("pos-search-clear");
@@ -3318,6 +3616,7 @@ function clearPosSearch() {
   renderPosTable();
 }
 
+/** Menggeser semua tanggal Tabel Pianis sebanyak 7 hari (hanya baris ber-id UUID). */
 async function shiftPosWeek(direction, confirmed = false) {
   if (!confirmed) {
     openWeekShiftConfirm("pos", null, direction);
@@ -3328,27 +3627,17 @@ async function shiftPosWeek(direction, confirmed = false) {
     showToast("Tidak ada jadwal di Tabel Pianis untuk digeser.", "fa-solid fa-triangle-exclamation text-amber");
     return;
   }
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showToast("Gagal menggeser jadwal Tabel Pianis: Supabase belum terhubung.", "fa-solid fa-triangle-exclamation text-amber");
     return;
   }
 
-  const updatedRows = posScheduleList.map(item => {
-    const date = new Date(`${item.date}T00:00:00`);
-    if (!Number.isNaN(date.getTime())) {
-      date.setDate(date.getDate() - direction * 7);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return { ...item, date: `${year}-${month}-${day}` };
-    }
-    return { ...item };
-  });
+  const updatedRows = posScheduleList.map(item => ({ ...item, date: shiftIsoDate(item.date, -direction * 7) }));
 
   try {
     const results = await Promise.all(updatedRows.map(item => {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+      const isUUID = isUuid(item.id);
       if (!isUUID) {
         return Promise.resolve({ error: new Error(`ID jadwal ${item.id} tidak valid.`) });
       }
@@ -3358,7 +3647,7 @@ async function shiftPosWeek(direction, confirmed = false) {
     if (failedResult?.error) throw failedResult.error;
 
     posScheduleList = updatedRows;
-    savePosSchedule();
+    syncNearestPosToWorship();
     renderPosTable();
     const action = direction > 0 ? "dimajukan" : "dimundurkan";
     const offset = direction > 0 ? "-7" : "+7";
@@ -3370,26 +3659,23 @@ async function shiftPosWeek(direction, confirmed = false) {
   }
 }
 
+/** Membuka form tambah jadwal Pianis; tanggal diisi satu minggu setelah jadwal terakhir. */
 function openAddPosModal() {
   const form = document.getElementById("pos-add-form");
   if (form) form.reset();
 
   const dateInput = document.getElementById("pos-add-date");
   if (dateInput && posScheduleList.length > 0) {
-    const sorted = [...posScheduleList].sort((a, b) => new Date(b.date) - new Date(a.date));
-    const latestDate = new Date(sorted[0].date);
-    if (!isNaN(latestDate.getTime())) {
-      latestDate.setDate(latestDate.getDate() + 7);
-      const yyyy = latestDate.getFullYear();
-      const mm = String(latestDate.getMonth() + 1).padStart(2, "0");
-      const dd = String(latestDate.getDate()).padStart(2, "0");
-      dateInput.value = `${yyyy}-${mm}-${dd}`;
-    }
+    // Isi otomatis dengan satu minggu setelah jadwal terakhir.
+    const latest = [...posScheduleList].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    const nextDate = shiftIsoDate(latest.date, 7);
+    if (nextDate !== latest.date) dateInput.value = nextDate;
   }
 
   openModal("modal-pos-add");
 }
 
+/** Menambah jadwal Pianis: langsung tampil (optimistis dengan id sementara), lalu disimpan ke Supabase. */
 async function handleSaveNewPos(e) {
   e.preventDefault();
   const dateInput = document.getElementById("pos-add-date");
@@ -3403,13 +3689,13 @@ async function handleSaveNewPos(e) {
   };
 
   posScheduleList.unshift(newItem);
-  savePosSchedule();
+  syncNearestPosToWorship();
   closeModal("modal-pos-add");
   renderPosTable();
   showToast(`Menyimpan jadwal tanggal ${newItem.date}...`, "fa-solid fa-spinner fa-spin text-gold");
 
-  // Sync to Supabase
-  if (!supabaseClient) initSupabaseClient();
+  // Sinkronkan ke Supabase
+  initSupabaseClient();
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient.from("Tabel Pianis").insert([{
@@ -3422,7 +3708,7 @@ async function handleSaveNewPos(e) {
         showToast(`Gagal menyimpan ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
       } else if (data && data[0]) {
         newItem.id = data[0].id;
-        savePosSchedule();
+        syncNearestPosToWorship();
         renderPosTable();
         showToast(`Jadwal POS ${newItem.date} tersimpan di Supabase & Web!`, "fa-solid fa-circle-check text-emerald");
       }
@@ -3434,6 +3720,7 @@ async function handleSaveNewPos(e) {
   }
 }
 
+/** Membuka form ubah jadwal Pianis dengan data terisi. */
 function openEditPosModal(id) {
   const item = posScheduleList.find(p => String(p.id) === String(id));
   if (!item) return;
@@ -3449,6 +3736,7 @@ function openEditPosModal(id) {
   openModal("modal-pos-edit");
 }
 
+/** Menyimpan perubahan jadwal Pianis ke tampilan dan Supabase. */
 async function handleUpdatePos(e) {
   e.preventDefault();
   const idInput = document.getElementById("pos-edit-id");
@@ -3466,13 +3754,13 @@ async function handleUpdatePos(e) {
       pianist: pianistInput ? pianistInput.value.trim() : ""
     };
 
-    savePosSchedule();
+    syncNearestPosToWorship();
     closeModal("modal-pos-edit");
     renderPosTable();
     showToast(`Memperbarui jadwal tanggal ${posScheduleList[index].date}...`, "fa-solid fa-spinner fa-spin text-gold");
 
-    // Sync to Supabase
-    if (!supabaseClient) initSupabaseClient();
+    // Sinkronkan ke Supabase
+    initSupabaseClient();
     if (supabaseClient) {
       try {
         let query = supabaseClient.from("Tabel Pianis").update({
@@ -3480,7 +3768,7 @@ async function handleUpdatePos(e) {
           pianist: posScheduleList[index].pianist
         });
 
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+        const isUUID = isUuid(targetId);
         if (isUUID) {
           query = query.eq("id", targetId);
         } else {
@@ -3501,6 +3789,7 @@ async function handleUpdatePos(e) {
   }
 }
 
+/** Membuka konfirmasi hapus jadwal Pianis. */
 function openDeletePosModal(id) {
   const item = posScheduleList.find(p => String(p.id) === String(id));
   if (!item) return;
@@ -3514,6 +3803,7 @@ function openDeletePosModal(id) {
   openModal("modal-pos-delete");
 }
 
+/** Menghapus jadwal Pianis di Supabase lalu memperbarui tampilan. */
 async function confirmDeletePos() {
   const idInput = document.getElementById("pos-delete-id");
   const targetId = idInput ? idInput.value : "";
@@ -3523,7 +3813,7 @@ async function confirmDeletePos() {
   const deletedItem = posScheduleList[index];
   const deletedDate = deletedItem.date;
   closeModal("modal-pos-delete");
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showDeleteResult(false, "Supabase belum terhubung. Jadwal tidak dihapus.");
     return;
@@ -3531,7 +3821,7 @@ async function confirmDeletePos() {
 
   try {
     let query = supabaseClient.from("Tabel Pianis").delete();
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId);
+    const isUUID = isUuid(targetId);
     if (isUUID) {
       query = query.eq("id", targetId);
     } else {
@@ -3542,7 +3832,7 @@ async function confirmDeletePos() {
     if (error) throw error;
 
     posScheduleList.splice(index, 1);
-    savePosSchedule();
+    syncNearestPosToWorship();
     renderPosTable();
     showDeleteResult(true, `Jadwal POS tanggal ${deletedDate} berhasil dihapus.`);
   } catch (error) {
@@ -3552,22 +3842,35 @@ async function confirmDeletePos() {
 }
 
 // ==========================================
-// 15. TABEL DIREKTORI JEMAAT & PENGURUS ENGINE (DINAMIS SUPABASE)
+// 17. DIREKTORI JEMAAT & PENGURUS
+// Kontak dimuat dari Tabel Direktori; admin mengelola lewat tabel, publik melihat lewat kartu.
 // ==========================================
-// Data kontak sepenuhnya diambil secara aman & dinamis dari server Supabase.
+
+/** Kontak direktori hasil fetchDirectoryFromSupabase(): [{ id, category, name, role, phone, show_in_prayer, avatarIcon }]. */
 let directoryList = [];
+/** Kolom pengurutan tabel direktori admin. */
 let dirSortField = "category";
+/** Arah pengurutan tabel direktori (true = menaik). */
 let dirSortAsc = true;
+/** Kata kunci pencarian tabel direktori admin. */
 let dirSearchQuery = "";
+/** Filter kategori tabel direktori admin ("" = semua). */
 let dirCategoryFilter = "";
 
-function saveDirectoryData() {
+/** Menyegarkan tampilan publik yang bergantung pada directoryList: grid direktori & modal doa. */
+function refreshDirectoryViews() {
   renderPublicDirectory();
   renderPrayerModal();
 }
 
+/** Data lama memakai kategori "majelis_anggota"; seluruh kode kini memakai "majelis_dept". */
+function normalizeDirectoryCategory(category) {
+  return category === "majelis_anggota" ? "majelis_dept" : category;
+}
+
+/** Memilih ikon Font Awesome avatar berdasarkan kata kunci pada jabatan; jika tak cocok, memakai ikon kategori. */
 function getDirectoryAvatarIcon(category, role) {
-  const normalizedCategory = category === "majelis_anggota" ? "majelis_dept" : category;
+  const normalizedCategory = normalizeDirectoryCategory(category);
   const normalizedRole = String(role || "").toLowerCase();
   const roleIconRules = [
     { keywords: ["sekolah sabat", "sabbath school", "departemen ss", "dept ss", "ss/pp", "ss/pa"], icon: "fa-book-open" },
@@ -3599,10 +3902,12 @@ function getDirectoryAvatarIcon(category, role) {
   return categoryIcons[normalizedCategory] || "fa-user-shield";
 }
 
+/** true bila kontak berkategori "gembala" (Pendeta). */
 function isPastorContact(item) {
   return item.category === "gembala";
 }
 
+/** Kemiripan dua teks (0–1) berdasar jarak Levenshtein; dipakai untuk mengenali jabatan yang salah ketik. */
 function getOfficerRoleSimilarity(first, second) {
   const previousRow = Array.from({ length: second.length + 1 }, (_, index) => index);
 
@@ -3623,6 +3928,10 @@ function getOfficerRoleSimilarity(first, second) {
   return longestLength === 0 ? 1 : 1 - previousRow[second.length] / longestLength;
 }
 
+/**
+ * Urutan tampil Officers: Ketua Jemaat 1, Ketua Jemaat 2, Sekretaris, Bendahara, Asisten Bendahara.
+ * Pencocokan toleran (angka Romawi/kata, salah ketik kecil). @returns {number} 0–4, atau Infinity bila tidak cocok (diurutkan terakhir).
+ */
 function getOfficerRoleOrder(role) {
   const normalizedRole = String(role || "")
     .normalize("NFD")
@@ -3669,6 +3978,10 @@ function getOfficerRoleOrder(role) {
   return bestOrder;
 }
 
+/**
+ * Jumlah kontak non-Pendeta yang tampil di Permohonan Doa.
+ * @param {*} [excludeId] Id yang diabaikan (saat mengedit kontak itu sendiri).
+ */
 function countSelectedPrayerContacts(excludeId = null) {
   return directoryList.filter(item =>
     !isPastorContact(item) &&
@@ -3677,8 +3990,9 @@ function countSelectedPrayerContacts(excludeId = null) {
   ).length;
 }
 
+/** Memuat Tabel Direktori, menormalkan kategori, lalu merender tabel admin, direktori publik, dan modal doa. */
 async function fetchDirectoryFromSupabase() {
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) return;
 
   try {
@@ -3694,7 +4008,7 @@ async function fetchDirectoryFromSupabase() {
 
     if (data && data.length > 0) {
       directoryList = data.map(row => {
-        const category = row.category === "majelis_anggota" ? "majelis_dept" : row.category;
+        const category = normalizeDirectoryCategory(row.category);
         return {
           id: row.id,
           category,
@@ -3705,9 +4019,8 @@ async function fetchDirectoryFromSupabase() {
           avatarIcon: getDirectoryAvatarIcon(category, row.role)
         };
       });
-      saveDirectoryData();
+      refreshDirectoryViews();
       renderDirectoryTable();
-      renderPrayerModal();
     } else {
       renderDirectoryStatus("Belum ada data direktori yang tersedia.");
     }
@@ -3717,6 +4030,7 @@ async function fetchDirectoryFromSupabase() {
   }
 }
 
+/** Menampilkan pesan status (mis. galat memuat) di direktori publik selama data belum ada. */
 function renderDirectoryStatus(message) {
   const container = document.getElementById("directory-content");
   if (!container || directoryList.length > 0) return;
@@ -3729,6 +4043,7 @@ function renderDirectoryStatus(message) {
   `;
 }
 
+/** HTML badge kategori untuk tabel admin. */
 function getCategoryBadge(cat) {
   switch (cat) {
     case "gembala":
@@ -3743,6 +4058,7 @@ function getCategoryBadge(cat) {
   }
 }
 
+/** Menormalkan nomor telepon untuk tautan wa.me (hanya angka; awalan 0 menjadi 62). */
 function cleanPhoneForWa(phone) {
   if (!phone) return "";
   let clean = phone.replace(/[^0-9]/g, "");
@@ -3752,6 +4068,7 @@ function cleanPhoneForWa(phone) {
   return clean;
 }
 
+/** Merender tabel direktori admin (filter kategori + pencarian + pengurutan, toggle kontak doa, tombol Edit/Hapus). */
 function renderDirectoryTable() {
   const tbody = document.getElementById("directory-table-body");
   const countDisp = document.getElementById("dir-count-displayed");
@@ -3762,7 +4079,7 @@ function renderDirectoryTable() {
   if (catFilterSelect) dirCategoryFilter = catFilterSelect.value;
 
   let filtered = directoryList.filter(item => {
-    const itemCat = item.category === "majelis_anggota" ? "majelis_dept" : item.category;
+    const itemCat = normalizeDirectoryCategory(item.category);
     if (dirCategoryFilter && itemCat !== dirCategoryFilter) return false;
     if (!dirSearchQuery) return true;
     const q = dirSearchQuery.toLowerCase();
@@ -3798,7 +4115,7 @@ function renderDirectoryTable() {
   tbody.innerHTML = filtered.map(item => {
     const isPastor = isPastorContact(item);
     const isChecked = isPastor || item.show_in_prayer === true;
-    const isDisabled = isPastor || (!isChecked && countSelectedPrayerContacts() >= 2);
+    const isDisabled = isPastor || (!isChecked && countSelectedPrayerContacts() >= MAX_PRAYER_CONTACTS);
     return `
     <tr>
       <td>${getCategoryBadge(item.category)}</td>
@@ -3824,6 +4141,7 @@ function renderDirectoryTable() {
   }).join("");
 }
 
+/** Mengurutkan tabel direktori admin berdasarkan kolom dan memperbarui ikon panah. */
 function sortDirectoryTable(field) {
   if (dirSortField === field) {
     dirSortAsc = !dirSortAsc;
@@ -3837,13 +4155,14 @@ function sortDirectoryTable(field) {
     const icon = document.getElementById(`sort-icon-dir-${f}`);
     if (icon) {
       icon.className = (f === dirSortField)
-        ? (dirSortAsc ? "fa-solid fa-sort-up th-sort-icon text-burgundy" : "fa-solid fa-sort-down th-sort-icon text-burgundy")
+        ? (dirSortAsc ? "fa-solid fa-sort-up th-sort-icon text-navy" : "fa-solid fa-sort-down th-sort-icon text-navy")
         : "fa-solid fa-sort th-sort-icon";
     }
   });
   renderDirectoryTable();
 }
 
+/** Menerapkan pencarian pada tabel direktori admin. */
 function filterDirectoryTable() {
   const input = document.getElementById("directory-table-search");
   const clearBtn = document.getElementById("directory-search-clear");
@@ -3854,6 +4173,7 @@ function filterDirectoryTable() {
   renderDirectoryTable();
 }
 
+/** Mengosongkan pencarian tabel direktori admin. */
 function clearDirectorySearch() {
   const input = document.getElementById("directory-table-search");
   const clearBtn = document.getElementById("directory-search-clear");
@@ -3863,30 +4183,16 @@ function clearDirectorySearch() {
   renderDirectoryTable();
 }
 
+/** Membuka form tambah kontak dengan status toggle kontak doa yang sesuai. */
 function openAddDirectoryModal() {
   const form = document.getElementById("directory-add-form");
   if (form) form.reset();
   const addCategory = document.getElementById("dir-add-category");
   handleDirectoryCategoryChange("add", addCategory);
-  const addToggle = document.getElementById("dir-add-show-in-prayer");
-  const addMsg = document.getElementById("dir-add-prayer-limit-msg");
-  const isPastor = document.getElementById("dir-add-category")?.value === "gembala";
-  if (addToggle) {
-    addToggle.checked = isPastor;
-    addToggle.disabled = isPastor || countSelectedPrayerContacts() >= 2;
-    addToggle.dataset.autoCheckedForPastor = String(isPastor);
-  }
-  if (addMsg) {
-    if (!isPastor && countSelectedPrayerContacts() >= 2) {
-      addMsg.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
-      addMsg.style.display = "block";
-    } else {
-      addMsg.style.display = "none";
-    }
-  }
   openModal("modal-directory-add");
 }
 
+/** Mengganti ikon pada pilihan kategori sesuai nilai yang dipilih. */
 function updateDirectoryCategoryIcon(select) {
   const icon = select.parentElement.querySelector(".category-field-icon");
   if (!icon) return;
@@ -3899,6 +4205,10 @@ function updateDirectoryCategoryIcon(select) {
   icon.className = `input-icon category-field-icon fa-solid ${iconByCategory[select.value] || "fa-address-card"}`;
 }
 
+/**
+ * Saat kategori diubah: Pendeta otomatis tampil di doa (toggle terkunci); lainnya mengikuti batas MAX_PRAYER_CONTACTS.
+ * @param {"add"|"edit"} mode Form yang sedang dipakai.
+ */
 function handleDirectoryCategoryChange(mode, select) {
   updateDirectoryCategoryIcon(select);
   const checkbox = document.getElementById(`dir-${mode}-show-in-prayer`);
@@ -3917,13 +4227,14 @@ function handleDirectoryCategoryChange(mode, select) {
 
   if (checkbox.dataset.autoCheckedForPastor === "true") checkbox.checked = false;
   checkbox.dataset.autoCheckedForPastor = "false";
-  checkbox.disabled = !checkbox.checked && countSelectedPrayerContacts(editId) >= 2;
+  checkbox.disabled = !checkbox.checked && countSelectedPrayerContacts(editId) >= MAX_PRAYER_CONTACTS;
   if (message) {
     message.style.display = checkbox.disabled ? "block" : "none";
-    if (checkbox.disabled) message.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+    if (checkbox.disabled) message.textContent = PRAYER_LIMIT_MESSAGE;
   }
 }
 
+/** Menambah kontak: validasi batas kontak doa, tampil langsung (id sementara), lalu simpan ke Supabase. */
 async function handleSaveNewDirectory(e) {
   e.preventDefault();
   const cat = document.getElementById("dir-add-category").value;
@@ -3937,22 +4248,21 @@ async function handleSaveNewDirectory(e) {
   const showInPrayer = cat === "gembala" || document.getElementById("dir-add-show-in-prayer")?.checked === true;
   const newItem = { id: tempId, category: cat, name, role, phone, show_in_prayer: showInPrayer, avatarIcon };
 
-  // Enforce max 2 prayer contacts
+  // Tegakkan batas kontak doa
   if (showInPrayer && cat !== "gembala") {
-    if (countSelectedPrayerContacts() >= 2) {
+    if (countSelectedPrayerContacts() >= MAX_PRAYER_CONTACTS) {
       showToast("Maks. 2 kontak doa. Nonaktifkan salah satu dulu.", "fa-solid fa-triangle-exclamation");
       return;
     }
   }
 
   directoryList.push(newItem);
-  saveDirectoryData();
-  renderPrayerModal();
+  refreshDirectoryViews();
   closeModal("modal-directory-add");
   renderDirectoryTable();
   showToast(`Menyimpan kontak ${name}...`, "fa-solid fa-spinner fa-spin text-gold");
 
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (supabaseClient) {
     try {
       const { data, error } = await supabaseClient.from("Tabel Direktori").insert([{
@@ -3963,9 +4273,8 @@ async function handleSaveNewDirectory(e) {
         showToast(`Gagal menyimpan ke Supabase: ${error.message}`, "fa-solid fa-triangle-exclamation text-amber");
       } else if (data && data[0]) {
         newItem.id = data[0].id;
-        saveDirectoryData();
+        refreshDirectoryViews();
         renderDirectoryTable();
-        renderPrayerModal();
         showToast(`Kontak ${name} (${role}) tersimpan di Supabase!`, "fa-solid fa-circle-check text-emerald");
       }
     } catch (err) {
@@ -3974,29 +4283,30 @@ async function handleSaveNewDirectory(e) {
   }
 }
 
+/** Membuka form ubah kontak dengan data dan status toggle doa terisi. */
 function openEditDirectoryModal(id) {
   const item = directoryList.find(d => String(d.id) === String(id));
   if (!item) return;
 
   document.getElementById("dir-edit-id").value = item.id;
-  document.getElementById("dir-edit-category").value = (item.category === "majelis_anggota" ? "majelis_dept" : item.category);
+  document.getElementById("dir-edit-category").value = normalizeDirectoryCategory(item.category);
   handleDirectoryCategoryChange("edit", document.getElementById("dir-edit-category"));
   document.getElementById("dir-edit-name").value = item.name;
   document.getElementById("dir-edit-role").value = item.role;
   document.getElementById("dir-edit-phone").value = item.phone || "";
-  // Set prayer toggle
+  // Atur toggle kontak doa
   const editToggle = document.getElementById("dir-edit-show-in-prayer");
   const editMsg = document.getElementById("dir-edit-prayer-limit-msg");
   const isPastor = isPastorContact(item);
   const prayerCount = countSelectedPrayerContacts(id);
   if (editToggle) {
     editToggle.checked = isPastor || item.show_in_prayer === true;
-    editToggle.disabled = isPastor || (!editToggle.checked && prayerCount >= 2);
+    editToggle.disabled = isPastor || (!editToggle.checked && prayerCount >= MAX_PRAYER_CONTACTS);
     editToggle.dataset.autoCheckedForPastor = String(isPastor);
   }
   if (editMsg) {
-    if (!isPastor && !item.show_in_prayer && prayerCount >= 2) {
-      editMsg.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+    if (!isPastor && !item.show_in_prayer && prayerCount >= MAX_PRAYER_CONTACTS) {
+      editMsg.textContent = PRAYER_LIMIT_MESSAGE;
       editMsg.style.display = "block";
     } else {
       editMsg.style.display = "none";
@@ -4005,6 +4315,7 @@ function openEditDirectoryModal(id) {
   openModal("modal-directory-edit");
 }
 
+/** Menyimpan perubahan kontak ke tampilan dan Supabase (menegakkan batas kontak doa). */
 async function handleUpdateDirectory(e) {
   e.preventDefault();
   const id = document.getElementById("dir-edit-id").value;
@@ -4019,25 +4330,24 @@ async function handleUpdateDirectory(e) {
     const avatarIcon = getDirectoryAvatarIcon(cat, role);
     const showInPrayer = cat === "gembala" || document.getElementById("dir-edit-show-in-prayer")?.checked === true;
 
-    // Enforce max 2 prayer contacts (excluding this item)
+    // Tegakkan batas kontak doa (tidak menghitung kontak ini sendiri)
     if (showInPrayer && cat !== "gembala" && (oldItem.category === "gembala" || !oldItem.show_in_prayer)) {
-      if (countSelectedPrayerContacts(id) >= 2) {
+      if (countSelectedPrayerContacts(id) >= MAX_PRAYER_CONTACTS) {
         showToast("Maks. 2 kontak doa. Nonaktifkan salah satu dulu.", "fa-solid fa-triangle-exclamation");
         return;
       }
     }
 
     directoryList[index] = { ...directoryList[index], category: cat, name, role, phone, show_in_prayer: showInPrayer, avatarIcon };
-    saveDirectoryData();
+    refreshDirectoryViews();
     closeModal("modal-directory-edit");
     renderDirectoryTable();
-    renderPrayerModal();
 
-    if (!supabaseClient) initSupabaseClient();
+    initSupabaseClient();
     if (supabaseClient) {
       try {
         let query = supabaseClient.from("Tabel Direktori").update({ category: cat, name, role, phone: phone || null, avatar_icon: avatarIcon, show_in_prayer: showInPrayer });
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        const isUUID = isUuid(id);
         const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", oldItem.name));
 
         if (error) {
@@ -4052,6 +4362,7 @@ async function handleUpdateDirectory(e) {
   }
 }
 
+/** Membuka konfirmasi hapus kontak. */
 function openDeleteDirectoryModal(id) {
   const item = directoryList.find(d => String(d.id) === String(id));
   if (!item) return;
@@ -4060,6 +4371,7 @@ function openDeleteDirectoryModal(id) {
   openModal("modal-directory-delete");
 }
 
+/** Menghapus kontak di Supabase lalu memperbarui tampilan. */
 async function confirmDeleteDirectory() {
   const id = document.getElementById("dir-delete-id").value;
   const index = directoryList.findIndex(d => String(d.id) === String(id));
@@ -4067,7 +4379,7 @@ async function confirmDeleteDirectory() {
 
   const deletedItem = directoryList[index];
   closeModal("modal-directory-delete");
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (!supabaseClient) {
     showDeleteResult(false, "Supabase belum terhubung. Kontak tidak dihapus.");
     return;
@@ -4075,12 +4387,12 @@ async function confirmDeleteDirectory() {
 
   try {
     let query = supabaseClient.from("Tabel Direktori").delete();
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isUUID = isUuid(id);
     const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", deletedItem.name));
     if (error) throw error;
 
     directoryList.splice(index, 1);
-    saveDirectoryData();
+    refreshDirectoryViews();
     renderDirectoryTable();
     showDeleteResult(true, `Kontak ${deletedItem.name} berhasil dihapus.`);
   } catch (error) {
@@ -4089,6 +4401,11 @@ async function confirmDeleteDirectory() {
   }
 }
 
+// ------------------------------------------
+// Direktori publik (tab Direktori)
+// ------------------------------------------
+
+/** Merender direktori publik: kartu per kategori (Pendeta, Officers terurut jabatan, Majelis & Departemen). */
 function renderPublicDirectory() {
   const container = document.getElementById("directory-content");
   if (!container) return;
@@ -4096,7 +4413,7 @@ function renderPublicDirectory() {
   if (!directoryList || directoryList.length === 0) {
     container.innerHTML = `
       <div class="directory-loading" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-burgundy);"></i>
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-navy);"></i>
         <span style="font-size: 0.95rem; font-weight: 500;">Memuat data direktori dari database Supabase...</span>
       </div>
     `;
@@ -4105,12 +4422,12 @@ function renderPublicDirectory() {
 
   const categories = [
     { key: "gembala", title: '<i class="fa-solid fa-crown text-gold"></i> Pendeta / Gembala Jemaat' },
-    { key: "officers", title: '<i class="fa-solid fa-user-gear text-burgundy"></i> Officers Jemaat' },
+    { key: "officers", title: '<i class="fa-solid fa-user-gear text-navy"></i> Officers Jemaat' },
     { key: "majelis_dept", title: '<i class="fa-solid fa-users-line text-gold"></i> Majelis & Pengurus Departemen' }
   ];
 
   container.innerHTML = categories.map((cat, idx) => {
-    const items = directoryList.filter(d => (d.category === "majelis_anggota" ? "majelis_dept" : d.category) === cat.key);
+    const items = directoryList.filter(d => normalizeDirectoryCategory(d.category) === cat.key);
     if (cat.key === "officers") {
       items.sort((a, b) => {
         const orderA = getOfficerRoleOrder(a.role);
@@ -4135,6 +4452,7 @@ function renderPublicDirectory() {
   }).join("");
 }
 
+/** Menyaring kartu direktori publik berdasarkan nama atau jabatan. */
 function filterDirectory() {
   const input = document.getElementById("directory-search-input");
   if (!input) return;
@@ -4156,11 +4474,14 @@ function filterDirectory() {
 }
 
 // ==========================================
-// PRAYER MODAL & CONTACT TOGGLE HELPERS
+// 18. PERMOHONAN DOA (MODAL & KONTAK WHATSAPP)
+// Menampilkan Pendeta (selalu) + maks. MAX_PRAYER_CONTACTS kontak pilihan admin.
 // ==========================================
 
 /**
- * Build a WA button HTML string for a directory contact.
+ * HTML tombol WhatsApp untuk satu kontak, dengan pesan permohonan doa terisi otomatis.
+ * @param {object} item Kontak direktori.
+ * @param {string} [label] Judul tombol (default: jabatan).
  */
 function buildPrayerWaButton(item, label) {
   const phoneClean = cleanPhoneForWa(item.phone);
@@ -4179,20 +4500,16 @@ function buildPrayerWaButton(item, label) {
     </a>`;
 }
 
-/**
- * Re-render the prayer modal content dynamically from directoryList.
- * - Pastor (category=gembala) always shown first
- * - Up to 2 contacts with show_in_prayer = true shown below
- */
+/** Merender isi modal Permohonan Doa dari directoryList: Pendeta selalu di atas, lalu maks. MAX_PRAYER_CONTACTS kontak terpilih (urut jabatan). */
 function renderPrayerModal() {
   const pastorEl = document.getElementById("prayer-pastor-contact");
   const extraEl = document.getElementById("prayer-extra-contacts");
   const noContactEl = document.getElementById("prayer-no-contact");
   if (!pastorEl || !extraEl || !noContactEl) return;
 
-  // Get pastor(s)
+  // Pendeta (selalu tampil pertama)
   const pastor = directoryList.find(isPastorContact);
-  // The two optional contacts are separate from the always-visible pastor.
+  // Kontak pilihan terpisah dari Pendeta yang selalu tampil.
   const prayerContacts = directoryList
     .filter(d => !isPastorContact(d) && d.show_in_prayer === true)
     .sort((a, b) => {
@@ -4200,7 +4517,7 @@ function renderPrayerModal() {
       const orderB = getOfficerRoleOrder(b.role);
       return orderA === orderB ? 0 : orderA - orderB;
     })
-    .slice(0, 2);
+    .slice(0, MAX_PRAYER_CONTACTS);
 
   let hasAny = false;
 
@@ -4225,35 +4542,31 @@ function renderPrayerModal() {
   noContactEl.style.display = hasAny ? "none" : "";
 }
 
-/**
- * Toggle show_in_prayer for a directory item directly from the admin table toggle.
- */
+/** Handler toggle di tabel admin: mengatur tampil/tidaknya kontak di Permohonan Doa (Pendeta selalu tampil; batas MAX_PRAYER_CONTACTS ditegakkan) dan menyinkronkan ke Supabase. */
 async function togglePrayerContact(id, checked) {
   const index = directoryList.findIndex(d => String(d.id) === String(id));
   if (index === -1) return;
   if (isPastorContact(directoryList[index])) {
     directoryList[index].show_in_prayer = true;
-    saveDirectoryData();
+    refreshDirectoryViews();
     renderDirectoryTable();
-    renderPrayerModal();
     return;
   }
 
-  if (checked && countSelectedPrayerContacts(id) >= 2) {
+  if (checked && countSelectedPrayerContacts(id) >= MAX_PRAYER_CONTACTS) {
     showToast("Maks. 2 kontak doa sudah tercapai. Nonaktifkan salah satu dulu.", "fa-solid fa-triangle-exclamation");
     renderDirectoryTable(); // re-render to reset checkbox
     return;
   }
 
   directoryList[index].show_in_prayer = checked;
-  saveDirectoryData();
+  refreshDirectoryViews();
   renderDirectoryTable();
-  renderPrayerModal();
 
-  if (!supabaseClient) initSupabaseClient();
+  initSupabaseClient();
   if (supabaseClient) {
     try {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      const isUUID = isUuid(id);
       const query = supabaseClient.from("Tabel Direktori").update({ show_in_prayer: checked });
       const { error } = await (isUUID ? query.eq("id", id) : query.eq("name", directoryList[index].name));
       if (error) {
@@ -4272,7 +4585,8 @@ async function togglePrayerContact(id, checked) {
 }
 
 /**
- * Handle the prayer toggle in the add/edit modal to show limit warning.
+ * Handler toggle pada form tambah/ubah kontak: menolak bila batas kontak doa tercapai dan menampilkan peringatan.
+ * @param {"add"|"edit"} mode
  */
 function handlePrayerToggleChange(mode, checkbox) {
   const msgEl = document.getElementById(`dir-${mode}-prayer-limit-msg`);
@@ -4284,15 +4598,15 @@ function handlePrayerToggleChange(mode, checkbox) {
     return;
   }
   if (!checkbox.checked) {
-    checkbox.disabled = countSelectedPrayerContacts(editId) >= 2;
+    checkbox.disabled = countSelectedPrayerContacts(editId) >= MAX_PRAYER_CONTACTS;
     if (msgEl) msgEl.style.display = "none";
     return;
   }
   const prayerCount = countSelectedPrayerContacts(editId);
-  if (prayerCount >= 2) {
+  if (prayerCount >= MAX_PRAYER_CONTACTS) {
     checkbox.checked = false;
     if (msgEl) {
-      msgEl.textContent = "Sudah ada 2 kontak doa. Nonaktifkan salah satu terlebih dahulu.";
+      msgEl.textContent = PRAYER_LIMIT_MESSAGE;
       msgEl.style.display = "block";
     }
   } else {
@@ -4302,8 +4616,10 @@ function handlePrayerToggleChange(mode, checkbox) {
 
 
 // ==========================================
-// 15. PENGUMUMAN (SUPABASE)
+// 19. PENGUMUMAN BERANDA
 // ==========================================
+
+/** Memuat pengumuman terbaru dari tabel "Pengumuman" ke Beranda dan kolom editor admin. */
 async function fetchPengumuman() {
   if (!supabaseClient) return;
   const teksEl = document.getElementById("teks-pengumuman");
@@ -4330,6 +4646,7 @@ async function fetchPengumuman() {
   }
 }
 
+/** Menyimpan pengumuman baru (insert baris baru; yang tampil selalu yang terbaru). */
 async function simpanPengumuman() {
   if (!supabaseClient) {
     showToast("Gagal: Koneksi database terputus", "fa-solid fa-triangle-exclamation");

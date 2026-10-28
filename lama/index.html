@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah</title>
+  <meta name="description"
+    content="Aplikasi resmi GMAHK Taman Gethsemane. Informasi Ibadah Sabat, Sejarah Gereja, Renungan, Persembahan & Warta Jemaat.">
+  <meta name="theme-color" content="#0f2b5c">
+
+  <!-- Favicon / Tab Site Icon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="alternate icon" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="GMAHK Taman Gethsemane - Aplikasi Web & Susunan Ibadah">
+  <meta property="og:description"
+    content="Informasi Ibadah Sabat, Sejarah Gereja, Renungan, dan Persembahan GMAHK Taman Gethsemane.">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts: Cinzel & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Supabase JS Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ==================== APP CONTAINER & SHELL ==================== -->
+  <div class="app-wrapper" id="app-wrapper">
+    <div class="app-shell" id="app-shell">
+
+      <!-- APP HEADER -->
+      <header class="app-header">
+        <div class="header-container">
+          <div class="header-brand">
+            <div class="brand-logo">
+              <img src="favicon.svg" alt="GMAHK Taman Gethsemane Logo"
+                style="width: 26px; height: 26px; border-radius: 6px; display: block;">
+            </div>
+            <div class="brand-text">
+              <span class="brand-title">GMAHK Taman Gethsemane</span>
+              <span class="brand-sub">Warta & Susunan Ibadah</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button id="btn-admin-login" class="header-btn btn-admin-nav" title="Login Admin / Pengurus"
+              onclick="handleAdminNavClick()">
+              <i id="admin-btn-icon" class="fa-solid fa-user-gear"></i> <span id="admin-btn-text"
+                class="admin-btn-label">Login Admin</span>
+            </button>
+            <button id="btn-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang">
+              <i class="fa-solid fa-moon"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT TABS -->
+      <main class="app-body">
+        <div class="body-container">
+
+          <!-- ==================== TAB 1: HOME ==================== -->
+          <section id="tab-home" class="tab-content active">
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+              <div class="hero-overlay"></div>
+              <div class="hero-content">
+                <span class="hero-chip"><i class="fa-solid fa-cross"></i> Ayat Sabat Ini</span>
+                <h2 class="hero-title">"Ingatlah dan kuduskanlah hari Sabat"</h2>
+                <p class="hero-verse">Keluaran 20:8</p>
+                <div class="hero-actions">
+                  <button class="btn-hero" onclick="switchTab('tab-worship')">
+                    <i class="fa-solid fa-book-open"></i> Susunan Ibadah Sabat
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visi & Misi GMAHK Card -->
+            <div class="section-container">
+              <div class="vm-card">
+                <div class="vm-grid">
+                  <div class="vm-item vm-misi">
+                    <div class="vm-header">
+                      <div class="vm-icon icon-blue">
+                        <i class="fa-solid fa-compass"></i>
+                      </div>
+                      <h4>Misi Kita</h4>
+                    </div>
+                    <p class="vm-text">
+                      Menjadikan murid Yesus Kristus, yang hidup sebagai saksiNya yang penuh kasih dan memberitakan
+                      kepada semua orang Injil yang kekal dari Pekabaran Tiga Malaikat sebagai persiapan untuk
+                      kedatanganNya yang segera (Matius 28:18–20; Kisah 1:8; Wahyu 14:6–12).
+                    </p>
+                  </div>
+
+                  <div class="vm-item vm-visi">
+                    <div class="vm-header">
+                      <div class="vm-icon icon-gold">
+                        <i class="fa-solid fa-eye"></i>
+                      </div>
+                      <h4>Visi Kita</h4>
+                    </div>
+                    <p class="vm-text">
+                      Selaras dengan wahyu Alkitab, Gereja Masehi Advent Hari Ketujuh melihat sebagai klimaks dari
+                      rencana Allah untuk memulihkan segenap ciptaanNya untuk menjadi selaras sepenuhnya dengan kehendak
+                      dan kebenaranNya.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Action Buttons Grid -->
+            <div class="section-container">
+              <h3 class="section-title"><i class="fa-solid fa-bolt text-gold"></i> Akses Cepat</h3>
+              <div class="quick-grid">
+                <button class="quick-card" onclick="switchTab('tab-directory')">
+                  <div class="quick-icon icon-navy">
+                    <i class="fa-solid fa-address-book"></i>
+                  </div>
+                  <span class="quick-label">Direktori Jemaat</span>
+                  <span class="quick-sub">Pengurus & Majelis</span>
+                </button>
+
+                <button class="quick-card" onclick="openModal('modal-schedule')">
+                  <div class="quick-icon icon-gold">
+                    <i class="fa-solid fa-clock"></i>
+                  </div>
+                  <span class="quick-label">Waktu Ibadah</span>
+                  <span class="quick-sub">Sabat & Vesper</span>
+                </button>
+
+                <button class="quick-card" onclick="switchTab('tab-donate')">
+                  <div class="quick-icon icon-emerald">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                  </div>
+                  <span class="quick-label">Persembahan</span>
+                  <span class="quick-sub">Transfer Bank</span>
+                </button>
+
+                <button class="quick-card" onclick="openModal('modal-prayer')">
+                  <div class="quick-icon icon-blue">
+                    <i class="fa-solid fa-hands-praying"></i>
+                  </div>
+                  <span class="quick-label">Kontak & Doa</span>
+                  <span class="quick-sub">Layanan Jemaat</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Announcement & Sabbath Verse Card -->
+            <div class="section-container">
+              <div class="info-card info-card-gradient">
+                <div class="info-header" style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-bullhorn text-gold"></i>
+                    <h4 style="margin: 0;">Pengumuman Penting Sabat Ini</h4>
+                  </div>
+                  <button class="btn-edit" onclick="openModal('modal-edit-pengumuman')" id="btn-edit-pengumuman"
+                    style="background: var(--accent-emerald); border: none; padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer; font-size: 0.85rem; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                    <i class="fa-solid fa-pen"></i> Edit
+                  </button>
+                </div>
+                <p class="info-body" id="teks-pengumuman" style="white-space: pre-line;">Memuat pengumuman...</p>
+                <div class="info-footer">
+                  <span class="badge-pill"><i class="fa-regular fa-calendar"></i> Sabat, 09:00 WIB</span>
+                  <span class="badge-pill"><i class="fa-solid fa-location-dot"></i> Gedung Gereja Utama</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kegiatan Jemaat -->
+            <div class="section-container">
+              <h3 class="section-title mt-4"><i class="fa-solid fa-images text-gold"></i> Kegiatan Jemaat</h3>
+              <div class="gallery-event-grid" id="gallery-event-grid">
+                <p class="gallery-events-status" id="gallery-events-status">Memuat dokumentasi...</p>
+              </div>
+            </div>
+
+            <!-- Google Maps Location Widget -->
+            <div class="section-container">
+              <h3 class="section-title"><i class="fa-solid fa-map-location-dot text-gold"></i> Lokasi Gereja</h3>
+              <div class="map-card">
+                <div class="map-wrapper">
+                  <iframe
+                    src="https://maps.google.com/maps?q=Jl.+Brigjend+Katamso+No.257,+Mekar+Raya+Binangun,+Janti,+Kec.+Waru,+Kabupaten+Sidoarjo,+Jawa+Timur+61256&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                    width="100%" height="280" style="border:0;" allowfullscreen="" loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade" title="Lokasi GMAHK Taman Gethsemane">
+                  </iframe>
+                </div>
+                <div class="map-details">
+                  <div class="map-address">
+                    <strong>GMAHK Taman Gethsemane</strong>
+                    <p>Jl. Brigjend Katamso No.257, Mekar Raya Binangun, Janti, Kec. Waru, Kabupaten Sidoarjo, Jawa
+                      Timur 61256</p>
+                  </div>
+                  <div class="map-buttons">
+                    <a href="https://maps.app.goo.gl/aroJndf6yvEmBBW98" target="_blank" rel="noopener"
+                      class="btn-map btn-map-solid">
+                      <i class="fa-solid fa-map-location-dot"></i> Buka Google Maps & Petunjuk Arah
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Google Maps Rating & Review Widget -->
+            <div class="section-container">
+              <h3 class="section-title"><i class="fa-solid fa-star text-gold"></i> Kesan & Penilaian Jemaat</h3>
+              <div class="rating-card text-center-card">
+                <div class="rating-icon-header">
+                  <div class="rating-stars-badge">
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                    <i class="fa-solid fa-star text-gold"></i>
+                  </div>
+                  <h4>Beri Ulasan & Rating Gereja</h4>
+                  <p>Bagaimana pengalaman ibadah & pelayanan GMAHK Taman Gethsemane? Bagikan ulasan dan penilaian
+                    bintang 5 Anda langsung di Google Maps untuk membantu perkembangan jemaat kita.</p>
+                </div>
+
+                <div class="rating-cta-container">
+                  <a href="https://maps.app.goo.gl/aroJndf6yvEmBBW98" target="_blank" rel="noopener"
+                    class="btn-google-rating">
+                    <i class="fa-brands fa-google"></i>
+                    <span>Beri Rating di Google Maps</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                  </a>
+                </div>
+              </div>
+
+              <div class="social-follow-card">
+                <div class="social-follow-copy">
+                  <span class="social-follow-eyebrow">Tetap terhubung</span>
+                  <h4>Ikuti Sosial Media Kami</h4>
+                  <p>Lihat kabar, kegiatan, dan momen kebersamaan jemaat di Instagram.</p>
+                </div>
+                <a href="https://www.instagram.com/tahestroops" target="_blank" rel="noopener noreferrer"
+                  class="btn-instagram-follow" aria-label="Ikuti Instagram @tahestroops">
+                  <i class="fa-brands fa-instagram"></i>
+                  <span><strong>Instagram</strong><small>@tahestroops</small></span>
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+              </div>
+            </div>
+
+            <footer class="home-credit">
+              <p>© 2026 - v1.0.0. GMAHK Taman Gethsemane. All rights reserved.</p>
+              <p>Developed by <strong><a href="https://github.com/MeakhelG" target="_blank"
+                    rel="noopener noreferrer">Meakhel Gunawan</a></strong></p>
+            </footer>
+          </section>
+
+          <section id="tab-gallery-viewer" class="tab-content">
+            <div class="gallery-viewer-page">
+              <button class="gallery-back-button" type="button" onclick="closeGalleryEvent()">
+                <i class="fa-solid fa-arrow-left"></i> Galeri Dokumentasi
+              </button>
+              <header class="gallery-viewer-heading">
+                <span class="gallery-viewer-kicker"><i class="fa-solid fa-photo-film"></i> Dokumentasi Jemaat</span>
+                <h2 id="gallery-viewer-title"></h2>
+                <p id="gallery-viewer-subtitle"></p>
+              </header>
+              <div class="gallery-slide-frame" id="gallery-slide-frame">
+                <iframe id="gallery-slides-frame" src="about:blank" title="Presentasi dokumentasi jemaat"
+                  allow="fullscreen" allowfullscreen loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"></iframe>
+              </div>
+              <p class="gallery-viewer-status" id="gallery-viewer-status" role="status" hidden></p>
+            </div>
+          </section>
+
+          <!-- ==================== TAB 2: SEJARAH ==================== -->
+          <section id="tab-history" class="tab-content">
+            <div class="history-page">
+              <header class="history-intro">
+                <div class="history-intro-copy">
+                  <span class="history-kicker"><i class="fa-solid fa-book-open"></i> Catatan Perjalanan Iman</span>
+                  <h2 class="history-title">Dari Perkumpulan Doa Menjadi Jemaat</h2>
+                  <p class="history-description">
+                    Kisah kebersamaan anggota GMAHK Sepanjang yang bertumbuh menjadi Jemaat Taman Gethsemane, dalam
+                    penyertaan Tuhan.
+                  </p>
+                </div>
+                <div class="history-highlights" aria-label="Ringkasan sejarah jemaat">
+                  <div class="history-highlight">
+                    <span class="history-highlight-icon"><i class="fa-solid fa-people-group"></i></span>
+                    <strong>23</strong>
+                    <span>anggota memulai perkumpulan doa</span>
+                  </div>
+                  <div class="history-highlight">
+                    <span class="history-highlight-icon"><i class="fa-solid fa-calendar-check"></i></span>
+                    <strong>27 Jan 2018</strong>
+                    <span>kebaktian pertama</span>
+                  </div>
+                  <div class="history-highlight">
+                    <span class="history-highlight-icon"><i class="fa-solid fa-church"></i></span>
+                    <strong>Jemaat ke-73</strong>
+                    <span>di KJKT sejak 24 Maret 2019</span>
+                  </div>
+                </div>
+              </header>
+
+              <section class="history-section" aria-labelledby="history-timeline-title">
+                <div class="history-section-heading">
+                  <div>
+                    <span class="history-section-kicker">2017 — 2019</span>
+                    <h3 id="history-timeline-title">Perjalanan Jemaat</h3>
+                  </div>
+                  <p>Dari pertemuan pertama hingga diorganisasi sebagai jemaat.</p>
+                </div>
+
+                <div class="history-timeline">
+                  <article class="history-event">
+                    <div class="history-event-date"><span>Sep — Des</span><strong>2017</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-people-group"></i></div>
+                    <div class="history-event-body">
+                      <h4>Memilih untuk bertumbuh bersama</h4>
+                      <p>Sejumlah anggota GMAHK Sepanjang berkumpul untuk membicarakan pembentukan jemaat baru atau
+                        pindah ke jemaat lain. Mereka memilih tetap bersama dan mempertimbangkan perkumpulan doa atau
+                        Sekolah Sabat Cabang. Pertemuan pertama berlangsung di Canela Resort.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>27 Januari</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-house"></i></div>
+                    <div class="history-event-body">
+                      <h4>Kebaktian pertama di kediaman Ibu Dewi Sianturi</h4>
+                      <p>Dengan 23 anggota, Perkumpulan Doa Taman Gethsemane dibentuk dan mengadakan kebaktian
+                        pertamanya.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>18 Maret</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-file-signature"></i></div>
+                    <div class="history-event-body">
+                      <h4>Disahkan di bawah KJKT</h4>
+                      <p>Perkumpulan Doa Taman Gethsemane resmi disahkan di bawah Konferens Jawa Kawasan Timur
+                        berdasarkan keputusan Executive Committee.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>24 — 31 Maret</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-hands-praying"></i></div>
+                    <div class="history-event-body">
+                      <h4>Perjamuan Suci dan pelayanan pertama</h4>
+                      <p>Perjamuan Suci pertama dilaksanakan bersama anggota Sekolah Sabat Cabang Peduli Kasih pada
+                        24 Maret. Seminggu kemudian, jemaat melayani di GMAHK Tunjungrejo, Lumajang.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event">
+                    <div class="history-event-date"><span>Juli</span><strong>2018</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-heart"></i></div>
+                    <div class="history-event-body">
+                      <h4>Bersyukur dan melayani lebih luas</h4>
+                      <p>Pada 1 Juli diadakan kebaktian ucapan syukur atas terbentuknya PDTG. Jemaat juga beribadah
+                        beberapa kali di Rusunawa Sumurwelut dan mengadakan pelayanan kedua ke GMAHK Sumberwekas.</p>
+                    </div>
+                  </article>
+
+                  <article class="history-event history-event-foundation">
+                    <div class="history-event-date"><span>24 Maret</span><strong>2019</strong></div>
+                    <div class="history-event-marker"><i class="fa-solid fa-church"></i></div>
+                    <div class="history-event-body">
+                      <h4>Diorganisasi menjadi Jemaat Taman Gethsemane</h4>
+                      <p>Atas berkat dan kasih karunia Tuhan, Taman Gethsemane diresmikan sebagai jemaat ke-73 di
+                        Konferens Jawa Kawasan Timur.</p>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section class="history-section ministry-section" aria-labelledby="ministry-title">
+                <div class="history-section-heading">
+                  <div>
+                    <span class="history-section-kicker">Pelayanan pastoral</span>
+                    <h3 id="ministry-title">Pendeta yang Pernah Melayani</h3>
+                  </div>
+                  <p>Nama, masa pelayanan, dan catatan keluarga dari daftar jemaat.</p>
+                </div>
+
+                <div class="minister-grid">
+
+                  <!-- 01 -->
+                  <article class="minister-card minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdt.%20Eben%20Sembiring.jpg"
+                          alt="Foto Pdt. Eben Sembiring" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">01</span>
+                          <span class="minister-period">Jan — Mar 2018</span>
+                        </div>
+
+                        <h4>Pdt. Eben Sembiring</h4>
+
+                        <p class="minister-note">
+                          Membantu proses perpindahan anggota dari GMAHK Sepanjang ke anggota GMAHK KJKT.
+                        </p>
+                      </div>
+                    </div>
+
+                    <details class="minister-family">
+                      <summary>
+                        <i class="fa-solid fa-people-roof"></i> Keluarga
+                      </summary>
+
+                      <dl>
+                        <dt>Istri</dt>
+                        <dd>Silvia Grace Ita Br. Tarigan</dd>
+
+                        <dt>Anak</dt>
+                        <dd>
+                          <ol>
+                            <li>Steve Bravin Mahanaim Sembiring</li>
+                            <li>Stevany Delicia Karyna Sembiring</li>
+                            <li>Sherina Bevie Vanya Sembiring</li>
+                          </ol>
+                        </dd>
+                      </dl>
+                    </details>
+                  </article>
+
+
+                  <!-- 02 -->
+                  <article class="minister-card minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdt.%20Kristiyono%20Sarjono.jpg"
+                          alt="Foto Pdt. Kristiyono Sarjono" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">02</span>
+                          <span class="minister-period">Jul 2018 — Jun 2019</span>
+                        </div>
+
+                        <h4>Pdt. Kristiyono Sarjono</h4>
+
+                        <p class="minister-note">
+                          Mengkoordinir Perkumpulan Doa Taman Gethsemane hingga terbentuknya jemaat.
+                        </p>
+                      </div>
+                    </div>
+
+                    <details class="minister-family">
+                      <summary>
+                        <i class="fa-solid fa-people-roof"></i> Keluarga
+                      </summary>
+
+                      <dl>
+                        <dt>Istri</dt>
+                        <dd>Shirley Yulia Pradana</dd>
+
+                        <dt>Anak</dt>
+                        <dd>
+                          <ol>
+                            <li>Moses Kristleyson Sarjono</li>
+                            <li>Bezalel Tioleyson Sarjono</li>
+                          </ol>
+                        </dd>
+                      </dl>
+                    </details>
+                  </article>
+
+
+                  <!-- 03 -->
+                  <article class="minister-card">
+                    <div class="minister-card-summary">
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">03</span>
+                          <span class="minister-period">Mei — Jul 2018</span>
+                        </div>
+
+                        <h4>PHD Hendika Simbolon</h4>
+
+                        <p class="minister-note">
+                          Pendeta Hari Depan / calon pendeta muda dari UNAI (trainee).
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+
+
+                  <!-- 04 -->
+                  <article class="minister-card minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdtm.%20Herwan%20Oroh.jpg"
+                          alt="Foto Pdtm. Herwan Oroh" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">04</span>
+                          <span class="minister-period">Jun 2019 — Jan 2022</span>
+                        </div>
+
+                        <h4>Pdtm. Herwan Oroh</h4>
+
+                        <p class="minister-note">
+                          Pendeta pertama yang melayani Jemaat Taman Gethsemane.
+                        </p>
+                      </div>
+                    </div>
+
+                    <details class="minister-family">
+                      <summary>
+                        <i class="fa-solid fa-people-roof"></i> Keluarga
+                      </summary>
+
+                      <dl>
+                        <dt>Istri</dt>
+                        <dd>Lunar Lesterina Siahaan</dd>
+
+                        <dt>Anak</dt>
+                        <dd>
+                          <ol>
+                            <li>Heine Ruth Cynthia Oroh</li>
+                            <li>Misael Theodorus Oroh</li>
+                          </ol>
+                        </dd>
+                      </dl>
+                    </details>
+                  </article>
+
+
+                  <!-- 05 -->
+                  <article class="minister-card minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdt.%20Pancarury%20Permadi%20Karsum.jpg"
+                          alt="Foto Pdt. Pancarury Permadi Karsum" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">05</span>
+                          <span class="minister-period">Jan 2022 — Jun 2023</span>
+                        </div>
+
+                        <h4>Pdt. Pancarury Permadi Karsum</h4>
+
+                        <p class="minister-note">
+                          Pendeta kedua yang melayani Jemaat Taman Gethsemane.
+                        </p>
+                      </div>
+                    </div>
+
+                    <details class="minister-family">
+                      <summary>
+                        <i class="fa-solid fa-people-roof"></i> Keluarga
+                      </summary>
+
+                      <dl>
+                        <dt>Istri</dt>
+                        <dd>Dewi Ernawati Apriliana</dd>
+
+                        <dt>Anak</dt>
+                        <dd>
+                          <ol>
+                            <li>Abhinaya Sabbathian Irawan Karsum</li>
+                            <li>Larasati Putri Karsum</li>
+                          </ol>
+                        </dd>
+                      </dl>
+                    </details>
+                  </article>
+
+
+                  <!-- 06 -->
+                  <article class="minister-card minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdtm.%20Sarpan%20Sanggalangi.jpg"
+                          alt="Foto Pdtm. Sarpan Sanggalangi" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">06</span>
+                          <span class="minister-period">Jul 2023 — Jul 2024</span>
+                        </div>
+
+                        <h4>Pdtm. Sarpan Sanggalangi</h4>
+
+                        <p class="minister-note">
+                          Pendeta ketiga yang melayani Jemaat Taman Gethsemane.
+                        </p>
+                      </div>
+                    </div>
+
+                    <details class="minister-family">
+                      <summary>
+                        <i class="fa-solid fa-people-roof"></i> Keluarga
+                      </summary>
+
+                      <dl>
+                        <dt>Istri</dt>
+                        <dd>Fatimah</dd>
+
+                        <dt>Anak</dt>
+                        <dd>
+                          <ol>
+                            <li>Gabriel Christian Sanggalangi</li>
+                            <li>Given Agapereal Sanggalangi</li>
+                            <li>Gracella Hanatasya Sanggalangi</li>
+                          </ol>
+                        </dd>
+                      </dl>
+                    </details>
+                  </article>
+
+
+                  <!-- 07 -->
+                  <article class="minister-card minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdt.%20Abri%20Santoso.jpg"
+                          alt="Foto Pdt. Abri Santoso" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">07</span>
+                          <span class="minister-period">Jul 2024 — Des 2025</span>
+                        </div>
+
+                        <h4>Pdt. Abri Santoso</h4>
+
+                        <p class="minister-note">
+                          Pendeta keempat yang melayani Jemaat Taman Gethsemane.
+                        </p>
+                      </div>
+                    </div>
+
+                    <details class="minister-family">
+                      <summary>
+                        <i class="fa-solid fa-people-roof"></i> Keluarga
+                      </summary>
+
+                      <dl>
+                        <dt>Istri</dt>
+                        <dd>Lenny Purnama Siburian</dd>
+
+                        <dt>Anak</dt>
+                        <dd>
+                          <ol>
+                            <li>Theofany Listya Abri Santoso</li>
+                            <li>Ivana Ivory Abri Santoso</li>
+                            <li>Dorothea Darlen Abri Santoso</li>
+                          </ol>
+                        </dd>
+                      </dl>
+                    </details>
+                  </article>
+
+
+                  <!-- 08 -->
+                  <article class="minister-card">
+                    <div class="minister-card-summary">
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">08</span>
+                          <span class="minister-period">Mei — Jul 2025</span>
+                        </div>
+
+                        <h4>PHD Firgo Situmorang</h4>
+
+                        <p class="minister-note">
+                          Pendeta Hari Depan / calon pendeta muda dari Universitas Surya Nusantara Pematang Siantar.
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+
+
+                  <!-- 09 -->
+                  <article class="minister-card minister-card-current minister-card-has-avatar">
+                    <div class="minister-card-summary">
+                      <div class="minister-avatar-wrap">
+                        <img class="minister-avatar" src="avatar-pastor/Pdtm.%20Rynaldo%20E.%20Katuuk.jpg"
+                          alt="Foto Pdtm. Rynaldo E. Katuuk" loading="lazy" decoding="async">
+                      </div>
+                      <div class="minister-card-copy">
+                        <div class="minister-card-top">
+                          <span class="minister-number">09</span>
+                          <span class="minister-period">Jan 2026 — sekarang</span>
+                        </div>
+
+                        <h4>Pdtm. Rynaldo E. Katuuk</h4>
+
+                        <p class="minister-note">
+                          Pendeta kelima yang melayani Jemaat Taman Gethsemane.
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <!-- ==================== TAB 3: SUSUNAN IBADAH ==================== -->
+          <section id="tab-worship" class="tab-content">
+                <div class="section-container">
+
+                  <!-- Countdown Widget -->
+                  <div class="countdown-card">
+                    <div class="countdown-header">
+                      <i class="fa-solid fa-hourglass-start icon-pulse text-gold"></i>
+                      <span>Menuju Sabat Berikutnya</span>
+                    </div>
+                    <div class="countdown-timer" id="sabbath-countdown">
+                      <div class="time-block">
+                        <span id="cd-days" class="time-val">00</span>
+                        <span class="time-label">Hari</span>
+                      </div>
+                      <span class="time-sep">:</span>
+                      <div class="time-block">
+                        <span id="cd-hours" class="time-val">00</span>
+                        <span class="time-label">Jam</span>
+                      </div>
+                      <span class="time-sep">:</span>
+                      <div class="time-block">
+                        <span id="cd-mins" class="time-val">00</span>
+                        <span class="time-label">Menit</span>
+                      </div>
+                      <span class="time-sep">:</span>
+                      <div class="time-block">
+                        <span id="cd-secs" class="time-val">00</span>
+                        <span class="time-label">Detik</span>
+                      </div>
+                    </div>
+                    <div class="countdown-sub">
+                      <i class="fa-regular fa-calendar-check"></i> Ibadah Sabat: Sabtu Pukul 09:00 WIB
+                    </div>
+                  </div>
+
+
+                  <!-- Program Selector Tabs / Accordions -->
+                  <div class="program-tab-headers">
+                    <button class="program-tab-btn active" data-program="sabat-raya">
+                      <i class="fa-solid fa-church"></i> Sabat Raya
+                    </button>
+                    <button class="program-tab-btn" data-program="pa">
+                      <i class="fa-solid fa-users"></i> Pemuda Advent
+                    </button>
+                    <button class="program-tab-btn" data-program="rabu-malam">
+                      <i class="fa-solid fa-moon"></i> Rabu Malam
+                    </button>
+                  </div>
+
+                  <!-- PROGRAM 1: SABAT RAYA (Sekolah Sabat & Ibadah Khotbah) -->
+                  <div id="prog-sabat-raya" class="program-content active">
+                    <div id="subtab-container-sabat-raya"></div>
+                  </div>
+
+                  <!-- PROGRAM 2: PEMUDA ADVENT -->
+                  <div id="prog-pa" class="program-content">
+                    <div id="subtab-container-pa"></div>
+                  </div>
+
+                  <!-- PROGRAM 3: RABU MALAM -->
+                  <div id="prog-rabu-malam" class="program-content">
+                    <div id="subtab-container-rabu-malam"></div>
+                  </div>
+
+                </div>
+              </section>
+
+              <!-- ==================== TAB 4: DIREKTORI JEMAAT ==================== -->
+              <div id="tab-directory" class="tab-content">
+                <!-- Header Card & Search Bar Unified -->
+                <div class="section-container">
+                  <div class="directory-header-card">
+                    <div class="dir-header-main">
+                      <div class="dir-header-info">
+                        <div class="dir-title-row">
+                          <i class="fa-solid fa-address-book text-burgundy"></i>
+                          <h2>Direktori Jemaat & Pengurus</h2>
+                        </div>
+                        <p class="dir-subtitle">Daftar kontak lengkap Gembala Jemaat, Officers, dan Anggota Majelis
+                          GMAHK Taman Gethsemane.</p>
+                      </div>
+                      <button class="btn-back-home" onclick="switchTab('tab-home')">
+                        <i class="fa-solid fa-arrow-left"></i> Beranda
+                      </button>
+                    </div>
+
+                    <div class="dir-search-row">
+                      <div class="dir-search-input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon text-gold"></i>
+                        <input type="text" id="directory-search-input"
+                          placeholder="Cari nama atau jabatan (contoh: Gembala, Ketua, Sekretaris, Ibu Tabita)..."
+                          class="dir-search-input" onkeyup="filterDirectory()">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Directory Categorized Grid (Dimuat Secara Dinamis dari Supabase) -->
+                <div class="section-container mt-3">
+                  <div id="directory-content">
+                    <div class="directory-loading"
+                      style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+                      <i class="fa-solid fa-spinner fa-spin"
+                        style="font-size: 2rem; margin-bottom: 14px; display: block; color: var(--primary-navy);"></i>
+                      <span style="font-size: 0.95rem; font-weight: 500;">Memuat data direktori dari database
+                        Supabase...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ==================== TAB 5: PERSEMBAHAN & DONASI ==================== -->
+              <div id="tab-donate" class="tab-content">
+                <!-- Header Card for Persembahan Page -->
+                <div class="section-container">
+                  <div class="directory-header-card" style="border-left-color: var(--accent-emerald);">
+                    <div class="dir-header-main">
+                      <div class="dir-header-info">
+                        <div class="dir-title-row">
+                          <i class="fa-solid fa-hand-holding-dollar text-emerald" style="font-size: 1.5rem;"></i>
+                          <h2>Persembahan & Donasi</h2>
+                        </div>
+                        <p class="dir-subtitle" style="font-style: italic;">
+                          "Hendaklah masing-masing memberikan menurut kerelaan hatinya, jangan dengan sedih hati atau
+                          karena paksaan, sebab Allah mengasihi orang yang memberi dengan sukacita." — 2 Korintus 9:7
+                        </p>
+                      </div>
+                      <button class="btn-back-home" onclick="switchTab('tab-home')">
+                        <i class="fa-solid fa-arrow-left"></i> Beranda
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Rekening Persembahan -->
+                <div class="section-container mt-3">
+                  <div class="donate-page-card">
+                    <div class="bank-header">
+                      <span class="bank-name"><i class="fa-solid fa-building-columns text-emerald"></i> BANK
+                        MANDIRI</span>
+                      <span class="bank-chip chip-gold">Persepuluhan & Persembahan</span>
+                    </div>
+                    <div class="bank-account-main">
+                      <div class="bank-account-number">
+                        <span class="bank-field-label">Nomor Rekening</span>
+                        <span class="bank-num-text">141-00-24761322</span>
+                      </div>
+                      <button class="btn-copy" aria-label="Salin rekening Mandiri"
+                        onclick="copyToClipboard('141-00-24761322', 'No. Rekening Mandiri')">
+                        <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                        <span class="btn-copy-label">Salin Rekening</span>
+                      </button>
+                    </div>
+                    <div class="bank-account-holder">
+                      <span class="bank-field-label">Nama Rekening</span>
+                      <p class="bank-holder">Gereja Masehi Advent Hari Ketujuh. Jmt Gethsemane</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+      </main>
+
+      <!-- BOTTOM NAVIGATION BAR (Fixed at bottom edge) -->
+      <nav class="bottom-nav">
+        <div class="nav-container">
+          <button class="nav-item active" onclick="switchTab('tab-home')" id="nav-tab-home">
+            <div class="nav-icon-box"><i class="fa-solid fa-house"></i></div>
+            <span class="nav-label">Beranda</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-history')" id="nav-tab-history">
+            <div class="nav-icon-box"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <span class="nav-label">Sejarah</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-worship')" id="nav-tab-worship">
+            <div class="nav-icon-box"><i class="fa-solid fa-book-bible"></i></div>
+            <span class="nav-label">Ibadah</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-directory')" id="nav-tab-directory">
+            <div class="nav-icon-box"><i class="fa-solid fa-address-book"></i></div>
+            <span class="nav-label">Direktori</span>
+          </button>
+
+          <button class="nav-item" onclick="switchTab('tab-donate')" id="nav-tab-donate">
+            <div class="nav-icon-box"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            <span class="nav-label">Persembahan</span>
+          </button>
+        </div>
+      </nav>
+
+    </div>
+
+    <!-- ==================== ADMIN DATABASE VIEW DASHBOARD ==================== -->
+    <div id="admin-database-view" class="admin-database-view" style="display: none;">
+      <!-- Admin Top Navigation Bar -->
+      <header class="admin-topbar">
+        <div class="admin-topbar-left">
+          <button id="btn-back-to-webapp" class="btn-back-webapp" onclick="closeAdminDatabaseView()"
+            title="Kembali ke Web App">
+            <i class="fa-solid fa-arrow-left"></i> <span>Kembali ke Web App</span>
+          </button>
+          <div class="admin-session-badge">
+            <span class="pulse-indicator"></span>
+            <span class="session-label"><i class="fa-solid fa-shield-halved"></i> Sesi Admin Aktif</span>
+          </div>
+        </div>
+        <div class="admin-topbar-right">
+          <button id="btn-admin-theme-toggle" class="header-btn" title="Ubah Mode Gelap/Terang" onclick="toggleTheme()">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button class="btn-admin-logout" onclick="openModal('modal-logout-confirm')" title="Keluar / Logout Admin">
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Admin Dashboard Body Container -->
+      <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+          <div class="sidebar-heading-box">
+            <span class="sidebar-heading-text">MANAJEMEN DATABASE</span>
+          </div>
+          <nav class="sidebar-nav">
+            <button class="sidebar-tab-btn active" data-dbtab="directory" onclick="switchAdminDbTab('directory')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-address-book"></i></div>
+              <span class="tab-label">Tabel Direktori</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="pos" onclick="switchAdminDbTab('pos')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-table-list"></i></div>
+              <span class="tab-label">Tabel Pianis</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="sekolah-sabat" onclick="switchAdminDbTab('sekolah-sabat')">
+              <div class="tab-icon-wrap"><i class="fa-regular fa-square-check"></i></div>
+              <span class="tab-label">Tabel SS</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="khotbah" onclick="switchAdminDbTab('khotbah')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <span class="tab-label">Tabel Khotbah</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="pemuda-advent" onclick="switchAdminDbTab('pemuda-advent')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-people-group"></i></div>
+              <span class="tab-label">Pemuda Advent</span>
+            </button>
+            <button class="sidebar-tab-btn" data-dbtab="gallery-events" onclick="switchAdminDbTab('gallery-events')">
+              <div class="tab-icon-wrap"><i class="fa-solid fa-photo-film"></i></div>
+              <span class="tab-label">Kegiatan Jemaat</span>
+            </button>
+          </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main">
+          <!-- Panel: Tabel POS -->
+          <section id="panel-pos" class="admin-panel">
+            <!-- Header Section -->
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Pianis</h2>
+                <p class="panel-subtitle">Kelola jadwal pianis ibadah dari database Supabase</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" onclick="shiftPosWeek(1)"
+                  title="Majukan semua tanggal 7 hari ke belakang (-7 hari)">
+                  <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
+                </button>
+                <button class="btn-shift-week" onclick="shiftPosWeek(-1)"
+                  title="Mundurkan semua tanggal 7 hari ke depan (+7 hari)">
+                  <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-import-data" type="button" onclick="openCsvImportModal('pos')">
+                  <i class="fa-solid fa-file-arrow-up"></i> <span>Import CSV</span>
+                </button>
+                <button class="btn-add-data" onclick="openAddPosModal()">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mobile Screen Notice -->
+            <div class="admin-mobile-notice">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+              <span>Untuk pengalaman melihat dan mengedit tabel yang lebih baik, sangat disarankan menggunakan perangkat
+                layar lebar (Laptop/Desktop).</span>
+            </div>
+
+            <!-- Search & Toolbar -->
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="pos-table-search" class="table-search-input"
+                  placeholder="Cari tanggal atau nama pianis..." onkeyup="filterPosTable()">
+                <button id="pos-search-clear" class="btn-clear-search" onclick="clearPosSearch()"
+                  style="display: none;">&times;</button>
+              </div>
+              <div class="table-stats-badge" id="pos-table-stats">
+                Menampilkan <strong id="pos-count-displayed">0</strong> dari <strong id="pos-count-total">0</strong>
+                jadwal
+              </div>
+            </div>
+
+            <!-- Table Card Container -->
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead>
+                    <tr>
+                      <th class="th-date sortable" onclick="sortPosTable('date')">
+                        <div class="th-content">
+                          <span>Tanggal</span>
+                          <i class="fa-solid fa-sort-down th-sort-icon" id="sort-icon-date"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortPosTable('pianist')">
+                        <div class="th-content">
+                          <span>Pianist</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-pianist"></i>
+                        </div>
+                      </th>
+                      <th class="th-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pos-table-body">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Panel: Tabel Direktori Jemaat & Pengurus -->
+          <section id="panel-directory" class="admin-panel active">
+            <!-- Header Section -->
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Direktori Jemaat & Pengurus</h2>
+                <p class="panel-subtitle">Kelola nama, jabatan, kategori pelayan, dan nomor telepon WhatsApp</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-add-data" onclick="openAddDirectoryModal()">
+                  <i class="fa-solid fa-user-plus"></i> <span>Tambah Kontak</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mobile Screen Notice -->
+            <div class="admin-mobile-notice">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+              <span>Untuk pengalaman melihat dan mengedit tabel yang lebih baik, sangat disarankan menggunakan perangkat
+                layar lebar (Laptop/Desktop).</span>
+            </div>
+
+            <!-- Search & Toolbar -->
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="directory-table-search" class="table-search-input"
+                  placeholder="Cari nama, jabatan, atau nomor telepon..." onkeyup="filterDirectoryTable()">
+                <button id="directory-search-clear" class="btn-clear-search" onclick="clearDirectorySearch()"
+                  style="display: none;">&times;</button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <select id="directory-category-filter" class="form-input-styled"
+                  style="padding: 7px 12px; font-size: 0.82rem; width: auto; font-weight: 600;"
+                  onchange="filterDirectoryTable()">
+                  <option value="">Semua Kategori (3 Kategori)</option>
+                  <option value="gembala">1. Pendeta / Gembala Jemaat</option>
+                  <option value="officers">2. Officers Jemaat</option>
+                  <option value="majelis_dept">3. Majelis & Pengurus Departemen</option>
+                </select>
+                <div class="table-stats-badge" id="directory-table-stats">
+                  Menampilkan <strong id="dir-count-displayed">0</strong> dari <strong id="dir-count-total">0</strong>
+                  kontak
+                </div>
+              </div>
+            </div>
+
+            <!-- Table Card Container -->
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead>
+                    <tr>
+                      <th class="sortable" onclick="sortDirectoryTable('category')">
+                        <div class="th-content">
+                          <span>Kategori</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-category"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortDirectoryTable('name')">
+                        <div class="th-content">
+                          <span>Nama Lengkap</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-name"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortDirectoryTable('role')">
+                        <div class="th-content">
+                          <span>Jabatan / Pelayanan</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-role"></i>
+                        </div>
+                      </th>
+                      <th class="sortable" onclick="sortDirectoryTable('phone')">
+                        <div class="th-content">
+                          <span>Nomor Telepon / WA</span>
+                          <i class="fa-solid fa-sort th-sort-icon" id="sort-icon-dir-phone"></i>
+                        </div>
+                      </th>
+                      <th style="text-align:center; white-space:nowrap;">
+                        <div class="th-content" style="justify-content:center;">
+                          <i class="fa-solid fa-hands-praying" style="color:var(--accent-gold);"></i>
+                          <span style="margin-left:4px;">Kontak Doa</span>
+                        </div>
+                      </th>
+                      <th class="th-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="directory-table-body">
+                    <!-- Dynamically populated -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Panel: Tabel Sekolah Sabat -->
+          <section id="panel-sekolah-sabat" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Sekolah Sabat</h2>
+                <p class="panel-subtitle">Data petugas dan acara Sekolah Sabat dari Supabase</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('ss', 1)">
+                  <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
+                </button>
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('ss', -1)">
+                  <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-import-data" type="button" onclick="openCsvImportModal('ss')">
+                  <i class="fa-solid fa-file-arrow-up"></i> <span>Import CSV</span>
+                </button>
+                <button class="btn-add-data" onclick="openSabbathTableAddModal('ss')">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mobile Screen Notice -->
+            <div class="admin-mobile-notice">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+              <span>Untuk pengalaman melihat dan mengedit tabel yang lebih baik, sangat disarankan menggunakan perangkat
+                layar lebar (Laptop/Desktop).</span>
+            </div>
+
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="ss-table-search" class="table-search-input"
+                  placeholder="Cari nama atau tanggal..." onkeyup="filterSabbathTable('ss')">
+                <button id="ss-search-clear" class="btn-clear-search" onclick="clearSabbathTableSearch('ss')"
+                  style="display:none;">&times;</button>
+              </div>
+              <div class="table-stats-badge">Menampilkan <strong id="ss-count-displayed">0</strong> dari <strong
+                  id="ss-count-total">0</strong> jadwal</div>
+            </div>
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead id="ss-table-head"></thead>
+                  <tbody id="ss-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Panel: Tabel Khotbah -->
+          <section id="panel-khotbah" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Khotbah (Kebaktian Utama)</h2>
+                <p class="panel-subtitle">Data petugas dan acara khotbah dari Supabase</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('khotbah', 1)">
+                  <i class="fa-solid fa-caret-left"></i> <span>Majukan 1 Minggu</span>
+                </button>
+                <button class="btn-shift-week" onclick="shiftSabbathTableWeek('khotbah', -1)">
+                  <span>Mundurkan 1 Minggu</span> <i class="fa-solid fa-caret-right"></i>
+                </button>
+                <button class="btn-import-data" type="button" onclick="openCsvImportModal('khotbah')">
+                  <i class="fa-solid fa-file-arrow-up"></i> <span>Import CSV</span>
+                </button>
+                <button class="btn-add-data" onclick="openSabbathTableAddModal('khotbah')">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Mobile Screen Notice -->
+            <div class="admin-mobile-notice">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+              <span>Untuk pengalaman melihat dan mengedit tabel yang lebih baik, sangat disarankan menggunakan perangkat
+                layar lebar (Laptop/Desktop).</span>
+            </div>
+
+            <div class="admin-table-toolbar">
+              <div class="table-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="khotbah-table-search" class="table-search-input"
+                  placeholder="Cari nama atau tanggal..." onkeyup="filterSabbathTable('khotbah')">
+                <button id="khotbah-search-clear" class="btn-clear-search" onclick="clearSabbathTableSearch('khotbah')"
+                  style="display:none;">&times;</button>
+              </div>
+              <div class="table-stats-badge">Menampilkan <strong id="khotbah-count-displayed">0</strong> dari <strong
+                  id="khotbah-count-total">0</strong> jadwal</div>
+            </div>
+            <div class="admin-table-card">
+              <div class="table-responsive">
+                <table class="pos-data-table">
+                  <thead id="khotbah-table-head"></thead>
+                  <tbody id="khotbah-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Panel: Pemuda Advent (Placeholder ready) -->
+          <section id="panel-pemuda-advent" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Tabel Pemuda Advent (PA)</h2>
+                <p class="panel-subtitle">Kelola jadwal acara Pemuda Advent, pembicara, dan pengisi acara</p>
+              </div>
+            </div>
+            <div class="admin-placeholder-card">
+              <div class="placeholder-icon-wrap"><i class="fa-solid fa-people-group"></i></div>
+              <h3>Modul Tabel Pemuda Advent</h3>
+              <p>Struktur kolom dan integrasi database Pemuda Advent akan dikonfigurasi secepatnya.</p>
+            </div>
+          </section>
+
+          <section id="panel-gallery-events" class="admin-panel">
+            <div class="admin-panel-header">
+              <div class="panel-header-info">
+                <h2 class="panel-title">Kegiatan Jemaat</h2>
+                <p class="panel-subtitle">Kelola hingga tiga event presentasi Google Slides.</p>
+              </div>
+              <div class="panel-header-actions">
+                <button class="btn-shift-week" id="btn-gallery-order" type="button" onclick="toggleGalleryOrderMode()">
+                  <i class="fa-solid fa-arrow-down-1-9"></i> <span>Atur Slot</span>
+                </button>
+                <button class="btn-shift-week" id="btn-cancel-gallery-order" type="button"
+                  onclick="cancelGalleryOrder()" hidden>
+                  <i class="fa-solid fa-xmark"></i> <span>Batal</span>
+                </button>
+                <button class="btn-add-data" id="btn-save-gallery-order" type="button" onclick="saveGalleryEventOrder()"
+                  hidden>
+                  <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Urutan</span>
+                </button>
+                <button class="btn-add-data" id="btn-add-gallery-event" onclick="openGalleryEventForm()">
+                  <i class="fa-solid fa-plus"></i> <span>Tambah Event</span>
+                </button>
+              </div>
+            </div>
+            <p class="gallery-admin-status" id="gallery-admin-status" role="status"></p>
+            <div class="gallery-admin-list" id="gallery-admin-list"></div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal: Waktu Ibadah -->
+  <div id="modal-schedule" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-clock text-gold"></i> Jadwal Ibadah Rutin</h4>
+        <button class="modal-close" onclick="closeModal('modal-schedule')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="schedule-list">
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-sun"></i></div>
+            <div class="sched-info">
+              <h5>Sekolah Sabat</h5>
+              <p>Sabtu Pagi, 09:00 - 10:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-cross"></i></div>
+            <div class="sched-info">
+              <h5>Ibadah Khotbah Utama</h5>
+              <p>Sabtu Pagi, 10:10 - 12:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="sched-info">
+              <h5>Pemuda Advent & Vesper</h5>
+              <p>Sabtu Sore, 15:30 - 18:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-hands-praying"></i></div>
+            <div class="sched-info">
+              <h5>Persekutuan Doa Rabu Malam</h5>
+              <p>Rabu Malam, 19:00 WIB</p>
+            </div>
+          </div>
+
+          <div class="schedule-item">
+            <div class="sched-icon"><i class="fa-solid fa-moon"></i></div>
+            <div class="sched-info">
+              <h5>Vesper Buka Sabat</h5>
+              <p>Jumat Malam, 18:00 WIB</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Edit Pengumuman -->
+  <div id="modal-edit-pengumuman" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-pen text-gold"></i> Edit Pengumuman</h4>
+        <button class="modal-close" onclick="closeModal('modal-edit-pengumuman')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="input-pengumuman" class="form-control" rows="6"
+          style="width: 100%; border-radius: 8px; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-color);"
+          placeholder="Tulis pengumuman di sini..."></textarea>
+        <button class="btn-primary" onclick="simpanPengumuman()" style="width: 100%;" id="btn-simpan-pengumuman">
+          <i class="fa-solid fa-save"></i> Simpan ke Supabase
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Kontak & Permohonan Doa -->
+  <div id="modal-prayer" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-hands-praying text-blue"></i> Layanan Kontak & Permohonan Doa</h4>
+        <button class="modal-close" onclick="closeModal('modal-prayer')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Apakah Anda membutuhkan dukungan doa atau konsultasi kerohanian? Hubungi langsung via WhatsApp:</p>
+
+        <!-- Kontak Pendeta (selalu ditampilkan jika ada) -->
+        <div id="prayer-pastor-contact" class="contact-links" style="display:none;"></div>
+
+        <!-- Kontak Ketua/Majelis (dari toggle direktori, max 2 orang) -->
+        <div id="prayer-extra-contacts" class="contact-links" style="display:none;"></div>
+
+        <!-- Fallback jika tidak ada kontak -->
+        <div id="prayer-no-contact" style="text-align:center; padding: 16px; color: var(--text-muted); display:none;">
+          <i class="fa-solid fa-circle-info" style="font-size:1.5rem; margin-bottom:8px; display:block;"></i>
+          <span>Belum ada kontak doa yang tersedia. Silakan hubungi pengurus jemaat secara langsung.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Lagu Zion / Hymnal Reference -->
+  <div id="modal-hymnal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h4><i class="fa-solid fa-music text-gold"></i> Pencarian & Daftar Lagu LSEL / AYS</h4>
+        <button class="modal-close" onclick="closeModal('modal-hymnal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="hymnal-search">
+          <input type="text" id="hymnal-search-input" placeholder="Cari judul atau nomor lagu (contoh: 12 atau Suci)..."
+            class="form-input" onkeyup="filterHymnal()">
+        </div>
+        <div class="hymnal-list" id="hymnal-list-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Login Admin -->
+  <div id="modal-admin-login" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Login Admin / Pengurus</h4>
+            <span class="auth-subtitle">GMAHK Taman Gethsemane</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-admin-login')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Error Alert Banner -->
+        <div id="admin-login-error" class="login-error-banner" style="display: none;">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="admin-error-text">Email atau Password salah. Silakan periksa kembali.</span>
+        </div>
+
+        <!-- Success Alert Banner -->
+        <div id="admin-login-success" class="login-success-banner" style="display: none;">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>Login berhasil! Membuka Mode Admin...</span>
+        </div>
+
+        <p class="auth-desc-text">
+          Masuk dengan akun pengurus yang terdaftar pada <strong>Supabase Authentication</strong>.
+        </p>
+
+        <form id="admin-login-form" class="auth-form" onsubmit="handleAdminLoginSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Email Admin Supabase</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-envelope input-icon"></i>
+              <input type="email" id="admin-email" placeholder="admin@gmahkgethsemane.org" class="form-input-styled"
+                required>
+            </div>
+          </div>
+
+          <div class="form-group mt-3">
+            <label class="form-label">Password Supabase</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="admin-password" placeholder="••••••••" class="form-input-styled" required>
+              <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility()"
+                title="Tampilkan/Sembunyikan Password">
+                <i id="password-toggle-icon" class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-submit-admin-login" class="btn-primary btn-auth-submit mt-4">
+            <i class="fa-solid fa-right-to-bracket"></i> <span>Masuk via Supabase Auth</span>
+          </button>
+        </form>
+
+        <div class="supabase-badge-info mt-3">
+          <i class="fa-solid fa-shield-halved text-emerald"></i>
+          <span>Autentikasi Langsung via <strong>Supabase Auth API</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Data SS / Khotbah -->
+  <div id="modal-sabbath-table-add" class="modal-overlay">
+    <div class="modal-card modal-card-auth modal-card-wide">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge"><i class="fa-solid fa-calendar-plus"></i></div>
+          <div>
+            <h4 id="sabbath-table-add-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Data
+            </h4>
+            <span class="auth-subtitle">Data jadwal Supabase</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-sabbath-table-add')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="sabbath-table-add-form" onsubmit="handleSaveSabbathTableEntry(event)">
+          <div id="sabbath-table-add-fields" class="form-grid-two"></div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="width: 100%;">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan ke Supabase</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-worship-reset-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-rotate-left"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Reset Override Susunan?</h4>
+            <span class="auth-subtitle">Tindakan ini menghapus override dari Supabase</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" onclick="cancelResetSubTab()" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="padding: 24px;">
+        <p id="worship-reset-description" style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+          Override susunan untuk tanggal ini akan dihapus.
+        </p>
+        <p id="worship-reset-detail" style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Override khusus pada tanggal ini akan dihapus.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-subtab-pill" type="button" style="flex: 1; padding: 11px; font-weight: 700;" onclick="cancelResetSubTab()">Batal</button>
+          <button class="btn-primary" type="button" style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700;" onclick="confirmResetSubTab()">
+            <i class="fa-solid fa-rotate-left"></i> Ya, Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-week-shift-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge"><i class="fa-solid fa-calendar-week"></i></div>
+          <div>
+            <h4 id="week-shift-confirm-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Geser Jadwal</h4>
+            <span class="auth-subtitle">Perubahan akan diterapkan ke semua tanggal dalam tabel</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" onclick="cancelWeekShift()" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body delete-modal-body">
+        <p id="week-shift-confirm-description" class="delete-modal-message week-shift-confirm-message">
+          Yakin ingin menggeser tanggal satu minggu?
+        </p>
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel" type="button" onclick="cancelWeekShift()">Batal</button>
+          <button class="delete-modal-confirm week-shift-confirm-button" type="button" onclick="confirmWeekShift()">
+            <i class="fa-solid fa-check"></i> Ya, Lanjutkan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-gallery-event" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge"><i class="fa-solid fa-photo-film"></i></div>
+          <div>
+            <h4 id="gallery-event-modal-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah
+              Event</h4>
+            <span class="auth-subtitle">Galeri Dokumentasi</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" onclick="closeModal('modal-gallery-event')"
+          aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="gallery-event-form" onsubmit="saveGalleryEvent(event)">
+          <input type="hidden" id="gallery-event-id">
+          <div class="form-group">
+            <label class="form-label" for="gallery-event-title">Judul Event</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-heading" aria-hidden="true"></i>
+              <input class="form-input-styled" id="gallery-event-title" type="text" maxlength="120" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label" for="gallery-event-subtitle">Subtitle pendek</label>
+            <div class="input-with-icon input-with-icon-multiline">
+              <i class="input-icon fa-solid fa-align-left" aria-hidden="true"></i>
+              <textarea class="form-input-styled gallery-event-subtitle-input" id="gallery-event-subtitle"
+                maxlength="180" rows="3" required></textarea>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label" for="gallery-event-slides-url">Link Google Slides</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-link" aria-hidden="true"></i>
+              <input class="form-input-styled" id="gallery-event-slides-url" type="url" inputmode="url"
+                placeholder="https://docs.google.com/presentation/d/..." required>
+            </div>
+          </div>
+          <p class="gallery-form-error" id="gallery-event-form-error" role="alert" hidden></p>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4" style="width: 100%;">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Event</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Logout Admin -->
+  <div id="modal-logout-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Keluar</h4>
+            <span class="auth-subtitle" style="color: #ef4444;">Mode Admin Aktif</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-logout-confirm')">&times;</button>
+      </div>
+      <div class="modal-body text-center" style="padding: 24px;">
+        <p style="font-size: 0.95rem; color: var(--text-main); font-weight: 700; margin-bottom: 8px;">
+          Apakah Anda yakin ingin keluar dari Mode Admin?
+        </p>
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5;">
+          Akses fitur editor susunan acara & warta jemaat akan ditutup sampai Anda login kembali.
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn-subtab-pill"
+            style="flex: 1; padding: 11px; font-weight: 700; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main);"
+            onclick="closeModal('modal-logout-confirm')">
+            Batal
+          </button>
+          <button class="btn-primary"
+            style="flex: 1; padding: 11px; background: #ef4444; border-color: #ef4444; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;"
+            onclick="confirmLogoutAdmin()">
+            <i class="fa-solid fa-right-from-bracket"></i> Ya, Keluar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Import CSV -->
+  <div id="modal-csv-import" class="modal-overlay">
+    <div class="modal-card modal-card-auth csv-import-modal">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge csv-import-icon">
+            <i class="fa-solid fa-file-csv"></i>
+          </div>
+          <div>
+            <h4 id="csv-import-title" style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Import CSV</h4>
+            <span id="csv-import-subtitle" class="auth-subtitle">Impor data ke tabel</span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" aria-label="Tutup" onclick="closeCsvImportModal()">&times;</button>
+      </div>
+      <div class="modal-body csv-import-body">
+        <div id="csv-import-upload-stage">
+          <p class="csv-import-guidance">Unduh template terlebih dahulu dan jangan ubah nama kolom. Gunakan format tanggal YYYY-MM-DD. Data dengan tanggal yang sama akan diperbarui; tanggal lain tetap dipertahankan.</p>
+          <button class="csv-template-button" type="button" onclick="downloadCsvImportTemplate()">
+            <i class="fa-solid fa-file-arrow-down"></i> Download Template CSV
+          </button>
+          <input id="csv-import-file" class="csv-import-file-input" type="file" accept=".csv,text/csv"
+            onchange="handleCsvImportFile(this.files[0])">
+          <div id="csv-import-dropzone" class="csv-import-dropzone" role="button" tabindex="0"
+            onclick="document.getElementById('csv-import-file').click()"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('csv-import-file').click();}">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <strong>Seret dan lepas file CSV di sini</strong>
+            <span>atau klik untuk memilih file</span>
+            <span id="csv-import-file-name" class="csv-import-file-name">Belum ada file dipilih</span>
+          </div>
+          <p id="csv-import-error" class="csv-import-error" role="alert" hidden></p>
+          <div class="csv-import-actions">
+            <button class="delete-modal-cancel" type="button" onclick="closeCsvImportModal()">Batal</button>
+            <button id="csv-import-preview-button" class="delete-modal-confirm csv-import-next-button" type="button"
+              onclick="prepareCsvImportPreview()" disabled>
+              Lanjutkan <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+        <div id="csv-import-preview-stage" hidden>
+          <div id="csv-import-summary" class="csv-import-summary"></div>
+          <p class="csv-import-guidance">Titik merah menunjukkan ada nilai berbeda pada tanggal yang sama. Baris yang tidak berubah tidak akan ditulis ulang.</p>
+          <div class="csv-import-preview-wrap">
+            <table class="csv-import-preview-table">
+              <thead>
+                <tr><th>Tanggal</th><th>Status</th><th>Data CSV</th><th>Perbedaan</th></tr>
+              </thead>
+              <tbody id="csv-import-preview-body"></tbody>
+            </table>
+          </div>
+          <p id="csv-import-error-preview" class="csv-import-error" role="alert" hidden></p>
+          <div class="csv-import-actions">
+            <button class="delete-modal-cancel" type="button" onclick="backToCsvImportUpload()">Kembali</button>
+            <button id="csv-import-save-button" class="delete-modal-confirm csv-import-save-button" type="button"
+              onclick="saveCsvImport()">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Data Jadwal POS -->
+  <div id="modal-pos-add" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
+            <i class="fa-solid fa-calendar-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Jadwal POS</h4>
+            <span class="auth-subtitle">Jadwal Pianis</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-pos-add')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="pos-add-form" onsubmit="handleSaveNewPos(event)">
+          <div class="form-group">
+            <label class="form-label">Tanggal Ibadah Sabat</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-calendar-day" aria-hidden="true"></i>
+              <input type="date" id="pos-add-date" class="form-input-styled" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Pianist</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-music" aria-hidden="true"></i>
+              <input type="text" id="pos-add-pianist" placeholder="Contoh: Sdra. Meakhel" class="form-input-styled"
+                required list="pos-officer-suggestions">
+            </div>
+          </div>
+          <datalist id="pos-officer-suggestions">
+            <option value="Sdra. Meakhel"></option>
+            <option value="Sdri. Rachel"></option>
+          </datalist>
+
+          <button type="submit" class="btn-primary btn-auth-submit mt-4"
+            style="background: var(--primary-navy); border-color: var(--primary-navy);">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan Jadwal ke Database</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Data Jadwal POS -->
+  <div id="modal-pos-edit" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Edit Jadwal POS</h4>
+            <span class="auth-subtitle">Jadwal Pianis</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-pos-edit')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="pos-edit-form" onsubmit="handleUpdatePos(event)">
+          <input type="hidden" id="pos-edit-id">
+          <div class="form-group">
+            <label class="form-label">Tanggal Ibadah Sabat</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-calendar-day" aria-hidden="true"></i>
+              <input type="date" id="pos-edit-date" class="form-input-styled" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Pianist</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-music" aria-hidden="true"></i>
+              <input type="text" id="pos-edit-pianist" class="form-input-styled" required
+                list="pos-officer-suggestions">
+            </div>
+          </div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4"
+            style="background: var(--primary-navy); border-color: var(--primary-navy);">
+            <i class="fa-solid fa-check"></i> <span>Perbarui Jadwal</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Hapus Jadwal POS -->
+  <div id="modal-pos-delete" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-trash-can"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
+            <span class="auth-subtitle" style="color: #ef4444;">Tabel Pianis</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-pos-delete')">&times;</button>
+      </div>
+      <div class="modal-body delete-modal-body">
+        <input type="hidden" id="pos-delete-id">
+        <p class="delete-modal-message">
+          Hapus jadwal ibadah tanggal <span id="pos-delete-date-text"
+            style="color: #ef4444; font-family: monospace;">-</span>?
+        </p>
+        <p class="delete-modal-description">
+          Data jadwal petugas ini akan dihapus dari database server Supabase.
+        </p>
+
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel"
+            onclick="closeModal('modal-pos-delete')">
+            Batal
+          </button>
+          <button class="delete-modal-confirm"
+            onclick="confirmDeletePos()">
+            <i class="fa-solid fa-trash-can"></i> Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tambah Kontak Direktori -->
+  <div id="modal-directory-add" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Tambah Kontak Direktori</h4>
+            <span class="auth-subtitle">Pengurus & Majelis Jemaat</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-directory-add')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="directory-add-form" onsubmit="handleSaveNewDirectory(event)">
+          <div class="form-group">
+            <label class="form-label">Kategori Pelayanan</label>
+            <div class="input-with-icon">
+              <i class="input-icon category-field-icon fa-solid fa-crown"></i>
+              <select id="dir-add-category" class="form-input-styled"
+                onchange="handleDirectoryCategoryChange('add', this)" required>
+                <option value="gembala">Pendeta / Gembala Jemaat</option>
+                <option value="officers">Officers Jemaat</option>
+                <option value="majelis_dept">Majelis & Pengurus Departemen</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Lengkap</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-user"></i>
+              <input type="text" id="dir-add-name" placeholder="Contoh: Bpk. Daniel / Ibu Tabita"
+                class="form-input-styled" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Jabatan / Peran</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-briefcase"></i>
+              <input type="text" id="dir-add-role" placeholder="Contoh: Gembala Jemaat / Ketua Jemaat / Sekretaris"
+                class="form-input-styled" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nomor WhatsApp / Telepon <span
+                style="color:var(--text-muted); font-weight:400;">(opsional)</span></label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-brands fa-whatsapp"></i>
+              <input type="tel" id="dir-add-phone" placeholder="Contoh: +62 812-3456-7890" class="form-input-styled">
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <div class="prayer-toggle-row" id="dir-add-prayer-toggle-row">
+              <div class="prayer-toggle-info">
+                <i class="fa-solid fa-hands-praying" style="color:var(--accent-gold);"></i>
+                <div>
+                  <strong>Tampilkan di Layanan Doa</strong>
+                  <span>Kontak ini akan muncul sebagai tombol WA di halaman Beranda (maks. 2 orang)</span>
+                </div>
+              </div>
+              <label class="toggle-switch" id="dir-add-prayer-toggle-label">
+                <input type="checkbox" id="dir-add-show-in-prayer" onchange="handlePrayerToggleChange('add', this)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="prayer-toggle-limit-msg" id="dir-add-prayer-limit-msg" style="display:none;"></p>
+          </div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4"
+            style="background: var(--primary-navy); border-color: var(--primary-navy);">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Simpan ke Database</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Kontak Direktori -->
+  <div id="modal-directory-edit" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(15, 43, 92, 0.12); color: var(--primary-navy);">
+            <i class="fa-solid fa-user-pen"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Edit Kontak Direktori</h4>
+            <span class="auth-subtitle">Ubah Nama & Nomor Telepon</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-directory-edit')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="directory-edit-form" onsubmit="handleUpdateDirectory(event)">
+          <input type="hidden" id="dir-edit-id">
+          <div class="form-group">
+            <label class="form-label">Kategori Pelayanan</label>
+            <div class="input-with-icon">
+              <i class="input-icon category-field-icon fa-solid fa-crown"></i>
+              <select id="dir-edit-category" class="form-input-styled"
+                onchange="handleDirectoryCategoryChange('edit', this)" required>
+                <option value="gembala">Pendeta / Gembala Jemaat</option>
+                <option value="officers">Officers Jemaat</option>
+                <option value="majelis_dept">Majelis & Pengurus Departemen</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Lengkap</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-user"></i>
+              <input type="text" id="dir-edit-name" class="form-input-styled" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nama Jabatan / Peran</label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-solid fa-briefcase"></i>
+              <input type="text" id="dir-edit-role" class="form-input-styled" required>
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <label class="form-label">Nomor WhatsApp / Telepon <span
+                style="color:var(--text-muted); font-weight:400;">(opsional)</span></label>
+            <div class="input-with-icon">
+              <i class="input-icon fa-brands fa-whatsapp"></i>
+              <input type="tel" id="dir-edit-phone" class="form-input-styled">
+            </div>
+          </div>
+          <div class="form-group mt-3">
+            <div class="prayer-toggle-row" id="dir-edit-prayer-toggle-row">
+              <div class="prayer-toggle-info">
+                <i class="fa-solid fa-hands-praying" style="color:var(--accent-gold);"></i>
+                <div>
+                  <strong>Tampilkan di Layanan Doa</strong>
+                  <span>Kontak ini akan muncul sebagai tombol WA di halaman Beranda (maks. 2 orang)</span>
+                </div>
+              </div>
+              <label class="toggle-switch" id="dir-edit-prayer-toggle-label">
+                <input type="checkbox" id="dir-edit-show-in-prayer" onchange="handlePrayerToggleChange('edit', this)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <p class="prayer-toggle-limit-msg" id="dir-edit-prayer-limit-msg" style="display:none;"></p>
+          </div>
+          <button type="submit" class="btn-primary btn-auth-submit mt-4"
+            style="background: var(--primary-navy); border-color: var(--primary-navy);">
+            <i class="fa-solid fa-check"></i> <span>Perbarui Kontak</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Hapus Kontak Direktori -->
+  <div id="modal-directory-delete" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+            <i class="fa-solid fa-trash-can"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
+            <span class="auth-subtitle" style="color: #ef4444;">Kontak Direktori</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-directory-delete')">&times;</button>
+      </div>
+      <div class="modal-body delete-modal-body">
+        <input type="hidden" id="dir-delete-id">
+        <p class="delete-modal-message">
+          Hapus kontak <span id="dir-delete-name-text" style="color: #ef4444;">-</span>?
+        </p>
+        <p class="delete-modal-description">
+          Kontak ini akan dihapus dari direktori jemaat dan database server Supabase.
+        </p>
+
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel"
+            onclick="closeModal('modal-directory-delete')">
+            Batal
+          </button>
+          <button class="delete-modal-confirm"
+            onclick="confirmDeleteDirectory()">
+            <i class="fa-solid fa-trash-can"></i> Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Konfirmasi Hapus Data -->
+  <div id="modal-delete-confirm" class="modal-overlay">
+    <div class="modal-card modal-card-auth">
+      <div class="modal-header auth-header">
+        <div class="auth-header-title">
+          <div class="auth-icon-badge delete-modal-icon">
+            <i class="fa-solid fa-trash-can"></i>
+          </div>
+          <div>
+            <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">Konfirmasi Hapus</h4>
+            <span id="delete-confirm-subtitle" class="auth-subtitle delete-modal-subtitle"></span>
+          </div>
+        </div>
+        <button class="modal-close" type="button" aria-label="Tutup" onclick="cancelDeleteConfirmation()">&times;</button>
+      </div>
+      <div class="modal-body delete-modal-body">
+        <p id="delete-confirm-message" class="delete-modal-message"></p>
+        <p id="delete-confirm-description" class="delete-modal-description"></p>
+        <div class="delete-modal-actions">
+          <button class="delete-modal-cancel" type="button" onclick="cancelDeleteConfirmation()">Batal</button>
+          <button class="delete-modal-confirm" type="button" onclick="confirmDeleteAction()">
+            <i class="fa-solid fa-trash-can"></i> Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast">
+    <i id="toast-icon" class="fa-solid fa-check-circle"></i>
+    <span id="toast-message">Pesan notifikasi</span>
+  </div>
+
+  <!-- JavaScript File -->
+  <script src="script.js"></script>
+</body>
+
+</html>

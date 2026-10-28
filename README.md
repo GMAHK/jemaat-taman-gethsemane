@@ -12,7 +12,7 @@ Aplikasi web (*Single Page Application*) resmi **GMAHK Taman Gethsemane**: moder
 
 - 🏠 **Beranda** — Ayat Sabat, Misi & Visi GMAHK, pengumuman terkini, tombol aksi cepat, peta lokasi, serta ulasan jemaat.
 - 📖 **Susunan Ibadah** — Tiga program dalam satu tempat: **Sabat Raya** (Sekolah Sabat & Ibadah Khotbah), **Pemuda Advent (PA)**, dan **Rabu Malam**. Dilengkapi *countdown* menuju ibadah berikutnya.
-- 🎵 **Referensi Lagu** — Daftar lagu **LSEL** dan **AYS** yang bisa dicari berdasarkan judul atau nomor.
+- 🎵 **Referensi Lagu** — Daftar lagu **LSEL** dan **AYS** yang bisa dicari berdasarkan judul atau nomor; tombol penanda menyalin nomor lagu.
 - 🏛️ **Sejarah** — Kronologi perjalanan gereja dan ragam pelayanan jemaat.
 - 🖼️ **Kegiatan Jemaat** — Galeri kegiatan berbasis presentasi Google Slides (maksimal tiga event).
 - 📇 **Direktori Jemaat** — Daftar Pendeta, Officers, dan Majelis/Departemen yang dapat dicari, dengan tombol langsung ke WhatsApp.
@@ -26,10 +26,10 @@ Aplikasi web (*Single Page Application*) resmi **GMAHK Taman Gethsemane**: moder
 
 - 🔐 **Login Aman** — Autentikasi lewat **Supabase Auth**; hak tulis dijaga oleh **Row Level Security (RLS)** di database.
 - 🗂️ **Dashboard Admin** dengan panel pengelolaan:
-  - **Jadwal POS** (petugas/pianis) — tambah, ubah, hapus, urutkan, cari, dan geser jadwal per minggu.
+  - **Jadwal POS** (petugas/pianis) — tambah, ubah, hapus, urutkan, cari, geser jadwal per minggu, dan **Import CSV**.
   - **Direktori Jemaat & Pengurus** — kelola kontak dan pilih siapa yang tampil pada permohonan doa.
-  - **Sekolah Sabat & Khotbah** — kelola data susunan ibadah Sabat.
-  - **Override Susunan** — kelola susunan khusus berdasarkan program dan tanggal.
+  - **Sekolah Sabat & Khotbah** — kelola data susunan ibadah Sabat (tambah/ubah/hapus, cari, urutkan, geser minggu, Import CSV dengan pratinjau perbedaan).
+  - **Edit Susunan Langsung** — admin mengubah petugas, lagu (dengan saran otomatis), dan judul khotbah langsung pada halaman Susunan Ibadah; hasilnya disimpan sebagai override tanggal itu.
   - **Galeri Kegiatan** — tambah, ubah, hapus, dan atur urutan event.
   - **Pengumuman** — ubah pengumuman yang tampil di Beranda.
 
@@ -39,7 +39,7 @@ Aplikasi web (*Single Page Application*) resmi **GMAHK Taman Gethsemane**: moder
 
 | Lapisan | Yang dipakai |
 | --- | --- |
-| Antarmuka | HTML5 semantik, CSS3 (variabel CSS untuk tema), JavaScript *vanilla* |
+| Antarmuka | HTML5 semantik, CSS3 (variabel CSS untuk tema terang/gelap), JavaScript *vanilla* tanpa framework |
 | Tipografi & ikon | Google Fonts (*Outfit* & *Cinzel*), Font Awesome 6 |
 | Backend | [Supabase](https://supabase.com) — PostgreSQL, Auth, dan RLS |
 | Hosting | GitHub Pages (situs statis, tanpa *build step*) |
@@ -53,9 +53,37 @@ Aplikasi web (*Single Page Application*) resmi **GMAHK Taman Gethsemane**: moder
 ├── index.html     # Struktur halaman, tab, dashboard admin, dan modal
 ├── style.css      # Sistem desain, tema terang/gelap, layout responsif
 ├── script.js      # Satu berkas JS: navigasi SPA, integrasi Supabase, logika fitur
+├── hero-bg.png    # Gambar latar banner Beranda
 ├── favicon.svg    # Logo & ikon situs
+├── avatar-pastor/ # Foto pendeta untuk kartu di tab Sejarah
+├── LICENSE        # Lisensi proyek
 └── README.md      # Dokumentasi ini
 ```
+
+### Peta `style.css`
+
+Berkas dibagi menjadi 19 seksi bernomor (cari `N. JUDUL`): 1 Variabel & palet · 2 Reset & utilitas · 3 App shell · 4 Header · 5 Body & tab · 6 Beranda · 7 Sejarah · 8 Galeri kegiatan · 9 Susunan ibadah · 10 Navigasi bawah · 11 Modal · 12 Toast · 13 Direktori · 14 Persembahan · 15 Tombol admin · 16 Dashboard admin · 17 Cetak · 18 Toggle switch · 19 Skala responsif ponsel. Tema gelap hanya menimpa variabel warna lewat `[data-theme="dark"]`.
+
+### Peta `script.js`
+
+Setiap fungsi dan variabel global memiliki komentar JSDoc. Isi dibagi menjadi bagian bernomor (cari `// N.`):
+
+| No. | Bagian | No. | Bagian |
+| --- | --- | --- | --- |
+| 0 | Konfigurasi & konstanta | 10 | Modal & konfirmasi hapus |
+| 1 | State global | 11 | Utilitas umum (HTML, tanggal, toast) |
+| 2 | Inisialisasi saat DOM siap | 12 | Susunan ibadah: data, render, editor, override |
+| 3 | Animasi keluarga pendeta | 13 | Klien Supabase |
+| 4 | Tema terang/gelap | 14 | Galeri kegiatan jemaat |
+| 5 | Router tab berbasis hash | 15 | Autentikasi admin & dashboard |
+| 6 | Countdown menuju Sabat | 16 | Jadwal: Pianis, Sekolah Sabat, Khotbah |
+| 7 | Rating & ulasan | 17 | Direktori jemaat & pengurus |
+| 8 | Pemilih program ibadah | 18 | Permohonan doa |
+| 9 | Referensi lagu (LSEL & AYS) | 19 | Pengumuman |
+
+**Alur data susunan ibadah:** kerangka `defaultWorshipData` → diisi dari `Tabel Pianis`, `Tabel SS`, dan `Tabel Khotbah` untuk Sabtu terdekat (lagu paten 515, 1, 260, 21, dan lagu tema *Misi Kita* ditetapkan di kode) → ditimpa override tanggal yang sama bila ada. Semuanya dirangkai oleh `applySabbathDatabaseRows()`.
+
+**Konstanta penting:** `MAX_GALLERY_EVENTS` (3 slot galeri) dan `MAX_PRAYER_CONTACTS` (2 kontak doa selain Pendeta).
 
 ---
 
@@ -122,9 +150,17 @@ Tabel `Tabel Override Susunan` memakai kolom `id`, `program_type`, `date_display
 
 Rabu malam selalu menampilkan susunan dasar dengan tanda `-` untuk petugas dan pengisi acara jika belum ada override pada tanggal tersebut. Setelah tanggal program berlalu, override lama tidak lagi digunakan; override bertanggal lampau dibersihkan dari Supabase saat admin memuat data. Sabat Raya kembali menggunakan susunan dari tabel Sekolah Sabat dan Khotbah setelah override tanggalnya berakhir.
 
+**Format Import CSV**
+
+Header CSV harus persis sama dengan nama kolom tabel (unduh template dari modal Import). Pemisah `,`, `;`, atau tab terdeteksi otomatis; ukuran maksimal 5 MB; kolom `date` berformat `YYYY-MM-DD` dan tidak boleh ganda. Data digabung berdasarkan tanggal: tanggal baru ditambahkan, tanggal yang sudah ada diperbarui, dan pratinjau menandai kolom yang berbeda.
+
 **Menyiapkan Ulasan Jemaat**
 
-Buat tabel `Ulasan Jemaat` dengan kolom `id` (identity), `name` (text), `score` (integer), `comment` (text), dan `created_at` (timestamp, default `now()`). Aktifkan RLS. Izinkan pembacaan dan penambahan ulasan anonim sesuai kebijakan moderasi yang diinginkan; perubahan tabel operasional tetap dibatasi untuk admin.
+Buat tabel `Ulasan Jemaat` dengan kolom `id` (identity), `name` (text), `score` (integer), `comment` (text), dan `created_at` (timestamp, default `now()`). Aktifkan RLS. Izinkan pembacaan dan penambahan ulasan anonim sesuai kebijakan moderasi yang diinginkan; perubahan tabel operasional tetap dibatasi untuk admin. Nama dan komentar selalu di-*escape* saat ditampilkan.
+
+**Menyiapkan Direktori & Pengumuman**
+
+`Tabel Direktori` memakai kolom `category` (`gembala`, `officers`, `majelis_dept`; nilai lama `majelis_anggota` tetap dibaca sebagai `majelis_dept`), `name`, `role`, `phone`, `avatar_icon`, dan `show_in_prayer`. Pendeta selalu tampil di Permohonan Doa; maksimal dua kontak lain boleh dipilih admin. Tabel `Pengumuman` berkolom `content` dan `created_at`; yang tampil adalah baris terbaru.
 
 ---
 
@@ -140,7 +176,7 @@ Data operasional dan ulasan dibaca/ditulis melalui Supabase tanpa cache browser.
 - [x] Integrasi Supabase & dashboard Admin
 - [x] Direktori jemaat dan permohonan doa
 - [x] Galeri kegiatan berbasis Google Slides
-- [ ] Panel Admin Pemuda Advent
+- [ ] Panel Admin Pemuda Advent (kerangka data PA sudah disimpan sebagai komentar di `script.js`)
 - [ ] Persembahan & persepuluhan online
 
 ---
