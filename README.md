@@ -4,7 +4,7 @@ Aplikasi resmi GMAHK Taman Gethsemane untuk membantu jemaat mengakses informasi 
 
 **Versi saat ini: v1.0.0**
 
-🔗 **Situs:** _tambahkan tautan GitHub Pages di sini_
+🔗 **Situs:** _[Website GMAHK Taman Gethsemane](https://gmahk.github.io/jemaat-taman-gethsemane/)_
 
 ---
 
