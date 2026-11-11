@@ -93,7 +93,3 @@ Pengurus yang memiliki akses dapat masuk untuk memperbarui jadwal ibadah, direkt
 Dikembangkan dengan ❤️ oleh **[Meakhel Gunawan](https://github.com/MeakhelG)**.
 
 &copy; 2026 — **GMAHK Taman Gethsemane**. All rights reserved.
-
----
-
-Dikembangkan oleh **[Meakhel Gunawan](https://github.com/MeakhelG)** untuk GMAHK Taman Gethsemane.
