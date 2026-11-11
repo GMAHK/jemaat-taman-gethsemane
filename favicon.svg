@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="110" fill="#0f2b5c"/>
+  <g fill="#d97706">
+    <!-- Cross on top -->
+    <rect x="236" y="90" width="40" height="90" rx="8"/>
+    <rect x="211" y="115" width="90" height="40" rx="8"/>
+    
+    <!-- Main Roof & Building -->
+    <path d="M 256,165 L 365,250 L 365,395 C 365,408 354,419 341,419 L 171,419 C 158,419 147,408 147,395 L 147,250 Z"/>
+    
+    <!-- Left Wing -->
+    <path d="M 135,285 L 135,395 C 135,408 124,419 111,419 L 95,419 C 82,419 71,408 71,395 L 71,310 Z"/>
+    
+    <!-- Right Wing -->
+    <path d="M 377,285 L 377,395 C 377,408 388,419 401,419 L 417,419 C 430,419 441,408 441,395 L 441,310 Z"/>
+    
+    <!-- Church Arch Doorway -->
+    <path d="M 216,419 L 216,335 C 216,313 234,295 256,295 C 278,295 296,313 296,335 L 296,419 Z" fill="#0f2b5c"/>
+  </g>
+</svg>
