@@ -766,12 +766,20 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-top: 20px;
+  margin-top: 0;
   padding: 22px 24px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+}
+
+.social-follow-title {
+  margin-top: 20px;
+}
+
+.social-follow-title i {
+  color: #c13584;
 }
 
 .social-follow-eyebrow {
@@ -780,13 +788,6 @@ button {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.social-follow-copy h4 {
-  margin: 4px 0 5px;
-  color: var(--text-main);
-  font-size: 1.05rem;
-  font-weight: 800;
 }
 
 .social-follow-copy p {
@@ -802,22 +803,23 @@ button {
   gap: 12px;
   flex-shrink: 0;
   padding: 11px 16px;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(193, 53, 132, 0.35);
   border-radius: var(--radius-md);
-  background: var(--bg-main);
-  color: var(--text-main);
+  background: linear-gradient(120deg, #833ab4 0%, #c13584 52%, #f77737 100%);
+  color: #ffffff;
   text-decoration: none;
+  box-shadow: 0 4px 12px rgba(193, 53, 132, 0.2);
   transition: var(--transition-fast);
 }
 
 .btn-instagram-follow:hover {
   border-color: #c13584;
-  box-shadow: 0 4px 14px rgba(193, 53, 132, 0.16);
+  box-shadow: 0 6px 16px rgba(193, 53, 132, 0.3);
   transform: translateY(-2px);
 }
 
 .btn-instagram-follow > i.fa-instagram {
-  color: #c13584;
+  color: #ffffff;
   font-size: 1.55rem;
 }
 
@@ -832,12 +834,12 @@ button {
 }
 
 .btn-instagram-follow small {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.82);
   font-size: 0.75rem;
 }
 
 .btn-instagram-follow > i.fa-arrow-up-right-from-square {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.88);
   font-size: 0.75rem;
 }
 
