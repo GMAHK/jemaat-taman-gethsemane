@@ -3942,6 +3942,9 @@ function getOfficerRoleOrder(role) {
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
   const roleWords = normalizedRole.split(/\s+/).filter(Boolean);
+  if (roleWords.includes("asisten") && roleWords.includes("bendahara")) return 4;
+  if (roleWords.includes("bendahara")) return 3;
+
   const expectedRoles = [
     "ketua jemaat 1",
     "ketua jemaat 2",

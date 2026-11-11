@@ -2,9 +2,19 @@
 
 Aplikasi resmi GMAHK Taman Gethsemane untuk membantu jemaat mengakses informasi ibadah, kegiatan, dan pelayanan gereja.
 
-**Versi saat ini: v1.0.0**
+**Versi saat ini: v1.0.1**
 
 🔗 **Situs:** _[Website GMAHK Taman Gethsemane](https://gmahk.github.io/jemaat-taman-gethsemane/)_
+
+---
+
+## 📝 Riwayat Perubahan
+
+### v1.0.1
+
+- **Direktori** — Urutan jabatan Bendahara Jemaat ditampilkan sebelum Asisten Bendahara Jemaat.
+- **Sejarah** — Kartu pendeta yang pernah melayani memiliki tinggi dasar yang konsisten saat bagian keluarga tertutup. Saat bagian keluarga dibuka, hanya kartu tersebut yang bertambah tinggi.
+- **Sejarah** — Isi kartu PHD Hendika Simbolon dan PHD Firgo Situmorang yang belum memiliki foto diposisikan rata atas dan di tengah secara horizontal.
 
 ---
 
